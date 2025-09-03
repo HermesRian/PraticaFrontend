@@ -199,7 +199,7 @@
       const payload = {
         nome: condicaoPagamento.nome,
         dias: parseInt(condicaoPagamento.dias, 10) || 0,
-        parcelas: parseInt(condicaoPagamento.parcelas, 10) || 0,
+        parcelas: condicaoPagamento.parcelasCondicao?.length || 0,
         ativo: condicaoPagamento.ativo,
         jurosPercentual: parseFloat(condicaoPagamento.jurosPercentual) || 0,
         multaPercentual: parseFloat(condicaoPagamento.multaPercentual) || 0,
@@ -336,7 +336,7 @@
               />
             </Grid>
 
-            <Grid item sx={{ width: '50%' }}>
+            <Grid item sx={{ width: '45%' }}>
               <TextField
                 fullWidth
                 required
@@ -370,22 +370,8 @@
               />
             </Grid>
 
-            {/* <Grid item sx={{ width: '15%', minWidth: 120 }}>
-              <TextField
-                fullWidth
-                size="small"
-                label="Parcelas"
-                name="parcelas"
-                type="number"
-                value={condicaoPagamento.parcelas}
-                onChange={handleChange}
-                placeholder="Número de parcelas"
-                variant="outlined"
-                inputProps={{ min: 1 }}
-              />
-            </Grid> */}
 
-            <Grid item sx={{ width: '30%' }}>
+            <Grid item sx={{ width: '10%' }}>
               <TextField
                 fullWidth
                 size="small"
@@ -400,7 +386,7 @@
               />
             </Grid>
 
-            <Grid item sx={{ width: '30%' }}>
+            <Grid item sx={{ width: '10%' }}>
               <TextField
                 fullWidth
                 size="small"
@@ -415,7 +401,7 @@
               />
             </Grid>
 
-            <Grid item sx={{ width: '30%' }}>
+            <Grid item sx={{ width: '10%' }}>
               <TextField
                 fullWidth
                 size="small"
@@ -518,7 +504,7 @@
           >
             {condicaoPagamento.parcelasCondicao.map((parcela, index) => (
               <Grid container spacing={2} alignItems="center" sx={{ mb: 2 }} key={index}>
-                <Grid item xs={6} md={1.5}>
+                <Grid item sx={{ width: '5%' }}>
                   <TextField
                     fullWidth
                     size="small"
@@ -542,7 +528,7 @@
                     inputProps={{ min: 0 }}
                   />
                 </Grid>
-                <Grid item xs={6} md={2}>
+            <Grid item sx={{ width: '10%' }}>
                   <TextField
                     fullWidth
                     size="small"
