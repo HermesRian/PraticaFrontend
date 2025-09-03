@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import FormaPagamentoModalForm from './FormaPagamentoModalForm';
+import { Link } from 'react-router-dom';
+import CategoriaModalForm from './CategoriaModalForm';
 import {
   Box,
   Typography,
@@ -36,40 +36,38 @@ import {
 import {
   Visibility as VisibilityIcon,
   Edit as EditIcon,
-  Delete as DeleteIcon,
   Add as AddIcon,
   Search as SearchIcon,
-  Payment as PaymentIcon,
+  Sell as SellIcon,
   Close as CloseIcon,
   Block as BlockIcon,
   CheckCircle as CheckCircleIcon
 } from '@mui/icons-material';
 
-const FormaPagamentoListMUI = () => {
-  const [formasPagamento, setFormasPagamento] = useState([]);
-  const [formaPagamentoSelecionada, setFormaPagamentoSelecionada] = useState(null);
+const CategoriaListMUI = () => {
+  const [categorias, setCategorias] = useState([]);
+  const [categoriaSelecionada, setCategoriaSelecionada] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
-  const [selectedFormaPagamentoId, setSelectedFormaPagamentoId] = useState(null);
-  const [sortConfig, setSortConfig] = useState({ key: 'descricao', direction: 'asc' });
+  const [selectedCategoriaId, setSelectedCategoriaId] = useState(null);
+  const [sortConfig, setSortConfig] = useState({ key: 'nome', direction: 'asc' });
   const [filtro, setFiltro] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [filtroStatus, setFiltroStatus] = useState('todos'); // 'todos', 'ativos', 'inativos'
-  const navigate = useNavigate();
+  const [filtroStatus, setFiltroStatus] = useState('todos');
 
-  const loadData = () => {
-    fetch('http://localhost:8080/formas-pagamento')
-      .then(res => res.json())
-      .then((data) => {
-        setFormasPagamento(data);
-        setLoading(false);
-      })
-      .catch((error) => {
-        console.error('Erro ao buscar dados:', error);
-        setError('Erro ao carregar dados');
-        setLoading(false);
-      });
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('http://localhost:8080/categorias');
+      const data = await response.json();
+      setCategorias(data);
+    } catch (error) {
+      console.error('Erro ao buscar dados:', error);
+      setError('Erro ao carregar dados');
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -83,7 +81,7 @@ const FormaPagamentoListMUI = () => {
     }
     setSortConfig({ key, direction });
 
-    const sortedFormasPagamento = [...formasPagamento].sort((a, b) => {
+    const sortedCategorias = [...categorias].sort((a, b) => {
       let aValue = a[key];
       let bValue = b[key];
 
@@ -105,65 +103,80 @@ const FormaPagamentoListMUI = () => {
       }
       return 0;
     });
-    setFormasPagamento(sortedFormasPagamento);
+    setCategorias(sortedCategorias);
   };
 
   const handleDelete = (id) => {
-    const formaPagamento = formasPagamento.find(f => f.id === id);
-    const isAtivo = formaPagamento?.ativo;
-    const acao = isAtivo ? 'excluir' : 'ativar';
+    const categoria = categorias.find(c => c.id === id);
+    const isAtivo = categoria?.ativo;
+    const acao = isAtivo ? 'inativar' : 'ativar';
     const mensagem = isAtivo ? 
-      'Tem certeza que deseja excluir esta forma de pagamento?' : 
-      'Tem certeza que deseja ativar esta forma de pagamento?';
+      'Tem certeza que deseja inativar esta categoria?' : 
+      'Tem certeza que deseja ativar esta categoria?';
     
     if (window.confirm(mensagem)) {
-      fetch(`http://localhost:8080/formas-pagamento/${id}`, {
-        method: 'DELETE',
-      })
-        .then(() => {
-          // Atualiza o status da forma de pagamento na lista local
-          setFormasPagamento(formasPagamento.map(forma => 
-            forma.id === id ? { ...forma, ativo: !forma.ativo } : forma
-          ));
+      if (isAtivo) {
+        fetch(`http://localhost:8080/categorias/${id}`, {
+          method: 'DELETE',
         })
-        .catch((error) => {
-          console.error(`Erro ao ${acao} forma de pagamento:`, error);
-          setError(`Erro ao ${acao} forma de pagamento`);
-        });
+          .then(() => {
+            setCategorias(categorias.map(categoria => 
+              categoria.id === id ? { ...categoria, ativo: false } : categoria
+            ));
+          })
+          .catch((error) => {
+            console.error(`Erro ao ${acao} categoria:`, error);
+            setError(`Erro ao ${acao} categoria`);
+          });
+      } else {
+        const categoriaAtualizada = {
+          ...categoria,
+          ativo: true,
+        };
+
+        fetch(`http://localhost:8080/categorias/${id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(categoriaAtualizada),
+        })
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error('Erro ao ativar categoria');
+            }
+            return response.json();
+          })
+          .then(() => {
+            setCategorias(categorias.map(categoria => 
+              categoria.id === id ? { ...categoria, ativo: true } : categoria
+            ));
+          })
+          .catch((error) => {
+            console.error(`Erro ao ${acao} categoria:`, error);
+            setError(`Erro ao ${acao} categoria`);
+          });
+      }
     }
   };
 
-  const handleView = (formaPagamento) => {
-    setFormaPagamentoSelecionada(formaPagamento);
+  const handleView = async (categoria) => {
+    setCategoriaSelecionada(categoria);
     setIsModalOpen(true);
   };
 
   const handleCloseModal = () => {
-    setFormaPagamentoSelecionada(null);
+    setCategoriaSelecionada(null);
     setIsModalOpen(false);
   };
 
-  const handleEdit = (formaPagamento) => {
-    setSelectedFormaPagamentoId(formaPagamento.id);
-    setIsFormModalOpen(true);
-  };
-
-  const handleAdd = () => {
-    setSelectedFormaPagamentoId(null);
-    setIsFormModalOpen(true);
-  };
-
-  const formasPagamentoFiltradas = formasPagamento.filter(forma => {
-    // Filtro por texto (descrição)
-    const matchesText = forma.id?.toString().includes(filtro) ||
-      forma.nome?.toLowerCase().includes(filtro.toLowerCase()) ||
-      forma.codigo?.toLowerCase().includes(filtro.toLowerCase()) ||
-      forma.tipo?.toLowerCase().includes(filtro.toLowerCase());
+  const categoriasFiltradas = categorias.filter(categoria => {
+    const matchesText = categoria.id?.toString().includes(filtro) ||
+      categoria.nome?.toLowerCase().includes(filtro.toLowerCase());
     
-    // Filtro por status
     const matchesStatus = filtroStatus === 'todos' || 
-      (filtroStatus === 'ativos' && forma.ativo) ||
-      (filtroStatus === 'inativos' && !forma.ativo);
+      (filtroStatus === 'ativos' && categoria.ativo) ||
+      (filtroStatus === 'inativos' && !categoria.ativo);
     
     return matchesText && matchesStatus;
   });
@@ -171,7 +184,7 @@ const FormaPagamentoListMUI = () => {
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
-        <Typography>Carregando formas de pagamento...</Typography>
+        <Typography>Carregando categorias...</Typography>
       </Box>
     );
   }
@@ -193,7 +206,7 @@ const FormaPagamentoListMUI = () => {
           overflow: 'hidden'
         }}
       >
-        {/* Cabeçalho com pesquisa e botão */}
+        {/* Cabeçalho */}
         <Box sx={{ 
           display: 'flex', 
           justifyContent: 'space-between', 
@@ -205,7 +218,7 @@ const FormaPagamentoListMUI = () => {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexGrow: 1, flexWrap: { xs: 'wrap', md: 'nowrap' } }}>
             <TextField
               variant="outlined"
-              placeholder="Pesquisar por descrição..."
+              placeholder="Pesquisar por código, nome..."
               value={filtro}
               onChange={(e) => setFiltro(e.target.value)}
               InputProps={{
@@ -246,8 +259,8 @@ const FormaPagamentoListMUI = () => {
             </FormControl>
           </Box>
           <Button
-            onClick={handleAdd}
             variant="contained"
+            onClick={() => setIsFormModalOpen(true)}
             startIcon={<AddIcon />}
             sx={{ 
               bgcolor: '#1976d2',
@@ -272,7 +285,7 @@ const FormaPagamentoListMUI = () => {
         {/* Tabela */}
         <Box sx={{ mb: 2 }}>
           <Typography variant="body2" color="text.secondary">
-            Exibindo {formasPagamentoFiltradas.length} de {formasPagamento.length} formas de pagamento
+            Exibindo {categoriasFiltradas.length} de {categorias.length} categorias
             {filtroStatus !== 'todos' && ` (${filtroStatus})`}
           </Typography>
         </Box>
@@ -293,12 +306,12 @@ const FormaPagamentoListMUI = () => {
                 </TableCell>
                 <TableCell>
                   <TableSortLabel
-                    active={sortConfig.key === 'descricao'}
+                    active={sortConfig.key === 'nome'}
                     direction={sortConfig.direction}
-                    onClick={() => handleSort('descricao')}
+                    onClick={() => handleSort('nome')}
                     sx={{ fontWeight: 600 }}
                   >
-                    Forma de Pagamento
+                    Categoria
                   </TableSortLabel>
                 </TableCell>
                 <TableCell>
@@ -315,33 +328,35 @@ const FormaPagamentoListMUI = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {formasPagamentoFiltradas.map((forma) => (
+              {categoriasFiltradas.map((categoria) => (
                 <TableRow 
-                  key={forma.id}
+                  key={categoria.id}
                   hover
                   sx={{ '&:hover': { bgcolor: '#f8f9fa' } }}
                 >
                   <TableCell>
                     <Typography variant="body2" fontWeight={500} color="primary">
-                      {forma.id}
+                      {categoria.id}
                     </Typography>
                   </TableCell>
                   <TableCell>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Avatar sx={{ width: 32, height: 32, bgcolor: '#1976d2' }}>
-                        <PaymentIcon fontSize="small" />
+                        <SellIcon fontSize="small" />
                       </Avatar>
-                      <Typography variant="body2" fontWeight={500}>
-                        {forma.nome}
-                      </Typography>
+                      <Box>
+                        <Typography variant="body2" fontWeight={500}>
+                          {categoria.nome}
+                        </Typography>
+                      </Box>
                     </Box>
                   </TableCell>
                   <TableCell>
                     <Chip
-                      label={forma.ativo ? 'Ativo' : 'Inativo'}
+                      label={categoria.ativo ? 'Ativo' : 'Inativo'}
                       size="small"
-                      color={forma.ativo ? 'success' : 'default'}
-                      variant={forma.ativo ? 'filled' : 'outlined'}
+                      color={categoria.ativo ? 'success' : 'default'}
+                      variant={categoria.ativo ? 'filled' : 'outlined'}
                     />
                   </TableCell>
                   <TableCell>
@@ -349,7 +364,7 @@ const FormaPagamentoListMUI = () => {
                       <Tooltip title="Visualizar">
                         <IconButton
                           size="small"
-                          onClick={() => handleView(forma)}
+                          onClick={() => handleView(categoria)}
                           sx={{ color: '#17a2b8' }}
                         >
                           <VisibilityIcon fontSize="small" />
@@ -358,19 +373,20 @@ const FormaPagamentoListMUI = () => {
                       <Tooltip title="Editar">
                         <IconButton
                           size="small"
-                          onClick={() => handleEdit(forma)}
+                          component={Link}
+                          to={`/categorias/editar/${categoria.id}`}
                           sx={{ color: '#28a745' }}
                         >
                           <EditIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
-                      <Tooltip title={forma.ativo ? "Excluir" : "Ativar"}>
+                      <Tooltip title={categoria.ativo ? "Inativar" : "Ativar"}>
                         <IconButton
                           size="small"
-                          onClick={() => handleDelete(forma.id)}
-                          sx={{ color: forma.ativo ? '#dc3545' : '#28a745' }}
+                          onClick={() => handleDelete(categoria.id)}
+                          sx={{ color: categoria.ativo ? '#dc3545' : '#28a745' }}
                         >
-                          {forma.ativo ? <BlockIcon fontSize="small" /> : <CheckCircleIcon fontSize="small" />}
+                          {categoria.ativo ? <BlockIcon fontSize="small" /> : <CheckCircleIcon fontSize="small" />}
                         </IconButton>
                       </Tooltip>
                     </Box>
@@ -381,12 +397,12 @@ const FormaPagamentoListMUI = () => {
           </Table>
         </TableContainer>
 
-        {formasPagamentoFiltradas.length === 0 && (
+        {categoriasFiltradas.length === 0 && (
           <Box sx={{ textAlign: 'center', py: 4 }}>
             <Typography variant="h6" color="text.secondary">
-              {formasPagamento.length === 0 
-                ? 'Nenhuma forma de pagamento cadastrada' 
-                : `Nenhuma forma de pagamento ${filtroStatus === 'todos' ? '' : filtroStatus === 'ativos' ? 'ativa' : 'inativa'} encontrada`
+              {categorias.length === 0 
+                ? 'Nenhuma categoria cadastrada' 
+                : `Nenhuma categoria ${filtroStatus === 'todos' ? '' : filtroStatus === 'ativos' ? 'ativa' : 'inativa'} encontrada`
               }
             </Typography>
             {filtro && (
@@ -405,7 +421,7 @@ const FormaPagamentoListMUI = () => {
         maxWidth="md"
         fullWidth
         PaperProps={{
-          sx: { borderRadius: 2, minHeight: '60vh' }
+          sx: { borderRadius: 2, minHeight: '40vh' }
         }}
       >
         <DialogTitle sx={{ 
@@ -416,16 +432,16 @@ const FormaPagamentoListMUI = () => {
           pb: 2
         }}>
           <Typography variant="h6" fontWeight={600}>
-            Visualizar Forma de Pagamento
+            Visualizar Categoria
           </Typography>
           <IconButton onClick={handleCloseModal} size="small">
             <CloseIcon />
           </IconButton>
         </DialogTitle>
         
-        {formaPagamentoSelecionada && (
+        {categoriaSelecionada && (
           <DialogContent sx={{ p: 4 }}>
-            {/* Cabeçalho com título e switch Ativo */}
+            {/* Título e Switch */}
             <Box sx={{ 
               display: 'flex', 
               justifyContent: 'space-between', 
@@ -439,13 +455,13 @@ const FormaPagamentoListMUI = () => {
                 align="center" 
                 sx={{ color: '#333', fontWeight: 600, flex: 1 }}
               >
-                Dados da Forma de Pagamento
+                Dados da Categoria
               </Typography>
               <Box sx={{ width: 120, display: 'flex', justifyContent: 'flex-end' }}>
                 <FormControlLabel
                   control={
                     <Switch
-                      checked={formaPagamentoSelecionada.ativo}
+                      checked={categoriaSelecionada.ativo}
                       disabled
                       color="primary"
                     />
@@ -456,32 +472,31 @@ const FormaPagamentoListMUI = () => {
               </Box>
             </Box>
 
-            {/* Dados da forma de pagamento */}
+            {/* Linha 1: Código e Nome */}
             <Grid container spacing={2} alignItems="center" sx={{ mb: 4 }}>
-              <Grid item xs={12} sm={6} md={6}>
+              <Grid item sx={{ width: '15%', minWidth: 120 }}>
                 <TextField
                   fullWidth
                   size="small"
                   label="Código"
-                  value={formaPagamentoSelecionada.id || ''}
+                  value={categoriaSelecionada.id || ''}
                   InputProps={{ readOnly: true }}
                   variant="outlined"
                 />
               </Grid>
-
-              <Grid item xs={12} sm={6} md={6}>
+              <Grid item sx={{ width: '85%' }}>
                 <TextField
                   fullWidth
                   size="small"
-                  label="Nome"
-                  value={formaPagamentoSelecionada.nome || ''}
+                  label="Nome da Categoria"
+                  value={categoriaSelecionada.nome || ''}
                   InputProps={{ readOnly: true }}
                   variant="outlined"
                 />
               </Grid>
             </Grid>
 
-            {/* Informações de cadastro */}
+            {/* Registros */}
             <Box
               sx={{
                 display: 'flex',
@@ -494,14 +509,14 @@ const FormaPagamentoListMUI = () => {
               }}
             >
               <Stack spacing={0.5} sx={{ flex: 1 }}>
-                {formaPagamentoSelecionada.dataCriacao && (
+                {categoriaSelecionada.dataCriacao && (
                   <Typography variant="caption" color="text.secondary">
-                    Data de cadastro: {new Date(formaPagamentoSelecionada.dataCriacao).toLocaleString('pt-BR')}
+                    Data de cadastro: {new Date(categoriaSelecionada.dataCriacao).toLocaleString('pt-BR')}
                   </Typography>
                 )}
-                {formaPagamentoSelecionada.ultimaModificacao && (
+                {categoriaSelecionada.ultimaModificacao && (
                   <Typography variant="caption" color="text.secondary">
-                    Última modificação: {new Date(formaPagamentoSelecionada.ultimaModificacao).toLocaleString('pt-BR')}
+                    Última modificação: {new Date(categoriaSelecionada.ultimaModificacao).toLocaleString('pt-BR')}
                   </Typography>
                 )}
               </Stack>
@@ -517,14 +532,13 @@ const FormaPagamentoListMUI = () => {
           >
             Fechar
           </Button>
-          {formaPagamentoSelecionada && (
+          {categoriaSelecionada && (
             <Button
-              onClick={() => {
-                handleCloseModal();
-                handleEdit(formaPagamentoSelecionada);
-              }}
+              component={Link}
+              to={`/categorias/editar/${categoriaSelecionada.id}`}
               variant="contained"
               startIcon={<EditIcon />}
+              onClick={handleCloseModal}
             >
               Editar
             </Button>
@@ -532,22 +546,21 @@ const FormaPagamentoListMUI = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Modal de Formulário */}
-      <FormaPagamentoModalForm 
+      <CategoriaModalForm 
         open={isFormModalOpen}
         onClose={() => {
           setIsFormModalOpen(false);
-          setSelectedFormaPagamentoId(null);
+          setSelectedCategoriaId(null);
         }}
         onSaveSuccess={() => {
           loadData();
           setIsFormModalOpen(false);
-          setSelectedFormaPagamentoId(null);
+          setSelectedCategoriaId(null);
         }}
-        formaPagamentoId={selectedFormaPagamentoId}
+        categoriaId={selectedCategoriaId}
       />
     </Box>
   );
 };
 
-export default FormaPagamentoListMUI;
+export default CategoriaListMUI;

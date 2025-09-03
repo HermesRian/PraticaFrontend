@@ -21,8 +21,8 @@ import CondicaoPagamentoForm from '../CondicaoPagamento/CondicaoPagamentoFormMUI
 import FormaPagamentoList from '../FormaPagamento/FormaPagamentoListMUI';
 import FormaPagamentoForm from '../FormaPagamento/FormaPagamentoFormMUI';
 
-import ProdutoList from '../Produto/ProdutoList';
-import ProdutoForm from '../Produto/ProdutoForm';
+import ProdutoList from '../Produto/ProdutoListMUI';
+import ProdutoForm from '../Produto/ProdutoFormMUI';
 
 import CidadeListMUI from '../Cidade/CidadeListMUI';
 import CidadeFormMUI from '../Cidade/CidadeFormMUI';
@@ -35,6 +35,9 @@ import EstadoFormMUI from '../Estado/EstadoFormMUI';
 import EstadoModal from '../Estado/EstadoModal';
 import EstadoFormModal from '../Estado/EstadoFormModal';
 
+import CategoriaListMUI from '../Categoria/CategoriaListMUI';
+import CategoriaFormMUI from '../Categoria/CategoriaFormMUI';
+
 const MainContent = () => {
   return (
     <main>      
@@ -46,8 +49,6 @@ const MainContent = () => {
 
         {/* Clientes */}
         <Route path="/clientes" element={<ClienteList />} />
-        <Route path="/clientes/cadastrar" element={<ClienteForm />} />
-        <Route path="/clientes/editar/:id" element={<ClienteForm />} />
 
         <Route path="/fornecedores" element={<FornecedorList />} />
         <Route path="/fornecedores/cadastrar" element={<FornecedorForm />} />
@@ -62,8 +63,6 @@ const MainContent = () => {
         <Route path="/funcoes-funcionario/editar/:id" element={<FuncaoFuncionarioForm />} />
 
         <Route path="/formas-pagamento" element={<FormaPagamentoList />} />
-        <Route path="/formas-pagamento/cadastrar" element={<FormaPagamentoForm />} />
-        <Route path="/formas-pagamento/editar/:id" element={<FormaPagamentoForm />} />
 
         <Route path="/condicoes-pagamento" element={<CondicaoPagamentoList />} />
         <Route path="/condicoes-pagamento/cadastrar" element={<CondicaoPagamentoForm />} />
@@ -74,8 +73,6 @@ const MainContent = () => {
         <Route path="/produtos/editar/:id" element={<ProdutoForm />} />
 
         <Route path="/cidades" element={<CidadeListMUI />} />
-        <Route path="/cidades/cadastrar" element={<CidadeFormMUI />} />
-        <Route path="/cidades/editar/:id" element={<CidadeFormMUI />} />
 
         <Route path="/paises" element={<PaisList />} />
         <Route path="/paises/cadastrar" element={<PaisForm />} />
@@ -84,6 +81,10 @@ const MainContent = () => {
         <Route path="/estados" element={<EstadoListMUI />} />
         <Route path="/estados/cadastrar" element={<EstadoFormMUI />} />
         <Route path="/estados/editar/:id" element={<EstadoFormMUI />} />
+
+        <Route path="/categorias" element={<CategoriaListMUI />} />
+        <Route path="/categorias/cadastrar" element={<CategoriaFormMUI />} />
+        <Route path="/categorias/editar/:id" element={<CategoriaFormMUI />} />
       </Routes>
     </main>
   );

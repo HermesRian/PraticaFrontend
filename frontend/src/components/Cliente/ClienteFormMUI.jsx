@@ -78,25 +78,22 @@ const ClienteForm = ({ id: propId, isModal = false, onClose }) => {
     bairro: '',
     cep: '',
     cidadeId: '',
-    cidadeNome: '',
-    cidadeEstado: '',
-    cidadeEstadoPais: '',
+    cidadeNome: '', // Auxiliar para exibição
     telefone: '',
     email: '',
     ativo: true,
     apelido: '',
     limiteCredito: '',
-    limiteCredito2: '',
     nacionalidade: '',
     rgInscricaoEstadual: '',
     dataNascimento: '',
     estadoCivil: '',
-    tipo: 'FISICA',
+    tipo: 0, // 0 = Pessoa Física, 1 = Pessoa Jurídica
     sexo: '',
     condicaoPagamentoId: '',
-    condicaoPagamentoDescricao: '',
+    condicaoPagamentoDescricao: '', // Auxiliar para exibição
     observacao: '',
-    dataCadastro: '',
+    dataCriacao: '',
     ultimaModificacao: '',
   });
   const [isCidadeModalOpen, setIsCidadeModalOpen] = useState(false);

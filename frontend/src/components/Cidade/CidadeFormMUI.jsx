@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-
-// Importações do Material-UI
 import {
   Box,
   Typography,
@@ -10,47 +8,65 @@ import {
   Grid,
   Switch,
   FormControlLabel,
+  FormControl,
+  Select,
+  MenuItem,
+  InputLabel,
   Paper,
   Alert,
-  Stack,
-  IconButton
+  Stack
 } from '@mui/material';
-import SearchIcon from '@mui/icons-material/Search';
 
-// Componente Modal de Seleção de Estado
-import EstadoModal from '../Estado/EstadoModal';
-
-// Componente de formulário de cidade
-const CidadeFormMUI = () => {
+const CidadeFormMUI = ({ id: propId, isModal = false, onClose }) => {
   const [cidade, setCidade] = useState({
     nome: '',
     codigoIbge: '',
     estadoId: '',
-    estadoNome: 'Selecione um Estado',
+    estadoDescricao: '',
     ativo: true,
-    dataCadastro: '',
+    dataCriacao: '',
     ultimaModificacao: '',
+    ddd: '',
   });
+
+  const [estados, setEstados] = useState([]);
   const [errorMessage, setErrorMessage] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
-  const [isEstadoModalOpen, setIsEstadoModalOpen] = useState(false);
   const navigate = useNavigate();
-  const { id } = useParams();
+  const { id: urlId } = useParams();
+  const id = propId || urlId;
+
+  useEffect(() => {
+    fetch('http://localhost:8080/estados')
+      .then(res => res.json())
+      .then(data => setEstados(data))
+      .catch(error => console.error('Erro ao carregar estados:', error));
+  }, []);
 
   useEffect(() => {
     if (id) {
       fetch(`http://localhost:8080/cidades/${id}`)
         .then((response) => response.json())
-        .then((data) => {
+        .then(async (data) => {
           console.log('Dados recebidos do backend:', data);
-          
+
+          let estadoDescricao = '';
+          if (data.estadoId) {
+            try {
+              const estadoResponse = await fetch(`http://localhost:8080/estados/${data.estadoId}`);
+              if (estadoResponse.ok) {
+                const estadoData = await estadoResponse.json();
+                estadoDescricao = `${estadoData.nome} - ${estadoData.uf}`;
+              }
+            } catch (error) {
+              console.error('Erro ao buscar estado:', error);
+            }
+          }
+            
           const cidadeAtualizada = {
-            nome: data.nome || '',
-            codigoIbge: data.codigoIbge || '',
-            estadoId: data.estadoId || '',
-            estadoNome: data.estadoNome || 'Selecione um Estado',
-            ativo: data.ativo !== undefined ? data.ativo : true,
-            dataCadastro: data.dataCadastro || '',
+            ...data,
+            estadoDescricao: estadoDescricao,
+            dataCriacao: data.dataCriacao || '',
             ultimaModificacao: data.ultimaModificacao || '',
           };
           
@@ -64,7 +80,34 @@ const CidadeFormMUI = () => {
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     
-    // Limpa o erro do campo quando o usuário começar a digitar
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
+
+    if (name === 'estadoId') {
+      const estadoSelecionado = estados.find(e => e.id === parseInt(value));
+      setCidade({ 
+        ...cidade, 
+        [name]: value,
+        estadoDescricao: estadoSelecionado ? `${estadoSelecionado.nome} - ${estadoSelecionado.uf}` : ''
+      });
+    } else {
+      setCidade({ ...cidade, [name]: type === 'checkbox' ? checked : value });
+    }
+  };
+
+  const handleNumericChange = (e, maxLength) => {
+    const { name } = e.target;
+    let value = e.target.value.replace(/[^0-9]/g, '');
+    
+    if (maxLength && value.length > maxLength) {
+      value = value.substring(0, maxLength);
+    }
+    
     if (fieldErrors[name]) {
       setFieldErrors(prev => {
         const newErrors = { ...prev };
@@ -73,44 +116,43 @@ const CidadeFormMUI = () => {
       });
     }
     
-    setCidade({ ...cidade, [name]: type === 'checkbox' ? checked : value });
+    setCidade({ ...cidade, [name]: value });
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    // Limpa erros anteriores
     setFieldErrors({});
     setErrorMessage('');
-    
-    // Validação de campos obrigatórios
     const errors = {};
     
     if (!cidade.nome?.trim()) {
       errors.nome = 'Este campo é obrigatório';
     }
-    
-    if (!cidade.codigoIbge?.trim()) {
-      errors.codigoIbge = 'Este campo é obrigatório';
-    }
-    
+
     if (!cidade.estadoId) {
-      errors.estadoId = 'É necessário selecionar um estado';
+      errors.estadoId = 'Selecione um estado';
+    }
+
+    if (cidade.codigoIbge && cidade.codigoIbge.length !== 7) {
+      errors.codigoIbge = 'O código IBGE deve ter exatamente 7 dígitos';
+    }
+
+    if (cidade.ddd && (cidade.ddd.length < 2 || cidade.ddd.length > 2)) {
+      errors.ddd = 'O DDD deve ter exatamente 2 dígitos';
     }
     
-    // Se há erros, exibe e para a execução
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
-      setErrorMessage('Por favor, preencha todos os campos obrigatórios.');
       return;
     }
 
-    // Formatando os dados para corresponder ao modelo esperado pelo backend
     const cidadeFormatada = {
-      nome: cidade.nome.trim(),
-      codigoIbge: cidade.codigoIbge.trim(),
-      estadoId: cidade.estadoId,
-      ativo: cidade.ativo
+      ...cidade,
+      nome: cidade.nome?.trim(),
+      codigoIbge: cidade.codigoIbge || null,
+      estadoId: cidade.estadoId ? parseInt(cidade.estadoId) : null,
+      ddd: cidade.ddd ? parseInt(cidade.ddd) : null,
     };
 
     console.log('Dados enviados:', cidadeFormatada);
@@ -127,68 +169,85 @@ const CidadeFormMUI = () => {
     })
       .then((response) => {
         if (!response.ok) {
+          console.error('Erro na resposta:', response.status, response.statusText);
+          
           return response.text().then(text => {
-            console.error('Erro do servidor:', text);
-            throw new Error(`Erro do servidor: ${response.status} - ${text}`);
+            let error;
+            let errorObj = null;
+            try {
+              errorObj = JSON.parse(text);
+              error = errorObj.erro || errorObj.message || 'Erro desconhecido ao salvar cidade';
+              console.error('Resposta do servidor:', errorObj);
+            } catch (e) {
+              error = text || 'Erro ao salvar cidade';
+              console.error('Resposta do servidor (texto):', text);
+            }
+            
+            if (errorObj && errorObj.erro) {
+              const errorMessage = errorObj.erro;
+              if (errorMessage.includes('nome') || errorMessage.includes('Nome')) {
+                setFieldErrors(prev => ({
+                  ...prev,
+                  nome: errorMessage
+                }));
+                throw new Error('');
+              }
+              if (errorMessage.includes('IBGE') || errorMessage.includes('ibge')) {
+                setFieldErrors(prev => ({
+                  ...prev,
+                  codigoIbge: errorMessage
+                }));
+                throw new Error('');
+              }
+            }
+            
+            throw new Error(error);
           });
         }
         return response.json();
       })
       .then(() => {
-        navigate('/cidades');
+        if (isModal) {
+          onClose();
+        } else {
+          navigate('/cidades');
+        }
       })
       .catch((error) => {
-        console.error('Erro ao salvar cidade:', error);
-        setErrorMessage('Erro ao salvar cidade. Tente novamente.');
+        console.error('Erro capturado:', error);
+        if (error.message.trim()) {
+          setErrorMessage(error.message);
+        }
       });
   };
 
   const handleCancel = () => {
-    navigate('/cidades');
-  };
-
-  const handleOpenEstadoModal = () => {
-    setIsEstadoModalOpen(true);
-  };
-
-  const handleCloseEstadoModal = () => {
-    setIsEstadoModalOpen(false);
-  };
-
-  const handleEstadoSelecionado = (estado) => {
-    setCidade({ ...cidade, estadoId: estado.id, estadoNome: `${estado.nome} - ${estado.uf}` });
-    
-    // Limpa o erro do campo estado se existir
-    if (fieldErrors.estadoId) {
-      setFieldErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors.estadoId;
-        return newErrors;
-      });
+    if (isModal) {
+      onClose();
+    } else {
+      navigate('/cidades');
     }
-    
-    setIsEstadoModalOpen(false);
   };
 
   return (
     <Box sx={{ 
-      padding: { xs: 2, md: 3 }, 
+      padding: isModal ? 0 : { xs: 2, md: 3 }, 
       bgcolor: '#f8f9fa', 
-      minHeight: '100vh',
-      paddingBottom: 0.5
+      minHeight: isModal ? 'auto' : '100vh',
+      paddingBottom: isModal ? 0 : 0.5
     }}>
       <Paper 
         component="form"
         onSubmit={handleSubmit}
-        elevation={10}
+        elevation={isModal ? 0 : 10}
         sx={{
-          width: '90%',
-          maxWidth: 900,
-          minHeight: 'auto',
-          mx: 'auto',
+          width: isModal ? '100%' : '95%',
+          maxWidth: isModal ? 'none' : 1200,
+          minHeight: isModal ? 'auto' : '70vh',
+          mx: isModal ? 0 : 'auto',
           p: { xs: 2, md: 3, lg: 4 },
           pb: 0,
-          borderRadius: 2,
+          borderRadius: isModal ? 0 : 2,
           overflow: 'hidden',
           position: 'relative',
           '& .MuiFormLabel-root': {
@@ -201,17 +260,15 @@ const CidadeFormMUI = () => {
           }
         }}
       >
-        {/* Cabeçalho com título e switch Ativo */}
+        {/* Cabeçalho */}
         <Box sx={{ 
           display: 'flex', 
           justifyContent: 'space-between', 
           alignItems: 'center', 
           mb: 4 
         }}>
-          {/* Espaço vazio à esquerda para centralizar o título */}
           <Box sx={{ width: 120 }}></Box>
           
-          {/* Título centralizado */}
           <Typography 
             variant="h5" 
             component="h1" 
@@ -220,8 +277,6 @@ const CidadeFormMUI = () => {
           >
             {id ? 'Editar Cidade' : 'Cadastrar Nova Cidade'}
           </Typography>
-
-          {/* Switch Ativo à direita */}
           <Box sx={{ width: 120, display: 'flex', justifyContent: 'flex-end' }}>
             <FormControlLabel
               control={
@@ -230,7 +285,7 @@ const CidadeFormMUI = () => {
                   onChange={handleChange}
                   name="ativo"
                   color="primary"
-                  disabled={!id} // Desabilita durante cadastro (quando não há id)
+                  disabled={!id}
                 />
               }
               label="Ativo"
@@ -239,9 +294,9 @@ const CidadeFormMUI = () => {
           </Box>
         </Box>
 
-        {/* Linha 1: Código e Nome da Cidade */}
-        <Grid container spacing={2} alignItems="center" sx={{ mb: 3 }}>
-          <Grid item sx={{ width: '8%', minWidth: 100 }}>
+        {/* Linha 1: Código e Nome */}
+        <Grid container spacing={2} alignItems="center" sx={{ mb: 4 }}>
+          <Grid item sx={{ width: '6%', minWidth: 120 }}>
             <TextField
               fullWidth
               size="small"
@@ -254,7 +309,7 @@ const CidadeFormMUI = () => {
             />
           </Grid>
 
-          <Grid item sx={{ width: '65%' }}>
+          <Grid item sx={{ width: '30%' }}>
             <TextField
               fullWidth
               required
@@ -269,63 +324,58 @@ const CidadeFormMUI = () => {
               helperText={fieldErrors.nome || ''}
             />
           </Grid>
-        </Grid>
-
-        {/* Linha 2: Código IBGE e Estado */}
-        <Grid container spacing={2} alignItems="center" sx={{ mb: 4 }}>
-          <Grid item sx={{ width: '25%' }}>
+          <Grid item sx={{ width: '15%' }}>
             <TextField
               fullWidth
-              required
               size="small"
               label="Código IBGE"
               name="codigoIbge"
               value={cidade.codigoIbge}
-              onChange={handleChange}
-              placeholder="Ex: 3550308"
+              onChange={e => handleNumericChange(e, 7)}
               variant="outlined"
               error={!!fieldErrors.codigoIbge}
-              helperText={fieldErrors.codigoIbge || ''}
+              inputProps={{ inputMode: 'numeric' }}
+              autoComplete="off"
+            />
+        </Grid>
+
+          <Grid item sx={{ width: '10%' }}>
+            <TextField
+              fullWidth
+              size="small"
+              label="DDD"
+              name="ddd"
+              value={cidade.ddd}
+              onChange={e => handleNumericChange(e, 2)}
+              variant="outlined"
+              error={!!fieldErrors.ddd}
+              inputProps={{ inputMode: 'numeric' }}
+              autoComplete="off"
             />
           </Grid>
 
-          <Grid item sx={{ width: '50%' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <TextField
-                fullWidth
-                required
-                size="small"
-                label="Estado"
-                value={cidade.estadoNome}
-                InputProps={{ readOnly: true }}
-                variant="outlined"
-                error={!!fieldErrors.estadoId}
-                helperText={fieldErrors.estadoId || ''}
-                sx={{ 
-                  '& .MuiInputBase-input': { 
-                    cursor: 'pointer',
-                    backgroundColor: '#f8f9fa'
-                  }
-                }}
-                onClick={handleOpenEstadoModal}
-              />
-              <IconButton
-                onClick={handleOpenEstadoModal}
-                color="primary"
-                size="medium"
-                sx={{ 
-                  border: '1px solid #1976d2',
-                  borderRadius: 1,
-                  p: 1,
-                  '&:hover': {
-                    backgroundColor: '#1976d2',
-                    color: 'white'
-                  }
-                }}
+          <Grid item sx={{ width: '25%' }}>
+            <FormControl fullWidth size="small" error={!!fieldErrors.estadoId}>
+              <InputLabel>Estado *</InputLabel>
+              <Select
+                name="estadoId"
+                value={cidade.estadoId}
+                onChange={handleChange}
+                label="Estado *"
               >
-                <SearchIcon />
-              </IconButton>
-            </Box>
+                <MenuItem value="">Selecione um estado...</MenuItem>
+                {estados.map((estado) => (
+                  <MenuItem key={estado.id} value={estado.id}>
+                    {estado.nome} - {estado.uf}
+                  </MenuItem>
+                ))}
+              </Select>
+              {fieldErrors.estadoId && (
+                <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.5 }}>
+                  {fieldErrors.estadoId}
+                </Typography>
+              )}
+            </FormControl>
           </Grid>
         </Grid>
 
@@ -341,7 +391,7 @@ const CidadeFormMUI = () => {
           </Alert>
         )}
 
-        {/* Botões e Informações de registro */}
+        {/* Registro e botões */}
         <Box
           sx={{
             display: 'flex',
@@ -359,11 +409,11 @@ const CidadeFormMUI = () => {
             boxShadow: '0px -4px 8px rgba(0, 0, 0, 0.05)'
           }}
         >
-          {/* Informações de registro - lado esquerdo */}
+          {/* Registros */}
           <Stack spacing={0.5} sx={{ flex: 1 }}>
-            {cidade.dataCadastro && (
+            {cidade.dataCriacao && (
               <Typography variant="caption" color="text.secondary">
-                Data de cadastro: {new Date(cidade.dataCadastro).toLocaleString('pt-BR')}
+                Data de cadastro: {new Date(cidade.dataCriacao).toLocaleString('pt-BR')}
               </Typography>
             )}
             {cidade.ultimaModificacao && (
@@ -373,7 +423,7 @@ const CidadeFormMUI = () => {
             )}
           </Stack>
 
-          {/* Botões - lado direito */}
+          {/* Botões */}
           <Box sx={{ display: 'flex', gap: 2 }}>
             <Button
               variant="contained"
@@ -397,14 +447,6 @@ const CidadeFormMUI = () => {
           </Box>
         </Box>
       </Paper>
-
-      {/* Modal de seleção de estados */}
-      {isEstadoModalOpen && (
-        <EstadoModal
-          onClose={handleCloseEstadoModal}
-          onEstadoSelecionado={handleEstadoSelecionado}
-        />
-      )}
     </Box>
   );
 };

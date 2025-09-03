@@ -21,6 +21,9 @@
     AttachMoney as AttachMoneyIcon,
     Map as MapIcon,
     Badge as BadgeIcon,
+    LocalMall as LocalMallIcon,
+    Category as CategoryIcon,
+    Sell as SellIcon,
   } from '@mui/icons-material';
 
   const NAVIGATION = [
@@ -60,7 +63,12 @@
     {
       segment: 'produtos',
       title: 'Produtos',
-      icon: <InventoryIcon />,
+      icon: <LocalMallIcon />,
+    },
+    {
+      segment: 'categorias',
+      title: 'Categorias',
+      icon: <SellIcon />,
     },
 
     {

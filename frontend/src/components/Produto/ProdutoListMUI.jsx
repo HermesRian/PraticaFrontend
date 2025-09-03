@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import ClienteModalForm from './ClienteModalForm';
+import ProdutoModalForm from './ProdutoModalForm';
 import {
   Box,
   Typography,
@@ -20,7 +20,6 @@ import {
   DialogContent,
   DialogActions,
   Grid,
-  Divider,
   TextField,
   InputAdornment,
   Tooltip,
@@ -37,40 +36,39 @@ import {
 import {
   Visibility as VisibilityIcon,
   Edit as EditIcon,
-  Delete as DeleteIcon,
   Add as AddIcon,
   Search as SearchIcon,
-  Person as PersonIcon,
-  Business as BusinessIcon,
+  Inventory as InventoryIcon,
   Close as CloseIcon,
   Block as BlockIcon,
   CheckCircle as CheckCircleIcon
 } from '@mui/icons-material';
-import { formatCPF, formatCNPJ, formatCEP, formatTelefone, censurarCPF, censurarCNPJ } from '../../utils/documentValidation';
 
-const ClienteListMUI = () => {
-  const [clientes, setClientes] = useState([]);
-  const [cidades, setCidades] = useState([]);
-  const [clienteSelecionado, setClienteSelecionado] = useState(null);
+const ProdutoListMUI = () => {
+  const [produtos, setProdutos] = useState([]);
+  const [marcas, setMarcas] = useState([]);
+  const [unidadesMedida, setUnidadesMedida] = useState([]);
+  const [produtoSelecionado, setProdutoSelecionado] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
-  const [selectedClienteId, setSelectedClienteId] = useState(null);
+  const [selectedProdutoId, setSelectedProdutoId] = useState(null);
   const [sortConfig, setSortConfig] = useState({ key: 'nome', direction: 'asc' });
   const [filtro, setFiltro] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [mostrarDocumentoCompleto, setMostrarDocumentoCompleto] = useState(false);
   const [filtroStatus, setFiltroStatus] = useState('todos');
 
   const loadData = async () => {
     setLoading(true);
     try {
-      const [clientesData, cidadesData] = await Promise.all([
-        fetch('http://localhost:8080/clientes').then(res => res.json()),
-        fetch('http://localhost:8080/cidades').then(res => res.json())
+      const [produtosData, marcasData, unidadesMedidaData] = await Promise.all([
+        fetch('http://localhost:8080/produtos').then(res => res.json()),
+        fetch('http://localhost:8080/marcas').then(res => res.json()).catch(() => []),
+        fetch('http://localhost:8080/unidades-medida').then(res => res.json()).catch(() => [])
       ]);
-      setClientes(clientesData);
-      setCidades(cidadesData);
+      setProdutos(produtosData);
+      setMarcas(marcasData);
+      setUnidadesMedida(unidadesMedidaData);
     } catch (error) {
       console.error('Erro ao buscar dados:', error);
       setError('Erro ao carregar dados');
@@ -83,9 +81,14 @@ const ClienteListMUI = () => {
     loadData();
   }, []);
 
-  const getCidadeNome = (cidadeId) => {
-    const cidade = cidades.find((c) => c.id === cidadeId);
-    return cidade ? cidade.nome : 'Não informada';
+  const getMarcaNome = (marcaId) => {
+    const marca = marcas.find((m) => m.id === marcaId);
+    return marca ? marca.nome : 'Não informada';
+  };
+
+  const getUnidadeMedidaNome = (unidadeMedidaId) => {
+    const unidade = unidadesMedida.find((u) => u.id === unidadeMedidaId);
+    return unidade ? unidade.nome : 'Não informada';
   };
 
   const handleSort = (key) => {
@@ -95,13 +98,13 @@ const ClienteListMUI = () => {
     }
     setSortConfig({ key, direction });
 
-    const sortedClientes = [...clientes].sort((a, b) => {
+    const sortedProdutos = [...produtos].sort((a, b) => {
       let aValue = a[key];
       let bValue = b[key];
 
-      if (key === 'cidade') {
-        aValue = getCidadeNome(a.cidadeId);
-        bValue = getCidadeNome(b.cidadeId);
+      if (key === 'marca') {
+        aValue = getMarcaNome(a.marcaId);
+        bValue = getMarcaNome(b.marcaId);
       }
 
       if (key === 'ativo') {
@@ -122,149 +125,135 @@ const ClienteListMUI = () => {
       }
       return 0;
     });
-    setClientes(sortedClientes);
+    setProdutos(sortedProdutos);
   };
 
   const handleDelete = (id) => {
-    const cliente = clientes.find(c => c.id === id);
-    const isAtivo = cliente?.ativo;
+    const produto = produtos.find(p => p.id === id);
+    const isAtivo = produto?.ativo;
     const acao = isAtivo ? 'inativar' : 'ativar';
     const mensagem = isAtivo ? 
-      'Tem certeza que deseja inativar este cliente?' : 
-      'Tem certeza que deseja ativar este cliente?';
+      'Tem certeza que deseja inativar este produto?' : 
+      'Tem certeza que deseja ativar este produto?';
     
     if (window.confirm(mensagem)) {
       if (isAtivo) {
-        fetch(`http://localhost:8080/clientes/${id}`, {
+        fetch(`http://localhost:8080/produtos/${id}`, {
           method: 'DELETE',
         })
           .then(() => {
-            setClientes(clientes.map(cliente => 
-              cliente.id === id ? { ...cliente, ativo: false } : cliente
+            setProdutos(produtos.map(produto => 
+              produto.id === id ? { ...produto, ativo: false } : produto
             ));
           })
           .catch((error) => {
-            console.error(`Erro ao ${acao} cliente:`, error);
-            setError(`Erro ao ${acao} cliente`);
+            console.error(`Erro ao ${acao} produto:`, error);
+            setError(`Erro ao ${acao} produto`);
           });
       } else {
-        const clienteAtualizado = {
-          ...cliente,
+        const produtoAtualizado = {
+          ...produto,
           ativo: true,
-          tipo: getTipoLabel(cliente.tipo) === 'Pessoa Física' ? 0 : 1,
-          limiteCredito: cliente.limiteCredito ? parseFloat(cliente.limiteCredito) : null,
-          limiteCredito2: cliente.limiteCredito2 ? parseFloat(cliente.limiteCredito2) : null,
-          dataNascimento: cliente.dataNascimento || null,
-          cnpjCpf: cliente.cnpjCpf?.trim() || null,
+          preco: produto.preco ? parseFloat(produto.preco) : null,
+          valorCompra: produto.valorCompra ? parseFloat(produto.valorCompra) : null,
+          valorVenda: produto.valorVenda ? parseFloat(produto.valorVenda) : null,
+          percentualLucro: produto.percentualLucro ? parseFloat(produto.percentualLucro) : null,
         };
 
-        fetch(`http://localhost:8080/clientes/${id}`, {
+        fetch(`http://localhost:8080/produtos/${id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(clienteAtualizado),
+          body: JSON.stringify(produtoAtualizado),
         })
           .then((response) => {
             if (!response.ok) {
-              throw new Error('Erro ao ativar cliente');
+              throw new Error('Erro ao ativar produto');
             }
             return response.json();
           })
           .then(() => {
-            setClientes(clientes.map(cliente => 
-              cliente.id === id ? { ...cliente, ativo: true } : cliente
+            setProdutos(produtos.map(produto => 
+              produto.id === id ? { ...produto, ativo: true } : produto
             ));
           })
           .catch((error) => {
-            console.error(`Erro ao ${acao} cliente:`, error);
-            setError(`Erro ao ${acao} cliente`);
+            console.error(`Erro ao ${acao} produto:`, error);
+            setError(`Erro ao ${acao} produto`);
           });
       }
     }
   };
-  const handleView = async (cliente) => {
-    let clienteComCondicaoPagamento = { ...cliente };
+
+  const handleView = async (produto) => {
+    let produtoComDetalhes = { ...produto };
     
-    if (cliente.condicaoPagamentoId) {
+    if (produto.marcaId) {
       try {
-        console.log('Buscando condição de pagamento com ID:', cliente.condicaoPagamentoId);
-        const condicaoResponse = await fetch(`http://localhost:8080/condicoes-pagamento/${cliente.condicaoPagamentoId}`);
-        
-        if (condicaoResponse.ok) {
-          const condicaoData = await condicaoResponse.json();
-          clienteComCondicaoPagamento.condicaoPagamentoDescricao = condicaoData.descricao || '';
-          console.log('Descrição da condição de pagamento encontrada:', condicaoData.descricao);
+        const marcaResponse = await fetch(`http://localhost:8080/marcas/${produto.marcaId}`);
+        if (marcaResponse.ok) {
+          const marcaData = await marcaResponse.json();
+          produtoComDetalhes.marcaDescricao = marcaData.nome || '';
         } else {
-          console.error('Erro ao buscar condição de pagamento, status:', condicaoResponse.status);
-          clienteComCondicaoPagamento.condicaoPagamentoDescricao = 'Erro ao carregar';
+          produtoComDetalhes.marcaDescricao = 'Erro ao carregar';
         }
       } catch (error) {
-        console.error('Erro ao buscar condição de pagamento:', error);
-        clienteComCondicaoPagamento.condicaoPagamentoDescricao = 'Erro ao carregar';
+        console.error('Erro ao buscar marca:', error);
+        produtoComDetalhes.marcaDescricao = 'Erro ao carregar';
+      }
+    }
+
+    if (produto.unidadeMedidaId) {
+      try {
+        const unidadeResponse = await fetch(`http://localhost:8080/unidades-medida/${produto.unidadeMedidaId}`);
+        if (unidadeResponse.ok) {
+          const unidadeData = await unidadeResponse.json();
+          produtoComDetalhes.unidadeMedidaDescricao = unidadeData.nome || '';
+        } else {
+          produtoComDetalhes.unidadeMedidaDescricao = 'Erro ao carregar';
+        }
+      } catch (error) {
+        console.error('Erro ao buscar unidade de medida:', error);
+        produtoComDetalhes.unidadeMedidaDescricao = 'Erro ao carregar';
       }
     }
     
-    setClienteSelecionado(clienteComCondicaoPagamento);
+    setProdutoSelecionado(produtoComDetalhes);
     setIsModalOpen(true);
   };
 
   const handleCloseModal = () => {
-    setClienteSelecionado(null);
+    setProdutoSelecionado(null);
     setIsModalOpen(false);
   };
 
-  const handleEdit = (id) => {
-    setSelectedClienteId(id);
-    setIsFormModalOpen(true);
-  };
-  const clientesFiltrados = clientes.filter(cliente => {
-    const matchesText = cliente.id?.toString().includes(filtro) ||
-      cliente.nome?.toLowerCase().includes(filtro.toLowerCase()) ||
-      cliente.cnpjCpf?.toLowerCase().includes(filtro.toLowerCase()) ||
-      cliente.email?.toLowerCase().includes(filtro.toLowerCase()) ||
-      getCidadeNome(cliente.cidadeId)?.toLowerCase().includes(filtro.toLowerCase());
+  const produtosFiltrados = produtos.filter(produto => {
+    const matchesText = produto.id?.toString().includes(filtro) ||
+      produto.nome?.toLowerCase().includes(filtro.toLowerCase()) ||
+      produto.codigo?.toLowerCase().includes(filtro.toLowerCase()) ||
+      produto.descricao?.toLowerCase().includes(filtro.toLowerCase()) ||
+      getMarcaNome(produto.marcaId)?.toLowerCase().includes(filtro.toLowerCase());
     
     const matchesStatus = filtroStatus === 'todos' || 
-      (filtroStatus === 'ativos' && cliente.ativo) ||
-      (filtroStatus === 'inativos' && !cliente.ativo);
+      (filtroStatus === 'ativos' && produto.ativo) ||
+      (filtroStatus === 'inativos' && !produto.ativo);
     
     return matchesText && matchesStatus;
   });
 
-  const getTipoLabel = (tipo) => {
-    if (typeof tipo === 'number') {
-      return tipo === 0 ? 'Pessoa Física' : 'Pessoa Jurídica';
-    }
-    return tipo === 'FISICA' ? 'Pessoa Física' : 'Pessoa Jurídica';
-  };
-
-  const getSexoLabel = (sexo) => {
-    switch (sexo) {
-      case 'M': return 'Masculino';
-      case 'F': return 'Feminino';
-      case 'O': return 'Outro';
-      default: return 'Não informado';
-    }
-  };
-
-  const getEstadoCivilLabel = (estadoCivil) => {
-    switch (estadoCivil) {
-      case 'SOLTEIRO': return 'Solteiro(a)';
-      case 'CASADO': return 'Casado(a)';
-      case 'DIVORCIADO': return 'Divorciado(a)';
-      case 'VIUVO': return 'Viúvo(a)';
-      case 'UNIAO_ESTAVEL': return 'União Estável';
-      case 'SEPARADO': return 'Separado(a)';
-      case 'OUTRO': return 'Outro';
-      default: return 'Não informado';
-    }
+  const formatCurrency = (value) => {
+    if (!value) return 'R$ 0,00';
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
   };
 
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
-        <Typography>Carregando clientes...</Typography>
+        <Typography>Carregando produtos...</Typography>
       </Box>
     );
   }
@@ -285,7 +274,9 @@ const ClienteListMUI = () => {
           borderRadius: 2,
           overflow: 'hidden'
         }}
-      >        {/* Cabeçalho  */}        <Box sx={{ 
+      >
+        {/* Cabeçalho */}
+        <Box sx={{ 
           display: 'flex', 
           justifyContent: 'space-between', 
           alignItems: 'center', 
@@ -296,7 +287,7 @@ const ClienteListMUI = () => {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexGrow: 1, flexWrap: { xs: 'wrap', md: 'nowrap' } }}>
             <TextField
               variant="outlined"
-              placeholder="Pesquisar por código, nome, CPF/CNPJ, email..."
+              placeholder="Pesquisar por código, nome, descrição, marca..."
               value={filtro}
               onChange={(e) => setFiltro(e.target.value)}
               InputProps={{
@@ -335,17 +326,6 @@ const ClienteListMUI = () => {
                 <MenuItem value="inativos">Inativos</MenuItem>
               </Select>
             </FormControl>
-            <FormControlLabel
-              control={
-                <Switch 
-                  checked={mostrarDocumentoCompleto}
-                  onChange={(e) => setMostrarDocumentoCompleto(e.target.checked)}
-                  color="primary"
-                  size="small"
-                />
-              }
-              label={<Typography variant="body2" sx={{ whiteSpace: 'nowrap' }}>Exibir documentos completos</Typography>}
-            />
           </Box>
           <Button
             variant="contained"
@@ -374,13 +354,14 @@ const ClienteListMUI = () => {
         {/* Tabela */}
         <Box sx={{ mb: 2 }}>
           <Typography variant="body2" color="text.secondary">
-            Exibindo {clientesFiltrados.length} de {clientes.length} clientes
+            Exibindo {produtosFiltrados.length} de {produtos.length} produtos
             {filtroStatus !== 'todos' && ` (${filtroStatus})`}
           </Typography>
         </Box>
         
         <TableContainer>
-          <Table>            <TableHead>
+          <Table>
+            <TableHead>
               <TableRow sx={{ bgcolor: '#f5f5f5' }}>
                 <TableCell>
                   <TableSortLabel
@@ -399,47 +380,47 @@ const ClienteListMUI = () => {
                     onClick={() => handleSort('nome')}
                     sx={{ fontWeight: 600 }}
                   >
-                    Cliente
+                    Produto
                   </TableSortLabel>
                 </TableCell>
                 <TableCell>
                   <TableSortLabel
-                    active={sortConfig.key === 'tipo'}
+                    active={sortConfig.key === 'codigo'}
                     direction={sortConfig.direction}
-                    onClick={() => handleSort('tipo')}
+                    onClick={() => handleSort('codigo')}
                     sx={{ fontWeight: 600 }}
                   >
-                    Tipo
+                    Código Produto
                   </TableSortLabel>
                 </TableCell>
                 <TableCell>
                   <TableSortLabel
-                    active={sortConfig.key === 'cnpjCpf'}
+                    active={sortConfig.key === 'preco'}
                     direction={sortConfig.direction}
-                    onClick={() => handleSort('cnpjCpf')}
+                    onClick={() => handleSort('preco')}
                     sx={{ fontWeight: 600 }}
                   >
-                    CPF/CNPJ
+                    Preço
                   </TableSortLabel>
                 </TableCell>
                 <TableCell>
                   <TableSortLabel
-                    active={sortConfig.key === 'email'}
+                    active={sortConfig.key === 'quantidadeEstoque'}
                     direction={sortConfig.direction}
-                    onClick={() => handleSort('email')}
+                    onClick={() => handleSort('quantidadeEstoque')}
                     sx={{ fontWeight: 600 }}
                   >
-                    Email
+                    Estoque
                   </TableSortLabel>
                 </TableCell>
                 <TableCell>
                   <TableSortLabel
-                    active={sortConfig.key === 'cidade'}
+                    active={sortConfig.key === 'marca'}
                     direction={sortConfig.direction}
-                    onClick={() => handleSort('cidade')}
+                    onClick={() => handleSort('marca')}
                     sx={{ fontWeight: 600 }}
                   >
-                    Cidade
+                    Marca
                   </TableSortLabel>
                 </TableCell>
                 <TableCell>
@@ -456,68 +437,65 @@ const ClienteListMUI = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {clientesFiltrados.map((cliente) => (                <TableRow 
-                  key={cliente.id}
+              {produtosFiltrados.map((produto) => (
+                <TableRow 
+                  key={produto.id}
                   hover
                   sx={{ '&:hover': { bgcolor: '#f8f9fa' } }}
                 >
                   <TableCell>
                     <Typography variant="body2" fontWeight={500} color="primary">
-                      {cliente.id}
+                      {produto.id}
                     </Typography>
                   </TableCell>
                   <TableCell>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Avatar sx={{ width: 32, height: 32, bgcolor: '#1976d2' }}>
-                        {getTipoLabel(cliente.tipo) === 'Pessoa Física' ? 
-                          <PersonIcon fontSize="small" /> : 
-                          <BusinessIcon fontSize="small" />
-                        }
+                        <InventoryIcon fontSize="small" />
                       </Avatar>
                       <Box>
                         <Typography variant="body2" fontWeight={500}>
-                          {cliente.nome}
+                          {produto.nome}
                         </Typography>
-                        {cliente.apelido && (
+                        {produto.descricao && (
                           <Typography variant="caption" color="text.secondary">
-                            {cliente.apelido}
+                            {produto.descricao.length > 30 
+                              ? produto.descricao.substring(0, 30) + '...' 
+                              : produto.descricao}
                           </Typography>
                         )}
                       </Box>
                     </Box>
                   </TableCell>
                   <TableCell>
+                    <Typography variant="body2" fontFamily="monospace">
+                      {produto.codigo || 'Não informado'}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body2" fontWeight={500} color="success.main">
+                      {formatCurrency(produto.preco)}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
                     <Chip
-                      label={getTipoLabel(cliente.tipo)}
+                      label={produto.quantidadeEstoque}
                       size="small"
-                      color={getTipoLabel(cliente.tipo) === 'Pessoa Física' ? 'primary' : 'secondary'}
+                      color={produto.quantidadeEstoque <= (produto.quantidadeMinima || 1) ? 'error' : 'success'}
                       variant="outlined"
                     />
-                  </TableCell>                  <TableCell>
-                    <Typography variant="body2" fontFamily="monospace">
-                      {cliente.cnpjCpf ? (
-                        getTipoLabel(cliente.tipo) === 'Pessoa Física' ? 
-                        (mostrarDocumentoCompleto ? formatCPF(cliente.cnpjCpf) : censurarCPF(cliente.cnpjCpf)) : 
-                        (mostrarDocumentoCompleto ? formatCNPJ(cliente.cnpjCpf) : censurarCNPJ(cliente.cnpjCpf))
-                      ) : 'Não informado'}
-                    </Typography>
                   </TableCell>
                   <TableCell>
                     <Typography variant="body2">
-                      {cliente.email || 'Não informado'}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2">
-                      {getCidadeNome(cliente.cidadeId)}
+                      {getMarcaNome(produto.marcaId)}
                     </Typography>
                   </TableCell>
                   <TableCell>
                     <Chip
-                      label={cliente.ativo ? 'Ativo' : 'Inativo'}
+                      label={produto.ativo ? 'Ativo' : 'Inativo'}
                       size="small"
-                      color={cliente.ativo ? 'success' : 'default'}
-                      variant={cliente.ativo ? 'filled' : 'outlined'}
+                      color={produto.ativo ? 'success' : 'default'}
+                      variant={produto.ativo ? 'filled' : 'outlined'}
                     />
                   </TableCell>
                   <TableCell>
@@ -525,7 +503,7 @@ const ClienteListMUI = () => {
                       <Tooltip title="Visualizar">
                         <IconButton
                           size="small"
-                          onClick={() => handleView(cliente)}
+                          onClick={() => handleView(produto)}
                           sx={{ color: '#17a2b8' }}
                         >
                           <VisibilityIcon fontSize="small" />
@@ -534,19 +512,20 @@ const ClienteListMUI = () => {
                       <Tooltip title="Editar">
                         <IconButton
                           size="small"
-                          onClick={() => handleEdit(cliente.id)}
+                          component={Link}
+                          to={`/produtos/editar/${produto.id}`}
                           sx={{ color: '#28a745' }}
                         >
                           <EditIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
-                      <Tooltip title={cliente.ativo ? "Inativar" : "Ativar"}>
+                      <Tooltip title={produto.ativo ? "Inativar" : "Ativar"}>
                         <IconButton
                           size="small"
-                          onClick={() => handleDelete(cliente.id)}
-                          sx={{ color: cliente.ativo ? '#dc3545' : '#28a745' }}
+                          onClick={() => handleDelete(produto.id)}
+                          sx={{ color: produto.ativo ? '#dc3545' : '#28a745' }}
                         >
-                          {cliente.ativo ? <BlockIcon fontSize="small" /> : <CheckCircleIcon fontSize="small" />}
+                          {produto.ativo ? <BlockIcon fontSize="small" /> : <CheckCircleIcon fontSize="small" />}
                         </IconButton>
                       </Tooltip>
                     </Box>
@@ -557,12 +536,12 @@ const ClienteListMUI = () => {
           </Table>
         </TableContainer>
 
-        {clientesFiltrados.length === 0 && (
+        {produtosFiltrados.length === 0 && (
           <Box sx={{ textAlign: 'center', py: 4 }}>
             <Typography variant="h6" color="text.secondary">
-              {clientes.length === 0 
-                ? 'Nenhum cliente cadastrado' 
-                : `Nenhum cliente ${filtroStatus === 'todos' ? '' : filtroStatus === 'ativos' ? 'ativo' : 'inativo'} encontrado`
+              {produtos.length === 0 
+                ? 'Nenhum produto cadastrado' 
+                : `Nenhum produto ${filtroStatus === 'todos' ? '' : filtroStatus === 'ativos' ? 'ativo' : 'inativo'} encontrado`
               }
             </Typography>
             {filtro && (
@@ -572,7 +551,9 @@ const ClienteListMUI = () => {
             )}
           </Box>
         )}
-      </Paper>      {/* Modal de Visualização */}
+      </Paper>
+
+      {/* Modal de Visualização */}
       <Dialog
         open={isModalOpen}
         onClose={handleCloseModal}
@@ -590,17 +571,16 @@ const ClienteListMUI = () => {
           pb: 2
         }}>
           <Typography variant="h6" fontWeight={600}>
-            Visualizar Cliente
+            Visualizar Produto
           </Typography>
           <IconButton onClick={handleCloseModal} size="small">
             <CloseIcon />
           </IconButton>
         </DialogTitle>
         
-        {clienteSelecionado && (
+        {produtoSelecionado && (
           <DialogContent sx={{ p: 4 }}>
-
-            {/* titulo e switch */}
+            {/* Título e Switch */}
             <Box sx={{ 
               display: 'flex', 
               justifyContent: 'space-between', 
@@ -614,12 +594,13 @@ const ClienteListMUI = () => {
                 align="center" 
                 sx={{ color: '#333', fontWeight: 600, flex: 1 }}
               >
-                Dados do Cliente
-              </Typography>              <Box sx={{ width: 120, display: 'flex', justifyContent: 'flex-end' }}>
+                Dados do Produto
+              </Typography>
+              <Box sx={{ width: 120, display: 'flex', justifyContent: 'flex-end' }}>
                 <FormControlLabel
                   control={
                     <Switch
-                      checked={clienteSelecionado.ativo}
+                      checked={produtoSelecionado.ativo}
                       disabled
                       color="primary"
                     />
@@ -630,251 +611,164 @@ const ClienteListMUI = () => {
               </Box>
             </Box>
 
-            {/* Linha 1*/}
+            {/* Linha 1: Código, Nome, Código Produto */}
             <Grid container spacing={2} alignItems="center" sx={{ mb: 4 }}>
               <Grid item sx={{ width: '6%', minWidth: 80 }}>
                 <TextField
                   fullWidth
                   size="small"
                   label="Código"
-                  value={clienteSelecionado.id || ''}
+                  value={produtoSelecionado.id || ''}
                   InputProps={{ readOnly: true }}
                   variant="outlined"
                 />
               </Grid>
-
-              <Grid item sx={{ width: '16%', minWidth: 140 }}>
+              <Grid item sx={{ width: '47%' }}>
                 <TextField
                   fullWidth
                   size="small"
-                  label="Tipo de Pessoa"
-                  value={getTipoLabel(clienteSelecionado.tipo)}
+                  label="Nome do Produto"
+                  value={produtoSelecionado.nome || ''}
                   InputProps={{ readOnly: true }}
                   variant="outlined"
                 />
               </Grid>
-
-              <Grid item sx={{ width: '30%' }}>
+              <Grid item sx={{ width: '47%' }}>
                 <TextField
                   fullWidth
                   size="small"
-                  label="Cliente"
-                  value={clienteSelecionado.nome || ''}
-                  InputProps={{ readOnly: true }}
-                  variant="outlined"
-                />
-              </Grid>              <Grid item sx={{ width: getTipoLabel(clienteSelecionado.tipo) === 'Pessoa Física' ? '18%' : '38%' }}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  label={getTipoLabel(clienteSelecionado.tipo) === 'Pessoa Física' ? 'Apelido' : 'Nome Fantasia'}
-                  value={clienteSelecionado.apelido || ''}
+                  label="Código do Produto"
+                  value={produtoSelecionado.codigo || ''}
                   InputProps={{ readOnly: true }}
                   variant="outlined"
                 />
               </Grid>
-
-              {getTipoLabel(clienteSelecionado.tipo) === 'Pessoa Física' && (
-                <Grid item sx={{ width: '20%' }}>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    label="Estado Civil"
-                    value={getEstadoCivilLabel(clienteSelecionado.estadoCivil)}
-                    InputProps={{ readOnly: true }}
-                    variant="outlined"
-                  />
-                </Grid>
-              )}
             </Grid>
 
-            {/* Linha 2 */}
+            {/* Linha 2: Preços e Estoque */}
             <Grid container spacing={2} sx={{ mb: 4 }}>
-              <Grid item sx={{ width: '25%' }}>
+              <Grid item sx={{ width: '15%' }}>
                 <TextField
                   fullWidth
                   size="small"
-                  label="Endereço"
-                  value={clienteSelecionado.endereco || ''}
+                  label="Preço"
+                  value={formatCurrency(produtoSelecionado.preco)}
                   InputProps={{ readOnly: true }}
                   variant="outlined"
                 />
               </Grid>
-
-              <Grid item sx={{ width: '5%', minWidth: 80 }}>
+              <Grid item sx={{ width: '15%' }}>
                 <TextField
                   fullWidth
                   size="small"
-                  label="Número"
-                  value={clienteSelecionado.numero || ''}
+                  label="Valor Compra"
+                  value={formatCurrency(produtoSelecionado.valorCompra)}
                   InputProps={{ readOnly: true }}
                   variant="outlined"
                 />
               </Grid>
-                
-              <Grid item sx={{ width: '13%' }}>
+              <Grid item sx={{ width: '15%' }}>
                 <TextField
                   fullWidth
                   size="small"
-                  label="Complemento"
-                  value={clienteSelecionado.complemento || ''}
+                  label="Valor Venda"
+                  value={formatCurrency(produtoSelecionado.valorVenda)}
                   InputProps={{ readOnly: true }}
                   variant="outlined"
                 />
               </Grid>
-
-              <Grid item sx={{ width: '13%', minWidth: 120 }}>
+              <Grid item sx={{ width: '15%' }}>
                 <TextField
                   fullWidth
                   size="small"
-                  label="Bairro"
-                  value={clienteSelecionado.bairro || ''}
+                  label="Estoque Atual"
+                  value={produtoSelecionado.quantidadeEstoque || '0'}
                   InputProps={{ readOnly: true }}
                   variant="outlined"
                 />
               </Grid>
-
-              <Grid item sx={{ width: '10%', minWidth: 100 }}>
+              <Grid item sx={{ width: '15%' }}>
                 <TextField
                   fullWidth
                   size="small"
-                  label="CEP"
-                  value={formatCEP(clienteSelecionado.cep) || ''}
+                  label="Estoque Mínimo"
+                  value={produtoSelecionado.quantidadeMinima || '1'}
                   InputProps={{ readOnly: true }}
                   variant="outlined"
                 />
               </Grid>
-
-              <Grid item sx={{ width: '20%', minWidth: 150 }}>
+              <Grid item sx={{ width: '15%' }}>
                 <TextField
                   fullWidth
                   size="small"
-                  label="Cidade"
-                  value={getCidadeNome(clienteSelecionado.cidadeId)}
-                  InputProps={{ readOnly: true }}
-                  variant="outlined"
-                />
-              </Grid>
-            </Grid>            
-            {/* Linha 3 */}
-            <Grid container spacing={2} sx={{ mb: 4 }}>
-              <Grid item sx={{ width: '15%', minWidth: 150 }}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  label="Telefone"
-                  value={formatTelefone(clienteSelecionado.telefone) || ''}
-                  InputProps={{ readOnly: true }}
-                  variant="outlined"
-                />
-              </Grid>
-
-              <Grid item sx={{ width: '25%' }}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  label="Email"
-                  value={clienteSelecionado.email || ''}
-                  InputProps={{ readOnly: true }}
-                  variant="outlined"
-                />
-              </Grid>
-
-              {getTipoLabel(clienteSelecionado.tipo) === 'Pessoa Física' && (
-                <Grid item sx={{ width: '10%', minWidth: 120 }}>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    label="Sexo"
-                    value={getSexoLabel(clienteSelecionado.sexo)}
-                    InputProps={{ readOnly: true }}
-                    variant="outlined"
-                  />
-                </Grid>
-              )}
-              <Grid item sx={{ width: '15%', minWidth: 150 }}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  label={getTipoLabel(clienteSelecionado.tipo) === 'Pessoa Física' ? 'Data de Nascimento' : 'Data de Abertura'}
-                  value={clienteSelecionado.dataNascimento ? 
-                    new Date(clienteSelecionado.dataNascimento).toLocaleDateString('pt-BR') : 
+                  label="% Lucro"
+                  value={produtoSelecionado.percentualLucro ? 
+                    `${parseFloat(produtoSelecionado.percentualLucro).toFixed(2)}%` : 
                     ''
                   }
                   InputProps={{ readOnly: true }}
                   variant="outlined"
                 />
               </Grid>
+            </Grid>
 
-
-            </Grid>            {/* Linha 4 */}
+            {/* Linha 3: Marca e Unidade */}
             <Grid container spacing={2} sx={{ mb: 4 }}>
-                <Grid item sx={{ width: '20%' }}>
+              <Grid item sx={{ width: '50%' }}>
                 <TextField
                   fullWidth
                   size="small"
-                  label={getTipoLabel(clienteSelecionado.tipo) === 'Pessoa Física' ? 'RG' : 'Inscrição Estadual'}
-                  value={clienteSelecionado.rgInscricaoEstadual || ''}
-                  InputProps={{ readOnly: true }}
-                  variant="outlined"
-                />
-              </Grid>              <Grid item sx={{ width: '20%', minWidth: 150 }}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  label={getTipoLabel(clienteSelecionado.tipo) === 'Pessoa Física' ? 'CPF' : 'CNPJ'}
-                  value={clienteSelecionado.cnpjCpf ? (
-                    getTipoLabel(clienteSelecionado.tipo) === 'Pessoa Física' ? 
-                    formatCPF(clienteSelecionado.cnpjCpf) : 
-                    formatCNPJ(clienteSelecionado.cnpjCpf)
-                  ) : ''}
+                  label="Marca"
+                  value={produtoSelecionado.marcaDescricao || getMarcaNome(produtoSelecionado.marcaId)}
                   InputProps={{ readOnly: true }}
                   variant="outlined"
                 />
               </Grid>
-
-              <Grid item sx={{ width: '15%', minWidth: 120 }}>
+              <Grid item sx={{ width: '50%' }}>
                 <TextField
                   fullWidth
                   size="small"
-                  label="Limite de Crédito"
-                  value={clienteSelecionado.limiteCredito ? 
-                    `R$ ${parseFloat(clienteSelecionado.limiteCredito).toFixed(2).replace('.', ',')}` : 
-                    ''
-                  }
+                  label="Unidade de Medida"
+                  value={produtoSelecionado.unidadeMedidaDescricao || getUnidadeMedidaNome(produtoSelecionado.unidadeMedidaId)}
                   InputProps={{ readOnly: true }}
                   variant="outlined"
                 />
               </Grid>
+            </Grid>
 
-              <Grid item sx={{ width: '35%' }}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  label="Condição de Pagamento"
-                  value={clienteSelecionado.condicaoPagamentoDescricao || ''}
-                  InputProps={{ readOnly: true }}
-                  variant="outlined"
-                />
-              </Grid>            </Grid>            
-
-              {/* Linha 5: Observações */}
-            <Grid container spacing={2} sx={{ mb: 2 }}>
-              <Grid item sx={{width: '100%'}}>
+            {/* Linha 4: Descrição */}
+            <Grid container spacing={2} sx={{ mb: 4 }}>
+              <Grid item sx={{ width: '100%' }}>
                 <TextField
                   fullWidth
                   multiline
-                  rows={3}
+                  rows={2}
                   size="small"
-                  label="Observações"
-                  value={clienteSelecionado.observacao || ''}
+                  label="Descrição"
+                  value={produtoSelecionado.descricao || ''}
                   InputProps={{ readOnly: true }}
                   variant="outlined"
                 />
               </Grid>
             </Grid>
 
-            {/* registros */}
+            {/* Linha 5: Observações */}
+            <Grid container spacing={2} sx={{ mb: 2 }}>
+              <Grid item sx={{ width: '100%' }}>
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={2}
+                  size="small"
+                  label="Observações"
+                  value={produtoSelecionado.observacoes || ''}
+                  InputProps={{ readOnly: true }}
+                  variant="outlined"
+                />
+              </Grid>
+            </Grid>
+
+            {/* Registros */}
             <Box
               sx={{
                 display: 'flex',
@@ -887,14 +781,14 @@ const ClienteListMUI = () => {
               }}
             >
               <Stack spacing={0.5} sx={{ flex: 1 }}>
-                {clienteSelecionado.dataCadastro && (
+                {produtoSelecionado.dataCriacao && (
                   <Typography variant="caption" color="text.secondary">
-                    Data de cadastro: {new Date(clienteSelecionado.dataCadastro).toLocaleString('pt-BR')}
+                    Data de cadastro: {new Date(produtoSelecionado.dataCriacao).toLocaleString('pt-BR')}
                   </Typography>
                 )}
-                {clienteSelecionado.ultimaModificacao && (
+                {produtoSelecionado.ultimaModificacao && (
                   <Typography variant="caption" color="text.secondary">
-                    Última modificação: {new Date(clienteSelecionado.ultimaModificacao).toLocaleString('pt-BR')}
+                    Última modificação: {new Date(produtoSelecionado.ultimaModificacao).toLocaleString('pt-BR')}
                   </Typography>
                 )}
               </Stack>
@@ -910,14 +804,13 @@ const ClienteListMUI = () => {
           >
             Fechar
           </Button>
-          {clienteSelecionado && (
+          {produtoSelecionado && (
             <Button
-              onClick={() => {
-                handleEdit(clienteSelecionado.id);
-                handleCloseModal();
-              }}
+              component={Link}
+              to={`/produtos/editar/${produtoSelecionado.id}`}
               variant="contained"
               startIcon={<EditIcon />}
+              onClick={handleCloseModal}
             >
               Editar
             </Button>
@@ -925,21 +818,21 @@ const ClienteListMUI = () => {
         </DialogActions>
       </Dialog>
 
-      <ClienteModalForm 
+      <ProdutoModalForm 
         open={isFormModalOpen}
         onClose={() => {
           setIsFormModalOpen(false);
-          setSelectedClienteId(null);
+          setSelectedProdutoId(null);
         }}
         onSaveSuccess={() => {
           loadData();
           setIsFormModalOpen(false);
-          setSelectedClienteId(null);
+          setSelectedProdutoId(null);
         }}
-        clienteId={selectedClienteId}
+        produtoId={selectedProdutoId}
       />
     </Box>
   );
 };
 
-export default ClienteListMUI;
+export default ProdutoListMUI;

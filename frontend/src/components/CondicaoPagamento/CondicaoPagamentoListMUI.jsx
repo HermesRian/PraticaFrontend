@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import CondicaoPagamentoModalForm from './CondicaoPagamentoModalForm';
 import {
   Box,
   Typography,
@@ -52,25 +53,17 @@ const CondicaoPagamentoListMUI = () => {
   const [condicoesPagamento, setCondicoesPagamento] = useState([]);
   const [condicaoSelecionada, setCondicaoSelecionada] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [sortConfig, setSortConfig] = useState({ key: 'descricao', direction: 'asc' });
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+  const [selectedCondicaoPagamentoId, setSelectedCondicaoPagamentoId] = useState(null);
+  const [sortConfig, setSortConfig] = useState({ key: 'nome', direction: 'asc' });
   const [filtro, setFiltro] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [filtroStatus, setFiltroStatus] = useState('todos'); // 'todos', 'ativos', 'inativos'
+  const [filtroStatus, setFiltroStatus] = useState('todos');
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetch('http://localhost:8080/condicoes-pagamento')
-      .then((response) => response.json())
-      .then((data) => {
-        setCondicoesPagamento(data);
-        setLoading(false);
-      })
-      .catch((error) => {
-        console.error('Erro ao buscar condições de pagamento:', error);
-        setError('Erro ao carregar dados');
-        setLoading(false);
-      });
+    loadData();
   }, []);
 
   const handleSort = (key) => {
@@ -140,6 +133,25 @@ const CondicaoPagamentoListMUI = () => {
     setIsModalOpen(false);
   };
 
+  const handleEdit = (id) => {
+    setSelectedCondicaoPagamentoId(id);
+    setIsFormModalOpen(true);
+  };
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('http://localhost:8080/condicoes-pagamento');
+      const data = await response.json();
+      setCondicoesPagamento(data);
+    } catch (error) {
+      console.error('Erro ao buscar dados:', error);
+      setError('Erro ao carregar dados');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Função para calcular soma dos percentuais das parcelas
   const calcularSomaPercentuais = (parcelas) => {
     if (!parcelas || parcelas.length === 0) return 0;
@@ -149,7 +161,7 @@ const CondicaoPagamentoListMUI = () => {
   const condicoesFiltradas = condicoesPagamento.filter(condicao => {
     // Filtro por texto (código, descrição)
     const matchesText = condicao.id?.toString().includes(filtro) ||
-      condicao.descricao?.toLowerCase().includes(filtro.toLowerCase());
+      condicao.nome?.toLowerCase().includes(filtro.toLowerCase());
     
     // Filtro por status
     const matchesStatus = filtroStatus === 'todos' || 
@@ -237,9 +249,8 @@ const CondicaoPagamentoListMUI = () => {
             </FormControl>
           </Box>
           <Button
-            component={Link}
-            to="/condicoes-pagamento/cadastrar"
             variant="contained"
+            onClick={() => setIsFormModalOpen(true)}
             startIcon={<AddIcon />}
             sx={{ 
               bgcolor: '#1976d2',
@@ -285,9 +296,9 @@ const CondicaoPagamentoListMUI = () => {
                 </TableCell>
                 <TableCell>
                   <TableSortLabel
-                    active={sortConfig.key === 'descricao'}
+                    active={sortConfig.key === 'nome'}
                     direction={sortConfig.direction}
-                    onClick={() => handleSort('descricao')}
+                    onClick={() => handleSort('nome')}
                     sx={{ fontWeight: 600 }}
                   >
                     Descrição
@@ -347,7 +358,7 @@ const CondicaoPagamentoListMUI = () => {
                         <PaymentIcon fontSize="small" />
                       </Avatar>
                       <Typography variant="body2" fontWeight={500}>
-                        {condicao.descricao}
+                        {condicao.nome}
                       </Typography>
                     </Box>
                   </TableCell>
@@ -363,7 +374,7 @@ const CondicaoPagamentoListMUI = () => {
                   <TableCell>
                     <Chip
                       icon={<ReceiptIcon />}
-                      label={`${condicao.parcelas || 0}x`}
+                      label={`${condicao.parcelasCondicao?.length || 0}x`}
                       size="small"
                       color="default"
                       variant="outlined"
@@ -407,8 +418,7 @@ const CondicaoPagamentoListMUI = () => {
                       <Tooltip title="Editar">
                         <IconButton
                           size="small"
-                          component={Link}
-                          to={`/condicoes-pagamento/editar/${condicao.id}`}
+                          onClick={() => handleEdit(condicao.id)}
                           sx={{ color: '#28a745' }}
                         >
                           <EditIcon fontSize="small" />
@@ -525,7 +535,7 @@ const CondicaoPagamentoListMUI = () => {
                   fullWidth
                   size="small"
                   label="Descrição"
-                  value={condicaoSelecionada.descricao || ''}
+                  value={condicaoSelecionada.nome || ''}
                   InputProps={{ readOnly: true }}
                   variant="outlined"
                 />
@@ -668,7 +678,7 @@ const CondicaoPagamentoListMUI = () => {
                       fullWidth
                       size="small"
                       label="Forma de Pagamento"
-                      value={parcela.formaPagamento?.descricao || 'Não informada'}
+                      value={parcela.formaPagamento?.nome || 'Não informada'}
                       InputProps={{ readOnly: true }}
                       variant="outlined"
                     />
@@ -697,9 +707,9 @@ const CondicaoPagamentoListMUI = () => {
               }}
             >
               <Stack spacing={0.5} sx={{ flex: 1 }}>
-                {condicaoSelecionada.dataCadastro && (
+                {condicaoSelecionada.dataCriacao && (
                   <Typography variant="caption" color="text.secondary">
-                    Data de cadastro: {new Date(condicaoSelecionada.dataCadastro).toLocaleString('pt-BR')}
+                    Data de cadastro: {new Date(condicaoSelecionada.dataCriacao).toLocaleString('pt-BR')}
                   </Typography>
                 )}
                 {condicaoSelecionada.ultimaModificacao && (
@@ -722,17 +732,32 @@ const CondicaoPagamentoListMUI = () => {
           </Button>
           {condicaoSelecionada && (
             <Button
-              component={Link}
-              to={`/condicoes-pagamento/editar/${condicaoSelecionada.id}`}
+              onClick={() => {
+                handleEdit(condicaoSelecionada.id);
+                handleCloseModal();
+              }}
               variant="contained"
               startIcon={<EditIcon />}
-              onClick={handleCloseModal}
             >
               Editar
             </Button>
           )}
         </DialogActions>
       </Dialog>
+
+      <CondicaoPagamentoModalForm 
+        open={isFormModalOpen}
+        onClose={() => {
+          setIsFormModalOpen(false);
+          setSelectedCondicaoPagamentoId(null);
+        }}
+        onSaveSuccess={() => {
+          loadData();
+          setIsFormModalOpen(false);
+          setSelectedCondicaoPagamentoId(null);
+        }}
+        condicaoPagamentoId={selectedCondicaoPagamentoId}
+      />
     </Box>
   );
 };

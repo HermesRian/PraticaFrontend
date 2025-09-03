@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import CidadeModalForm from './CidadeModalForm';
 import {
   Box,
   Typography,
@@ -35,7 +36,6 @@ import {
 import {
   Visibility as VisibilityIcon,
   Edit as EditIcon,
-  Delete as DeleteIcon,
   Add as AddIcon,
   Search as SearchIcon,
   LocationCity as LocationCityIcon,
@@ -46,44 +46,42 @@ import {
 
 const CidadeListMUI = () => {
   const [cidades, setCidades] = useState([]);
-  const [estados, setEstados] = useState({});
+  const [estados, setEstados] = useState([]);
   const [cidadeSelecionada, setCidadeSelecionada] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+  const [selectedCidadeId, setSelectedCidadeId] = useState(null);
   const [sortConfig, setSortConfig] = useState({ key: 'nome', direction: 'asc' });
   const [filtro, setFiltro] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [filtroStatus, setFiltroStatus] = useState('todos'); // 'todos', 'ativos', 'inativos'
-  const navigate = useNavigate();
+  const [filtroStatus, setFiltroStatus] = useState('todos');
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const [cidadesData, estadosData] = await Promise.all([
+        fetch('http://localhost:8080/cidades').then(res => res.json()),
+        fetch('http://localhost:8080/estados').then(res => res.json()).catch(() => [])
+      ]);
+      setCidades(cidadesData);
+      setEstados(estadosData);
+    } catch (error) {
+      console.error('Erro ao buscar dados:', error);
+      setError('Erro ao carregar dados');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // Buscar cidades
-    fetch('http://localhost:8080/cidades')
-      .then((response) => response.json())
-      .then((data) => {
-        setCidades(data);
-        setLoading(false);
-      })
-      .catch((error) => {
-        console.error('Erro ao buscar cidades:', error);
-        setError('Erro ao carregar dados das cidades');
-        setLoading(false);
-      });
-
-    // Buscar estados para exibir os nomes
-    fetch('http://localhost:8080/estados')
-      .then((response) => response.json())
-      .then((data) => {
-        const estadosMap = {};
-        data.forEach((estado) => {
-          estadosMap[estado.id] = `${estado.nome} - ${estado.uf}`;
-        });
-        setEstados(estadosMap);
-      })
-      .catch((error) => {
-        console.error('Erro ao buscar estados:', error);
-      });
+    loadData();
   }, []);
+
+  const getEstadoNome = (estadoId) => {
+    const estado = estados.find((e) => e.id === estadoId);
+    return estado ? `${estado.nome} - ${estado.uf}` : 'Não informado';
+  };
 
   const handleSort = (key) => {
     let direction = 'asc';
@@ -96,10 +94,9 @@ const CidadeListMUI = () => {
       let aValue = a[key];
       let bValue = b[key];
 
-      // Para a coluna "estado", usamos o nome do estado
       if (key === 'estado') {
-        aValue = estados[a.estadoId] || 'Desconhecido';
-        bValue = estados[b.estadoId] || 'Desconhecido';
+        aValue = getEstadoNome(a.estadoId);
+        bValue = getEstadoNome(b.estadoId);
       }
 
       if (key === 'ativo') {
@@ -126,29 +123,82 @@ const CidadeListMUI = () => {
   const handleDelete = (id) => {
     const cidade = cidades.find(c => c.id === id);
     const isAtivo = cidade?.ativo;
-    const acao = isAtivo ? 'excluir' : 'ativar';
+    const acao = isAtivo ? 'inativar' : 'ativar';
     const mensagem = isAtivo ? 
-      'Tem certeza que deseja excluir esta cidade?' : 
+      'Tem certeza que deseja inativar esta cidade?' : 
       'Tem certeza que deseja ativar esta cidade?';
     
     if (window.confirm(mensagem)) {
-      fetch(`http://localhost:8080/cidades/${id}`, {
-        method: 'DELETE',
-      })
-        .then(() => {
-          // Remove completamente da lista
-          setCidades(cidades.filter(cidade => cidade.id !== id));
+      if (isAtivo) {
+        fetch(`http://localhost:8080/cidades/${id}`, {
+          method: 'DELETE',
         })
-        .catch((error) => {
-          console.error(`Erro ao ${acao} cidade:`, error);
-          setError(`Erro ao ${acao} cidade`);
-        });
+          .then(() => {
+            setCidades(cidades.map(cidade => 
+              cidade.id === id ? { ...cidade, ativo: false } : cidade
+            ));
+          })
+          .catch((error) => {
+            console.error(`Erro ao ${acao} cidade:`, error);
+            setError(`Erro ao ${acao} cidade`);
+          });
+      } else {
+        const cidadeAtualizada = {
+          ...cidade,
+          ativo: true,
+        };
+
+        fetch(`http://localhost:8080/cidades/${id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(cidadeAtualizada),
+        })
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error('Erro ao ativar cidade');
+            }
+            return response.json();
+          })
+          .then(() => {
+            setCidades(cidades.map(cidade => 
+              cidade.id === id ? { ...cidade, ativo: true } : cidade
+            ));
+          })
+          .catch((error) => {
+            console.error(`Erro ao ${acao} cidade:`, error);
+            setError(`Erro ao ${acao} cidade`);
+          });
+      }
     }
   };
 
   const handleView = async (cidade) => {
-    setCidadeSelecionada(cidade);
+    let cidadeComEstado = { ...cidade };
+    
+    if (cidade.estadoId) {
+      try {
+        const estadoResponse = await fetch(`http://localhost:8080/estados/${cidade.estadoId}`);
+        if (estadoResponse.ok) {
+          const estadoData = await estadoResponse.json();
+          cidadeComEstado.estadoDescricao = `${estadoData.nome} - ${estadoData.uf}`;
+        } else {
+          cidadeComEstado.estadoDescricao = 'Erro ao carregar';
+        }
+      } catch (error) {
+        console.error('Erro ao buscar estado:', error);
+        cidadeComEstado.estadoDescricao = 'Erro ao carregar';
+      }
+    }
+    
+    setCidadeSelecionada(cidadeComEstado);
     setIsModalOpen(true);
+  };
+
+  const handleEdit = (id) => {
+    setSelectedCidadeId(id);
+    setIsFormModalOpen(true);
   };
 
   const handleCloseModal = () => {
@@ -157,17 +207,15 @@ const CidadeListMUI = () => {
   };
 
   const cidadesFiltradas = cidades.filter(cidade => {
-    // Filtro por texto (código, nome, código IBGE, estado)
-    const estadoNome = estados[cidade.estadoId] || '';
     const matchesText = cidade.id?.toString().includes(filtro) ||
       cidade.nome?.toLowerCase().includes(filtro.toLowerCase()) ||
-      cidade.codigoIbge?.toString().includes(filtro) ||
-      estadoNome.toLowerCase().includes(filtro.toLowerCase());
+      cidade.codigoIbge?.toLowerCase().includes(filtro.toLowerCase()) ||
+      cidade.ddd?.toString().includes(filtro) ||
+      getEstadoNome(cidade.estadoId)?.toLowerCase().includes(filtro.toLowerCase());
     
-    // Filtro por status
     const matchesStatus = filtroStatus === 'todos' || 
-      (filtroStatus === 'ativos' && cidade.ativo !== false) ||
-      (filtroStatus === 'inativos' && cidade.ativo === false);
+      (filtroStatus === 'ativos' && cidade.ativo) ||
+      (filtroStatus === 'inativos' && !cidade.ativo);
     
     return matchesText && matchesStatus;
   });
@@ -197,7 +245,7 @@ const CidadeListMUI = () => {
           overflow: 'hidden'
         }}
       >
-        {/* Cabeçalho com pesquisa e botão */}
+        {/* Cabeçalho */}
         <Box sx={{ 
           display: 'flex', 
           justifyContent: 'space-between', 
@@ -209,7 +257,7 @@ const CidadeListMUI = () => {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexGrow: 1, flexWrap: { xs: 'wrap', md: 'nowrap' } }}>
             <TextField
               variant="outlined"
-              placeholder="Pesquisar por código, nome, IBGE ou estado..."
+              placeholder="Pesquisar por código, nome, IBGE, DDD, estado..."
               value={filtro}
               onChange={(e) => setFiltro(e.target.value)}
               InputProps={{
@@ -250,9 +298,8 @@ const CidadeListMUI = () => {
             </FormControl>
           </Box>
           <Button
-            component={Link}
-            to="/cidades/cadastrar"
             variant="contained"
+            onClick={() => setIsFormModalOpen(true)}
             startIcon={<AddIcon />}
             sx={{ 
               bgcolor: '#1976d2',
@@ -303,7 +350,7 @@ const CidadeListMUI = () => {
                     onClick={() => handleSort('nome')}
                     sx={{ fontWeight: 600 }}
                   >
-                    Nome
+                    Cidade
                   </TableSortLabel>
                 </TableCell>
                 <TableCell>
@@ -314,6 +361,16 @@ const CidadeListMUI = () => {
                     sx={{ fontWeight: 600 }}
                   >
                     Código IBGE
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell>
+                  <TableSortLabel
+                    active={sortConfig.key === 'ddd'}
+                    direction={sortConfig.direction}
+                    onClick={() => handleSort('ddd')}
+                    sx={{ fontWeight: 600 }}
+                  >
+                    DDD
                   </TableSortLabel>
                 </TableCell>
                 <TableCell>
@@ -356,14 +413,16 @@ const CidadeListMUI = () => {
                       <Avatar sx={{ width: 32, height: 32, bgcolor: '#1976d2' }}>
                         <LocationCityIcon fontSize="small" />
                       </Avatar>
-                      <Typography variant="body2" fontWeight={500}>
-                        {cidade.nome}
-                      </Typography>
+                      <Box>
+                        <Typography variant="body2" fontWeight={500}>
+                          {cidade.nome}
+                        </Typography>
+                      </Box>
                     </Box>
                   </TableCell>
                   <TableCell>
                     <Chip
-                      label={cidade.codigoIbge}
+                      label={cidade.codigoIbge || 'N/A'}
                       size="small"
                       color="secondary"
                       variant="outlined"
@@ -371,16 +430,25 @@ const CidadeListMUI = () => {
                     />
                   </TableCell>
                   <TableCell>
+                    <Chip
+                      label={cidade.ddd || 'N/A'}
+                      size="small"
+                      color="info"
+                      variant="outlined"
+                      sx={{ fontFamily: 'monospace', fontWeight: 500 }}
+                    />
+                  </TableCell>
+                  <TableCell>
                     <Typography variant="body2">
-                      {estados[cidade.estadoId] || 'Desconhecido'}
+                      {getEstadoNome(cidade.estadoId)}
                     </Typography>
                   </TableCell>
                   <TableCell>
                     <Chip
-                      label={cidade.ativo !== false ? 'Ativo' : 'Inativo'}
+                      label={cidade.ativo ? 'Ativo' : 'Inativo'}
                       size="small"
-                      color={cidade.ativo !== false ? 'success' : 'default'}
-                      variant={cidade.ativo !== false ? 'filled' : 'outlined'}
+                      color={cidade.ativo ? 'success' : 'default'}
+                      variant={cidade.ativo ? 'filled' : 'outlined'}
                     />
                   </TableCell>
                   <TableCell>
@@ -397,20 +465,19 @@ const CidadeListMUI = () => {
                       <Tooltip title="Editar">
                         <IconButton
                           size="small"
-                          component={Link}
-                          to={`/cidades/editar/${cidade.id}`}
+                          onClick={() => handleEdit(cidade.id)}
                           sx={{ color: '#28a745' }}
                         >
                           <EditIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
-                      <Tooltip title={cidade.ativo !== false ? "Excluir" : "Ativar"}>
+                      <Tooltip title={cidade.ativo ? "Inativar" : "Ativar"}>
                         <IconButton
                           size="small"
                           onClick={() => handleDelete(cidade.id)}
-                          sx={{ color: cidade.ativo !== false ? '#dc3545' : '#28a745' }}
+                          sx={{ color: cidade.ativo ? '#dc3545' : '#28a745' }}
                         >
-                          {cidade.ativo !== false ? <BlockIcon fontSize="small" /> : <CheckCircleIcon fontSize="small" />}
+                          {cidade.ativo ? <BlockIcon fontSize="small" /> : <CheckCircleIcon fontSize="small" />}
                         </IconButton>
                       </Tooltip>
                     </Box>
@@ -445,7 +512,7 @@ const CidadeListMUI = () => {
         maxWidth="lg"
         fullWidth
         PaperProps={{
-          sx: { borderRadius: 2, minHeight: '80vh' }
+          sx: { borderRadius: 2, minHeight: '60vh' }
         }}
       >
         <DialogTitle sx={{ 
@@ -465,7 +532,7 @@ const CidadeListMUI = () => {
         
         {cidadeSelecionada && (
           <DialogContent sx={{ p: 4 }}>
-            {/* Cabeçalho com título e switch Ativo */}
+            {/* Título e Switch */}
             <Box sx={{ 
               display: 'flex', 
               justifyContent: 'space-between', 
@@ -485,7 +552,7 @@ const CidadeListMUI = () => {
                 <FormControlLabel
                   control={
                     <Switch
-                      checked={cidadeSelecionada.ativo !== false}
+                      checked={cidadeSelecionada.ativo}
                       disabled
                       color="primary"
                     />
@@ -496,9 +563,9 @@ const CidadeListMUI = () => {
               </Box>
             </Box>
 
-            {/* Linha 1: Código e Nome da Cidade */}
-            <Grid container spacing={2} alignItems="center" sx={{ mb: 3 }}>
-              <Grid item sx={{ width: '8%', minWidth: 100 }}>
+            {/* Linha 1: Código e Nome */}
+            <Grid container spacing={2} alignItems="center" sx={{ mb: 4 }}>
+              <Grid item sx={{ width: '15%', minWidth: 120 }}>
                 <TextField
                   fullWidth
                   size="small"
@@ -506,11 +573,9 @@ const CidadeListMUI = () => {
                   value={cidadeSelecionada.id || ''}
                   InputProps={{ readOnly: true }}
                   variant="outlined"
-                  disabled
                 />
               </Grid>
-
-              <Grid item sx={{ width: '65%' }}>
+              <Grid item sx={{ width: '85%' }}>
                 <TextField
                   fullWidth
                   size="small"
@@ -522,8 +587,8 @@ const CidadeListMUI = () => {
               </Grid>
             </Grid>
 
-            {/* Linha 2: Código IBGE e Estado */}
-            <Grid container spacing={2} alignItems="center" sx={{ mb: 4 }}>
+            {/* Linha 2: Código IBGE, DDD e Estado */}
+            <Grid container spacing={2} sx={{ mb: 4 }}>
               <Grid item sx={{ width: '25%' }}>
                 <TextField
                   fullWidth
@@ -534,20 +599,29 @@ const CidadeListMUI = () => {
                   variant="outlined"
                 />
               </Grid>
-
-              <Grid item sx={{ width: '50%' }}>
+              <Grid item sx={{ width: '15%' }}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="DDD"
+                  value={cidadeSelecionada.ddd || ''}
+                  InputProps={{ readOnly: true }}
+                  variant="outlined"
+                />
+              </Grid>
+              <Grid item sx={{ width: '60%' }}>
                 <TextField
                   fullWidth
                   size="small"
                   label="Estado"
-                  value={estados[cidadeSelecionada.estadoId] || 'Desconhecido'}
+                  value={cidadeSelecionada.estadoDescricao || getEstadoNome(cidadeSelecionada.estadoId)}
                   InputProps={{ readOnly: true }}
                   variant="outlined"
                 />
               </Grid>
             </Grid>
 
-            {/* Informações de cadastro */}
+            {/* Registros */}
             <Box
               sx={{
                 display: 'flex',
@@ -560,9 +634,9 @@ const CidadeListMUI = () => {
               }}
             >
               <Stack spacing={0.5} sx={{ flex: 1 }}>
-                {cidadeSelecionada.dataCadastro && (
+                {cidadeSelecionada.dataCriacao && (
                   <Typography variant="caption" color="text.secondary">
-                    Data de cadastro: {new Date(cidadeSelecionada.dataCadastro).toLocaleString('pt-BR')}
+                    Data de cadastro: {new Date(cidadeSelecionada.dataCriacao).toLocaleString('pt-BR')}
                   </Typography>
                 )}
                 {cidadeSelecionada.ultimaModificacao && (
@@ -585,17 +659,32 @@ const CidadeListMUI = () => {
           </Button>
           {cidadeSelecionada && (
             <Button
-              component={Link}
-              to={`/cidades/editar/${cidadeSelecionada.id}`}
+              onClick={() => {
+                handleEdit(cidadeSelecionada.id);
+                handleCloseModal();
+              }}
               variant="contained"
               startIcon={<EditIcon />}
-              onClick={handleCloseModal}
             >
               Editar
             </Button>
           )}
         </DialogActions>
       </Dialog>
+
+      <CidadeModalForm 
+        open={isFormModalOpen}
+        onClose={() => {
+          setIsFormModalOpen(false);
+          setSelectedCidadeId(null);
+        }}
+        onSaveSuccess={() => {
+          loadData();
+          setIsFormModalOpen(false);
+          setSelectedCidadeId(null);
+        }}
+        cidadeId={selectedCidadeId}
+      />
     </Box>
   );
 };
