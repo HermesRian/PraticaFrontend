@@ -108,10 +108,14 @@
       
       const qtdParcelasLimitada = qtdParcelas > 12 ? 12 : qtdParcelas;
       
+      // Calcula o percentual base e o resto
+      const percentualBase = Math.floor(100 / qtdParcelasLimitada);
+      const resto = 100 - (percentualBase * qtdParcelasLimitada);
+      
       const parcelasGeradas = Array.from({ length: qtdParcelasLimitada }, (_, index) => ({
         numeroParcela: index + 1,
         dias: '',
-        percentual: '',
+        percentual: index === 0 ? (percentualBase + resto).toString() : percentualBase.toString(),
         formaPagamentoId: '',
       }));
       
@@ -412,7 +416,7 @@
                 onChange={handleChange}
                 placeholder="Desconto"
                 variant="outlined"
-                inputProps={{ min: 0, step: 0.01 }}
+                inputProps={{ min: 0, max: 100, step: 0.01 }}
               />
             </Grid>
 

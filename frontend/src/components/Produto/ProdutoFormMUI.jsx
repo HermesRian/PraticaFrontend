@@ -24,7 +24,6 @@ import SearchIcon from '@mui/icons-material/Search';
 const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
   const [produto, setProduto] = useState({
     nome: '',
-    preco: '',
     quantidadeEstoque: '',
     descricao: '',
     codigo: '',
@@ -38,7 +37,6 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
     quantidadeMinima: '1',
     percentualLucro: '',
     observacoes: '',
-    situacao: '',
     dataCriacao: '',
     ultimaModificacao: '',
   });
@@ -100,13 +98,11 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
             ...data,
             marcaDescricao: marcaDescricao,
             unidadeMedidaDescricao: unidadeMedidaDescricao,
-            preco: data.preco ? data.preco.toString() : '',
             valorCompra: data.valorCompra ? data.valorCompra.toString() : '',
             valorVenda: data.valorVenda ? data.valorVenda.toString() : '',
             percentualLucro: data.percentualLucro ? data.percentualLucro.toString() : '',
             quantidadeEstoque: data.quantidadeEstoque ? data.quantidadeEstoque.toString() : '',
             quantidadeMinima: data.quantidadeMinima ? data.quantidadeMinima.toString() : '1',
-            situacao: data.situacao ? data.situacao.split('T')[0] : '',
             dataCriacao: data.dataCriacao || '',
             ultimaModificacao: data.ultimaModificacao || '',
           };
@@ -168,11 +164,6 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
       errors.codigo = 'Este campo é obrigatório';
     }
     
-    if (!produto.preco) {
-      errors.preco = 'Este campo é obrigatório';
-    } else if (isNaN(parseFloat(produto.preco)) || parseFloat(produto.preco) <= 0) {
-      errors.preco = 'Digite um valor válido maior que zero';
-    }
     
     if (!produto.quantidadeEstoque) {
       errors.quantidadeEstoque = 'Este campo é obrigatório';
@@ -203,7 +194,6 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
 
     const produtoFormatado = {
       ...produto,
-      preco: produto.preco ? parseFloat(produto.preco) : null,
       valorCompra: produto.valorCompra ? parseFloat(produto.valorCompra) : null,
       valorVenda: produto.valorVenda ? parseFloat(produto.valorVenda) : null,
       percentualLucro: produto.percentualLucro ? parseFloat(produto.percentualLucro) : null,
@@ -211,7 +201,6 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
       quantidadeMinima: produto.quantidadeMinima ? parseInt(produto.quantidadeMinima) : 1,
       marcaId: produto.marcaId || null,
       unidadeMedidaId: produto.unidadeMedidaId || null,
-      situacao: produto.situacao || null,
     };
 
     console.log('Dados enviados:', produtoFormatado);
@@ -361,7 +350,7 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
             />
           </Grid>
 
-          <Grid item sx={{ width: '47%' }}>
+          <Grid item sx={{ width: '30%' }}>
             <TextField
               fullWidth
               required
@@ -377,7 +366,7 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
             />
           </Grid>
 
-          <Grid item sx={{ width: '47%' }}>
+          <Grid item sx={{ width: '15%' }}>
             <TextField
               fullWidth
               required
@@ -396,25 +385,6 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
 
         {/* Linha 2: Preços */}
         <Grid container spacing={2} sx={{ mb: 4 }}>
-          <Grid item sx={{ width: '20%' }}>
-            <TextField
-              fullWidth
-              required
-              size="small"
-              label="Preço"
-              name="preco"
-              value={produto.preco}
-              onChange={e => handleNumericChange(e, 10, true)}
-              variant="outlined"
-              error={!!fieldErrors.preco}
-              helperText={fieldErrors.preco || ''}
-              InputProps={{
-                startAdornment: <InputAdornment position="start">R$</InputAdornment>,
-                inputMode: 'decimal'
-              }}
-            />
-          </Grid>
-
           <Grid item sx={{ width: '20%' }}>
             <TextField
               fullWidth
@@ -466,21 +436,6 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
                 endAdornment: <InputAdornment position="end">%</InputAdornment>,
                 inputMode: 'decimal'
               }}
-            />
-          </Grid>
-
-          <Grid item sx={{ width: '20%' }}>
-            <TextField
-              fullWidth
-              size="small"
-              label="Data Situação"
-              name="situacao"
-              type="date"
-              value={produto.situacao}
-              onChange={handleChange}
-              InputLabelProps={{ shrink: true }}
-              variant="outlined"
-              autoComplete="off"
             />
           </Grid>
         </Grid>

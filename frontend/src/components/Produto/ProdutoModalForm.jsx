@@ -1,7 +1,7 @@
 import React from 'react';
 import { Dialog, DialogContent, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import ProdutoForm from './ProdutoForm';
+import ProdutoFormMUI from './ProdutoFormMUI';
 
 const ProdutoModalForm = ({ open, onClose, onSaveSuccess, produtoId }) => {
   return (
@@ -32,7 +32,7 @@ const ProdutoModalForm = ({ open, onClose, onSaveSuccess, produtoId }) => {
         <CloseIcon />
       </IconButton>
       <DialogContent sx={{ p: 0 }}>
-        <ProdutoForm 
+        <ProdutoFormMUI 
           id={produtoId} 
           isModal={true} 
           onClose={onSaveSuccess || onClose} 

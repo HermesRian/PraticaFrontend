@@ -154,9 +154,8 @@ const ProdutoListMUI = () => {
         const produtoAtualizado = {
           ...produto,
           ativo: true,
-          preco: produto.preco ? parseFloat(produto.preco) : null,
-          valorCompra: produto.valorCompra ? parseFloat(produto.valorCompra) : null,
           valorVenda: produto.valorVenda ? parseFloat(produto.valorVenda) : null,
+          valorCompra: produto.valorCompra ? parseFloat(produto.valorCompra) : null,
           percentualLucro: produto.percentualLucro ? parseFloat(produto.percentualLucro) : null,
         };
 
@@ -395,9 +394,9 @@ const ProdutoListMUI = () => {
                 </TableCell>
                 <TableCell>
                   <TableSortLabel
-                    active={sortConfig.key === 'preco'}
+                    active={sortConfig.key === 'valorVenda'}
                     direction={sortConfig.direction}
-                    onClick={() => handleSort('preco')}
+                    onClick={() => handleSort('valorVenda')}
                     sx={{ fontWeight: 600 }}
                   >
                     Preço
@@ -474,7 +473,7 @@ const ProdutoListMUI = () => {
                   </TableCell>
                   <TableCell>
                     <Typography variant="body2" fontWeight={500} color="success.main">
-                      {formatCurrency(produto.preco)}
+                      {formatCurrency(produto.valorVenda)}
                     </Typography>
                   </TableCell>
                   <TableCell>
@@ -652,7 +651,7 @@ const ProdutoListMUI = () => {
                   fullWidth
                   size="small"
                   label="Preço"
-                  value={formatCurrency(produtoSelecionado.preco)}
+                  value={formatCurrency(produtoSelecionado.valorVenda)}
                   InputProps={{ readOnly: true }}
                   variant="outlined"
                 />
