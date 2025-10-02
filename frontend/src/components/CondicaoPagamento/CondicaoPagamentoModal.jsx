@@ -39,6 +39,7 @@ const CondicaoPagamentoModal = ({ onClose, onCondicaoSelecionada }) => {
         return response.json();
       })
       .then((data) => {
+        console.log('Dados das condições de pagamento:', data);
         setCondicoesPagamento(data);
         setLoading(false);
       })
@@ -53,10 +54,15 @@ const CondicaoPagamentoModal = ({ onClose, onCondicaoSelecionada }) => {
   };
 
   const condicoesFiltradas = condicoesPagamento.filter((condicao) => {
+    if (!condicao) return false;
+    
     const numParcelas = condicao.parcelasCondicao?.length || condicao.parcelas?.length || 0;
+    const descricao = condicao.descricao || '';
+    const dias = condicao.dias || '';
+    
     return (
-      condicao.descricao.toLowerCase().includes(filtro) ||
-      condicao.dias?.toString().includes(filtro) ||
+      descricao.toLowerCase().includes(filtro) ||
+      dias.toString().includes(filtro) ||
       numParcelas.toString().includes(filtro)
     );
   });
@@ -155,12 +161,12 @@ const CondicaoPagamentoModal = ({ onClose, onCondicaoSelecionada }) => {
                     >
                       <TableCell>
                         <Typography variant="body2" fontWeight={500}>
-                          {condicao.descricao}
+                          {condicao.descricao || 'Sem descrição'}
                         </Typography>
                       </TableCell>
                       <TableCell sx={{ textAlign: 'center' }}>
                         <Typography variant="body2">
-                          {condicao.dias}
+                          {condicao.dias || 0}
                         </Typography>
                       </TableCell>
                       <TableCell sx={{ textAlign: 'center' }}>
