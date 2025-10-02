@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import FornecedorModalForm from './FornecedorModalForm';
 import {
   Box,
   Typography,
@@ -58,6 +59,8 @@ const FornecedorListMUI = () => {
   const [error, setError] = useState('');
   const [mostrarDocumentoCompleto, setMostrarDocumentoCompleto] = useState(false);
   const [filtroStatus, setFiltroStatus] = useState('todos'); // 'todos', 'ativos', 'inativos'
+  const [modalOpen, setModalOpen] = useState(false);
+  const [fornecedorParaEditar, setFornecedorParaEditar] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -216,6 +219,26 @@ const FornecedorListMUI = () => {
     setIsModalOpen(false);
   };
 
+  const handleOpenFormModal = (fornecedor = null) => {
+    setFornecedorParaEditar(fornecedor);
+    setModalOpen(true);
+  };
+
+  const handleCloseFormModal = () => {
+    setFornecedorParaEditar(null);
+    setModalOpen(false);
+  };
+
+  const handleSaveSuccess = () => {
+    // Recarregar a lista de fornecedores
+    fetch('http://localhost:8080/fornecedores')
+      .then(res => res.json())
+      .then(data => setFornecedores(data))
+      .catch(error => console.error('Erro ao recarregar fornecedores:', error));
+    
+    handleCloseFormModal();
+  };
+
   const fornecedoresFiltrados = fornecedores.filter(fornecedor => {
     // Filtro por texto (código, razão social, CPF/CNPJ, email, cidade)
     const matchesText = fornecedor.id?.toString().includes(filtro) ||
@@ -350,10 +373,9 @@ const FornecedorListMUI = () => {
             />
           </Box>
           <Button
-            component={Link}
-            to="/fornecedores/cadastrar"
             variant="contained"
             startIcon={<AddIcon />}
+            onClick={() => handleOpenFormModal()}
             sx={{ 
               bgcolor: '#1976d2',
               '&:hover': { bgcolor: '#1565c0' },
@@ -540,8 +562,7 @@ const FornecedorListMUI = () => {
                       <Tooltip title="Editar">
                         <IconButton
                           size="small"
-                          component={Link}
-                          to={`/fornecedores/editar/${fornecedor.id}`}
+                          onClick={() => handleOpenFormModal(fornecedor)}
                           sx={{ color: '#28a745' }}
                         >
                           <EditIcon fontSize="small" />
@@ -927,17 +948,26 @@ const FornecedorListMUI = () => {
           </Button>
           {fornecedorSelecionado && (
             <Button
-              component={Link}
-              to={`/fornecedores/editar/${fornecedorSelecionado.id}`}
               variant="contained"
               startIcon={<EditIcon />}
-              onClick={handleCloseModal}
+              onClick={() => {
+                handleCloseModal();
+                handleOpenFormModal(fornecedorSelecionado);
+              }}
             >
               Editar
             </Button>
           )}
         </DialogActions>
       </Dialog>
+
+      {/* Modal de Formulário */}
+      <FornecedorModalForm
+        open={modalOpen}
+        onClose={handleCloseFormModal}
+        onSaveSuccess={handleSaveSuccess}
+        fornecedorId={fornecedorParaEditar?.id}
+      />
     </Box>
   );
 };

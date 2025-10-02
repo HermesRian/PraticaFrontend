@@ -28,7 +28,9 @@ const CondicaoPagamentoModal = ({ onClose, onCondicaoSelecionada }) => {
   const [condicoesPagamento, setCondicoesPagamento] = useState([]);
   const [filtro, setFiltro] = useState('');
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);  useEffect(() => {
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
     fetch('http://localhost:8080/condicoes-pagamento')
       .then((response) => {
         if (!response.ok) {
@@ -49,6 +51,7 @@ const CondicaoPagamentoModal = ({ onClose, onCondicaoSelecionada }) => {
   const handleFiltroChange = (e) => {
     setFiltro(e.target.value.toLowerCase());
   };
+
   const condicoesFiltradas = condicoesPagamento.filter((condicao) => {
     const numParcelas = condicao.parcelasCondicao?.length || condicao.parcelas?.length || 0;
     return (
@@ -85,7 +88,8 @@ const CondicaoPagamentoModal = ({ onClose, onCondicaoSelecionada }) => {
 
       <DialogContent sx={{ p: 3 }}>
         {/* Campo de pesquisa */}
-        <Box sx={{ mb: 3 }}>          <TextField
+        <Box sx={{ mb: 3 }}>
+          <TextField
             variant="outlined"
             placeholder="Filtrar por descrição, dias ou número de parcelas..."
             value={filtro}
@@ -158,7 +162,8 @@ const CondicaoPagamentoModal = ({ onClose, onCondicaoSelecionada }) => {
                         <Typography variant="body2">
                           {condicao.dias}
                         </Typography>
-                      </TableCell>                      <TableCell sx={{ textAlign: 'center' }}>
+                      </TableCell>
+                      <TableCell sx={{ textAlign: 'center' }}>
                         <Chip
                           label={condicao.parcelasCondicao?.length || condicao.parcelas?.length || 0}
                           size="small"

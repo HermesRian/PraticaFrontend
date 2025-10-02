@@ -68,7 +68,7 @@ const converterNumeroParaEstadoCivil = (numero) => {
   }
 };
 
-const FornecedorForm = () => {
+const FornecedorForm = ({ id: propId, isModal = false, onClose }) => {
   const [fornecedor, setFornecedor] = useState({
     razaoSocial: '',
     cpfCnpj: '',
@@ -107,7 +107,8 @@ const FornecedorForm = () => {
   const [fieldErrors, setFieldErrors] = useState({});
   const [showRequiredErrors, setShowRequiredErrors] = useState(false);
   const navigate = useNavigate();
-  const { id } = useParams();
+  const { id: urlId } = useParams();
+  const id = propId || urlId;
 
   useEffect(() => {
     Promise.all([
@@ -475,7 +476,11 @@ const FornecedorForm = () => {
         return response.json();
       })
       .then(() => {
-        navigate('/fornecedores');
+        if (isModal) {
+          onClose();
+        } else {
+          navigate('/fornecedores');
+        }
       })
       .catch((error) => {
         console.error('Erro capturado:', error);
@@ -486,7 +491,11 @@ const FornecedorForm = () => {
   };
 
   const handleCancel = () => {
-    navigate('/fornecedores');
+    if (isModal) {
+      onClose();
+    } else {
+      navigate('/fornecedores');
+    }
   };
 
   const handleOpenCidadeModal = () => {
@@ -538,23 +547,23 @@ const FornecedorForm = () => {
 
   return (
     <Box sx={{ 
-      padding: { xs: 2, md: 3 }, 
+      padding: isModal ? 0 : { xs: 2, md: 3 }, 
       bgcolor: '#f8f9fa', 
-      minHeight: '100vh',
-      paddingBottom: 0.5
+      minHeight: isModal ? 'auto' : '100vh',
+      paddingBottom: isModal ? 0 : 0.5
     }}>
       <Paper 
         component="form"
         onSubmit={handleSubmit}
-        elevation={10}
+        elevation={isModal ? 0 : 10}
         sx={{
-          width: '95%',
-          maxWidth: 1390,
-          minHeight: '70vh',
-          mx: 'auto',
+          width: isModal ? '100%' : '95%',
+          maxWidth: isModal ? 'none' : 1390,
+          minHeight: isModal ? 'auto' : '70vh',
+          mx: isModal ? 0 : 'auto',
           p: { xs: 2, md: 3, lg: 4 },
           pb: 0,
-          borderRadius: 2,
+          borderRadius: isModal ? 0 : 2,
           overflow: 'hidden',
           position: 'relative',
           '& .MuiFormLabel-root': {
