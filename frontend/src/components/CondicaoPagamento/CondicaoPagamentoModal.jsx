@@ -39,7 +39,6 @@ const CondicaoPagamentoModal = ({ onClose, onCondicaoSelecionada }) => {
         return response.json();
       })
       .then((data) => {
-        console.log('Dados das condições de pagamento:', data);
         setCondicoesPagamento(data);
         setLoading(false);
       })
@@ -57,11 +56,11 @@ const CondicaoPagamentoModal = ({ onClose, onCondicaoSelecionada }) => {
     if (!condicao) return false;
     
     const numParcelas = condicao.parcelasCondicao?.length || condicao.parcelas?.length || 0;
-    const descricao = condicao.descricao || '';
+    const nome = condicao.nome || condicao.descricao || '';
     const dias = condicao.dias || '';
     
     return (
-      descricao.toLowerCase().includes(filtro) ||
+      nome.toLowerCase().includes(filtro) ||
       dias.toString().includes(filtro) ||
       numParcelas.toString().includes(filtro)
     );
@@ -161,7 +160,7 @@ const CondicaoPagamentoModal = ({ onClose, onCondicaoSelecionada }) => {
                     >
                       <TableCell>
                         <Typography variant="body2" fontWeight={500}>
-                          {condicao.descricao || 'Sem descrição'}
+                          {condicao.nome || condicao.descricao || 'Sem descrição'}
                         </Typography>
                       </TableCell>
                       <TableCell sx={{ textAlign: 'center' }}>

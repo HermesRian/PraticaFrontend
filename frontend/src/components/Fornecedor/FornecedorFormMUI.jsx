@@ -185,9 +185,9 @@ const FornecedorForm = ({ id: propId, isModal = false, onClose }) => {
               
               if (condicaoResponse.ok) {
                 const condicaoData = await condicaoResponse.json();
-                condicaoPagamentoDescricao = condicaoData.descricao || '';
+                condicaoPagamentoDescricao = condicaoData.nome || condicaoData.descricao || '';
                 console.log('Dados da condição de pagamento:', condicaoData);
-                console.log('Descrição da condição encontrada:', condicaoPagamentoDescricao);
+                console.log('Nome da condição encontrada:', condicaoPagamentoDescricao);
               } else {
                 console.error('Erro ao buscar condição de pagamento, status:', condicaoResponse.status);
               }
@@ -537,10 +537,12 @@ const FornecedorForm = ({ id: propId, isModal = false, onClose }) => {
   };
 
   const handleCondicaoPagamentoSelecionada = (condicao) => {
+    console.log('Condição selecionada:', condicao);
+    console.log('ID:', condicao.id, 'Nome:', condicao.nome);
     setFornecedor({
       ...fornecedor,
       condicaoPagamentoId: condicao.id,
-      condicaoPagamentoDescricao: condicao.descricao,
+      condicaoPagamentoDescricao: condicao.nome,
     });
     setIsCondicaoPagamentoModalOpen(false);
   };

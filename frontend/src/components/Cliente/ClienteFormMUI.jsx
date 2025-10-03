@@ -181,9 +181,9 @@ const ClienteForm = ({ id: propId, isModal = false, onClose }) => {
               let condicaoResponse = await fetch(`http://localhost:8080/condicoes-pagamento/${data.condicaoPagamentoId}`);              
               if (condicaoResponse.ok) {
                 const condicaoData = await condicaoResponse.json();
-                condicaoPagamentoDescricao = condicaoData.descricao || '';
+                condicaoPagamentoDescricao = condicaoData.nome || condicaoData.descricao || '';
                 console.log('Dados da condição de pagamento:', condicaoData);
-                console.log('Descrição da condição encontrada:', condicaoPagamentoDescricao);
+                console.log('Nome da condição encontrada:', condicaoPagamentoDescricao);
               } else {
                 console.error('Erro ao buscar condição de pagamento, status:', condicaoResponse.status);
               }
@@ -525,7 +525,7 @@ const ClienteForm = ({ id: propId, isModal = false, onClose }) => {
     setCliente({
       ...cliente,
       condicaoPagamentoId: condicao.id,
-      condicaoPagamentoDescricao: condicao.descricao,
+      condicaoPagamentoDescricao: condicao.nome || condicao.descricao || '',
     });
     setIsCondicaoPagamentoModalOpen(false);
   };  return (    <Box sx={{ 
