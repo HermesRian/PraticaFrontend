@@ -114,6 +114,18 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
     }
   }, [id]);
 
+  // Função para calcular lucro automaticamente
+  const calcularLucro = (valorCompra, valorVenda) => {
+    const compra = parseFloat(valorCompra) || 0;
+    const venda = parseFloat(valorVenda) || 0;
+    
+    if (compra > 0 && venda > 0) {
+      const lucro = ((venda - compra) / compra) * 100;
+      return lucro.toFixed(2);
+    }
+    return '';
+  };
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     
@@ -146,7 +158,16 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
       });
     }
     
-    setProduto({ ...produto, [name]: value });
+    const updatedProduto = { ...produto, [name]: value };
+    
+    // Calcular lucro automaticamente se alterou valor de compra ou venda
+    if (name === 'valorCompra' || name === 'valorVenda') {
+      const valorCompra = name === 'valorCompra' ? value : produto.valorCompra;
+      const valorVenda = name === 'valorVenda' ? value : produto.valorVenda;
+      updatedProduto.percentualLucro = calcularLucro(valorCompra, valorVenda);
+    }
+    
+    setProduto(updatedProduto);
   };
 
   const handleSubmit = (e) => {
@@ -226,7 +247,7 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
               errorObj = JSON.parse(text);
               error = errorObj.erro || errorObj.message || 'Erro desconhecido ao salvar produto';
               console.error('Resposta do servidor:', errorObj);
-            } catch (e) {
+            } catch {
               error = text || 'Erro ao salvar produto';
               console.error('Resposta do servidor (texto):', text);
             }
@@ -335,9 +356,9 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
           </Box>
         </Box>
 
-        {/* Linha 1: Código, Nome, Código Produto */}
+        {/* Linha 1: Código, Nome do Produto, Descrição, Marca, Código do Produto */}
         <Grid container spacing={2} alignItems="center" sx={{ mb: 4 }}>
-          <Grid item sx={{ width: '6%', minWidth: 80 }}>
+          <Grid item xs={1}>
             <TextField
               fullWidth
               size="small"
@@ -350,7 +371,7 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
             />
           </Grid>
 
-          <Grid item sx={{ width: '30%' }}>
+          <Grid item xs={3}>
             <TextField
               fullWidth
               required
@@ -366,114 +387,20 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
             />
           </Grid>
 
-          <Grid item sx={{ width: '15%' }}>
+          <Grid item xs={3}>
             <TextField
               fullWidth
-              required
               size="small"
-              label="Código do Produto"
-              name="codigo"
-              value={produto.codigo}
+              label="Descrição"
+              name="descricao"
+              value={produto.descricao}
               onChange={handleChange}
-              placeholder="Código único do produto"
+              placeholder="Descrição do produto"
               variant="outlined"
-              error={!!fieldErrors.codigo}
-              helperText={fieldErrors.codigo || ''}
-            />
-          </Grid>
-        </Grid>
-
-        {/* Linha 2: Preços */}
-        <Grid container spacing={2} sx={{ mb: 4 }}>
-          <Grid item sx={{ width: '20%' }}>
-            <TextField
-              fullWidth
-              size="small"
-              label="Valor de Compra"
-              name="valorCompra"
-              value={produto.valorCompra}
-              onChange={e => handleNumericChange(e, 10, true)}
-              variant="outlined"
-              error={!!fieldErrors.valorCompra}
-              helperText={fieldErrors.valorCompra || ''}
-              InputProps={{
-                startAdornment: <InputAdornment position="start">R$</InputAdornment>,
-                inputMode: 'decimal'
-              }}
             />
           </Grid>
 
-          <Grid item sx={{ width: '20%' }}>
-            <TextField
-              fullWidth
-              size="small"
-              label="Valor de Venda"
-              name="valorVenda"
-              value={produto.valorVenda}
-              onChange={e => handleNumericChange(e, 10, true)}
-              variant="outlined"
-              error={!!fieldErrors.valorVenda}
-              helperText={fieldErrors.valorVenda || ''}
-              InputProps={{
-                startAdornment: <InputAdornment position="start">R$</InputAdornment>,
-                inputMode: 'decimal'
-              }}
-            />
-          </Grid>
-
-          <Grid item sx={{ width: '20%' }}>
-            <TextField
-              fullWidth
-              size="small"
-              label="% Lucro"
-              name="percentualLucro"
-              value={produto.percentualLucro}
-              onChange={e => handleNumericChange(e, 6, true)}
-              variant="outlined"
-              error={!!fieldErrors.percentualLucro}
-              helperText={fieldErrors.percentualLucro || ''}
-              InputProps={{
-                endAdornment: <InputAdornment position="end">%</InputAdornment>,
-                inputMode: 'decimal'
-              }}
-            />
-          </Grid>
-        </Grid>
-
-        {/* Linha 3: Estoque */}
-        <Grid container spacing={2} sx={{ mb: 4 }}>
-          <Grid item sx={{ width: '25%' }}>
-            <TextField
-              fullWidth
-              required
-              size="small"
-              label="Quantidade em Estoque"
-              name="quantidadeEstoque"
-              value={produto.quantidadeEstoque}
-              onChange={e => handleNumericChange(e, 10)}
-              variant="outlined"
-              error={!!fieldErrors.quantidadeEstoque}
-              helperText={fieldErrors.quantidadeEstoque || ''}
-              inputProps={{ inputMode: 'numeric' }}
-            />
-          </Grid>
-
-          <Grid item sx={{ width: '25%' }}>
-            <TextField
-              fullWidth
-              size="small"
-              label="Quantidade Mínima"
-              name="quantidadeMinima"
-              value={produto.quantidadeMinima}
-              onChange={e => handleNumericChange(e, 10)}
-              variant="outlined"
-              error={!!fieldErrors.quantidadeMinima}
-              helperText={fieldErrors.quantidadeMinima || ''}
-              inputProps={{ inputMode: 'numeric' }}
-            />
-          </Grid>
-
-          <Grid item sx={{ width: '25%' }}>
+          <Grid item sx={{ width: '10%', minWidth: 80 }}>
             <FormControl fullWidth size="small">
               <InputLabel>Marca</InputLabel>
               <Select
@@ -492,7 +419,102 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
             </FormControl>
           </Grid>
 
-          <Grid item sx={{ width: '25%' }}>
+          <Grid item xs={2.5}>
+            <TextField
+              fullWidth
+              required
+              size="small"
+              label="Código do Produto"
+              name="codigo"
+              value={produto.codigo}
+              onChange={handleChange}
+              placeholder="Código único"
+              variant="outlined"
+              error={!!fieldErrors.codigo}
+              helperText={fieldErrors.codigo || ''}
+            />
+          </Grid>
+        </Grid>
+
+        {/* Linha 2: Valor de Compra, Valor de Venda, Lucro */}
+        <Grid container spacing={2} sx={{ mb: 4 }}>
+          <Grid item xs={4}>
+            <TextField
+              fullWidth
+              size="small"
+              label="Valor de Compra"
+              name="valorCompra"
+              value={produto.valorCompra}
+              onChange={e => handleNumericChange(e, 10, true)}
+              variant="outlined"
+              error={!!fieldErrors.valorCompra}
+              helperText={fieldErrors.valorCompra || ''}
+              InputProps={{
+                startAdornment: <InputAdornment position="start">R$</InputAdornment>,
+                inputMode: 'decimal'
+              }}
+            />
+          </Grid>
+
+          <Grid item xs={4}>
+            <TextField
+              fullWidth
+              size="small"
+              label="Valor de Venda"
+              name="valorVenda"
+              value={produto.valorVenda}
+              onChange={e => handleNumericChange(e, 10, true)}
+              variant="outlined"
+              error={!!fieldErrors.valorVenda}
+              helperText={fieldErrors.valorVenda || ''}
+              InputProps={{
+                startAdornment: <InputAdornment position="start">R$</InputAdornment>,
+                inputMode: 'decimal'
+              }}
+            />
+          </Grid>
+
+          <Grid item xs={4}>
+            <TextField
+              fullWidth
+              size="small"
+              label="Lucro"
+              name="percentualLucro"
+              value={produto.percentualLucro}
+              variant="outlined"
+              InputProps={{
+                readOnly: true,
+                endAdornment: <InputAdornment position="end">%</InputAdornment>
+              }}
+              sx={{
+                '& .MuiInputBase-input': {
+                  backgroundColor: '#f5f5f5',
+                  color: '#666'
+                }
+              }}
+            />
+          </Grid>
+        </Grid>
+
+        {/* Linha 3: Quantidade em Estoque, Unidade de Medida, Quantidade Mínima */}
+        <Grid container spacing={2} sx={{ mb: 4 }}>
+          <Grid item xs={4}>
+            <TextField
+              fullWidth
+              required
+              size="small"
+              label="Quantidade em Estoque"
+              name="quantidadeEstoque"
+              value={produto.quantidadeEstoque}
+              onChange={e => handleNumericChange(e, 10)}
+              variant="outlined"
+              error={!!fieldErrors.quantidadeEstoque}
+              helperText={fieldErrors.quantidadeEstoque || ''}
+              inputProps={{ inputMode: 'numeric' }}
+            />
+          </Grid>
+
+          <Grid item sx={{ width: '16%', minWidth: 80 }}>
             <FormControl fullWidth size="small">
               <InputLabel>Unidade de Medida</InputLabel>
               <Select
@@ -510,33 +532,30 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
               </Select>
             </FormControl>
           </Grid>
-        </Grid>
 
-        {/* Linha 4: Descrição */}
-        <Grid container spacing={2} sx={{ mb: 4 }}>
-          <Grid item sx={{ width: '100%' }}>
+          <Grid item xs={4}>
             <TextField
               fullWidth
-              multiline
-              rows={2}
               size="small"
-              label="Descrição"
-              name="descricao"
-              value={produto.descricao}
-              onChange={handleChange}
-              placeholder="Descrição detalhada do produto"
+              label="Quantidade Mínima"
+              name="quantidadeMinima"
+              value={produto.quantidadeMinima}
+              onChange={e => handleNumericChange(e, 10)}
               variant="outlined"
+              error={!!fieldErrors.quantidadeMinima}
+              helperText={fieldErrors.quantidadeMinima || ''}
+              inputProps={{ inputMode: 'numeric' }}
             />
           </Grid>
         </Grid>
 
-        {/* Linha 5: Observações */}
+        {/* Linha 4: Observações */}
         <Grid container spacing={2} sx={{ mb: 2 }}>
-          <Grid item sx={{ width: '100%' }}>
+          <Grid item sx={{ width: '100%', minWidth: 80 }}>
             <TextField
               fullWidth
               multiline
-              rows={2}
+              rows={3}
               size="small"
               label="Observações"
               name="observacoes"
