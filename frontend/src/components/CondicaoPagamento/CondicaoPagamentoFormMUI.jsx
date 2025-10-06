@@ -74,7 +74,9 @@
                 numeroParcela: parcela.numeroParcela || '',
                 dias: parcela.dias || '',
                 percentual: parcela.percentual || '',
-                formaPagamentoId: parcela.formaPagamento?.id || '',
+                formaPagamentoId: parcela.formaPagamentoId || parcela.formaPagamento?.id || '',
+                dataVencimento: parcela.dataVencimento || '',
+                situacao: parcela.situacao || 'A',
               }))
             };
             
@@ -117,6 +119,8 @@
         dias: '',
         percentual: index === 0 ? (percentualBase + resto).toString() : percentualBase.toString(),
         formaPagamentoId: '',
+        dataVencimento: '',
+        situacao: 'A',
       }));
       
       setCondicaoPagamento({ ...condicaoPagamento, parcelasCondicao: parcelasGeradas });
@@ -131,6 +135,8 @@
         dias: '',
         percentual: '',
         formaPagamentoId: '',
+        dataVencimento: '',
+        situacao: 'A',
       };
       
       setCondicaoPagamento({ 
@@ -212,7 +218,10 @@
           numeroParcela: parseInt(parcela.numeroParcela, 10) || 0,
           dias: parseInt(parcela.dias, 10) || 0,
           percentual: parseFloat(parcela.percentual) || 0,
-          formaPagamento: { id: parseInt(parcela.formaPagamentoId, 10) || null },
+          condicaoPagamentoId: id ? parseInt(id, 10) : null,
+          formaPagamentoId: parseInt(parcela.formaPagamentoId, 10) || null,
+          dataVencimento: parcela.dataVencimento || null,
+          situacao: parcela.situacao || 'A',
         })),
       };
 
@@ -508,7 +517,7 @@
           >
             {condicaoPagamento.parcelasCondicao.map((parcela, index) => (
               <Grid container spacing={2} alignItems="center" sx={{ mb: 2 }} key={index}>
-                <Grid item sx={{ width: '5%' }}>
+                <Grid item sx={{ width: '10%' }}>
                   <TextField
                     fullWidth
                     size="small"
@@ -520,7 +529,7 @@
                     inputProps={{ min: 1 }}
                   />
                 </Grid>
-                <Grid item xs={6} md={2}>
+                <Grid item xs={1.5}>
                   <TextField
                     fullWidth
                     size="small"
@@ -532,7 +541,7 @@
                     inputProps={{ min: 0 }}
                   />
                 </Grid>
-            <Grid item sx={{ width: '10%' }}>
+                <Grid item xs={1.5}>
                   <TextField
                     fullWidth
                     size="small"
@@ -544,7 +553,7 @@
                     inputProps={{ min: 0, max: 100, step: 0.01 }}
                   />
                 </Grid>
-                <Grid item sx={{ width: '30%' }}>
+                <Grid item sx={{ width: '20%' }}>
                   <FormControl fullWidth size="small">
                     <InputLabel>Forma de Pagamento</InputLabel>
                     <Select
@@ -558,6 +567,35 @@
                           {forma.nome}
                         </MenuItem>
                       ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={2.5}>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    label="Data Vencimento"
+                    type="date"
+                    value={parcela.dataVencimento}
+                    onChange={(e) => handleParcelaChange(index, 'dataVencimento', e.target.value)}
+                    variant="outlined"
+                    InputLabelProps={{
+                      shrink: true,
+                    }}
+                  />
+                </Grid>
+                <Grid item sx={{ width: '10%' }}>
+                  <FormControl fullWidth size="small">
+                    <InputLabel>Situação</InputLabel>
+                    <Select
+                      value={parcela.situacao}
+                      onChange={(e) => handleParcelaChange(index, 'situacao', e.target.value)}
+                      label="Situação"
+                    >
+                      <MenuItem value="A">Ativa</MenuItem>
+                      <MenuItem value="I">Inativa</MenuItem>
+                      <MenuItem value="P">Paga</MenuItem>
+                      <MenuItem value="V">Vencida</MenuItem>
                     </Select>
                   </FormControl>
                 </Grid>
