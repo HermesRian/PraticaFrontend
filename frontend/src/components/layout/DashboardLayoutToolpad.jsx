@@ -25,6 +25,7 @@
     LocalMall as LocalMallIcon,
     Category as CategoryIcon,
     Sell as SellIcon,
+    Receipt as ReceiptIcon,
   } from '@mui/icons-material';
 
   const NAVIGATION = [
@@ -93,6 +94,11 @@
       segment: 'condicoes-pagamento',
       title: 'Condições de Pagamento',
       icon: <AccountBalanceIcon />,
+    },
+    {
+      segment: 'notas-entrada',
+      title: 'Notas de Entrada',
+      icon: <ReceiptIcon />,
     },
     {
       kind: 'divider',

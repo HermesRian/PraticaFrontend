@@ -41,6 +41,9 @@ import EstadoFormModal from '../Estado/EstadoFormModal';
 import CategoriaListMUI from '../Categoria/CategoriaListMUI';
 import CategoriaFormMUI from '../Categoria/CategoriaFormMUI';
 
+import NotaEntradaListMUI from '../NotaEntrada/NotaEntradaListMUI';
+import NotaEntradaFormMUI from '../NotaEntrada/NotaEntradaFormMUI';
+
 const MainContent = () => {
   return (
     <main>      
@@ -92,6 +95,11 @@ const MainContent = () => {
         <Route path="/categorias" element={<CategoriaListMUI />} />
         <Route path="/categorias/cadastrar" element={<CategoriaFormMUI />} />
         <Route path="/categorias/editar/:id" element={<CategoriaFormMUI />} />
+
+        {/* Notas de Entrada */}
+        <Route path="/notas-entrada" element={<NotaEntradaListMUI />} />
+        <Route path="/notas-entrada/cadastrar" element={<NotaEntradaFormMUI />} />
+        <Route path="/notas-entrada/editar/:id" element={<NotaEntradaFormMUI />} />
       </Routes>
     </main>
   );
