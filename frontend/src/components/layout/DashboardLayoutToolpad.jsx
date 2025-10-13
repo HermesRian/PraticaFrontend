@@ -8,6 +8,7 @@
   import {
     People as PeopleIcon,
     Business as BusinessIcon,
+    LocalShipping as LocalShippingIcon,
     Work as WorkIcon,
     Payment as PaymentIcon,
     AccountBalance as AccountBalanceIcon,
@@ -48,6 +49,11 @@
       segment: 'fornecedores',
       title: 'Fornecedores',
       icon: <BusinessIcon />,
+    },
+    {
+      segment: 'transportadoras',
+      title: 'Transportadoras',
+      icon: <LocalShippingIcon />,
     },
     {
       segment: 'funcionarios',

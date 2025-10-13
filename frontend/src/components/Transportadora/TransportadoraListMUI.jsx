@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import TransportadoraModalForm from './TransportadoraModalForm';
 import {
   Box,
   Typography,
@@ -19,13 +19,11 @@ import {
   DialogContent,
   DialogActions,
   Grid,
-  Divider,
   TextField,
   InputAdornment,
   Tooltip,
   Alert,
   Avatar,
-  Stack,
   Switch,
   FormControlLabel,
   Select,
@@ -47,34 +45,39 @@ import {
 } from '@mui/icons-material';
 import { formatCPF, formatCNPJ, formatCEP, formatTelefone, censurarCPF, censurarCNPJ } from '../../utils/documentValidation';
 
-const FornecedorListMUI = () => {
-  const [fornecedores, setFornecedores] = useState([]);
+const TransportadoraListMUI = () => {
+  const [transportadoras, setTransportadoras] = useState([]);
   const [cidades, setCidades] = useState([]);
-  const [fornecedorSelecionado, setFornecedorSelecionado] = useState(null);
+  const [transportadoraSelecionada, setTransportadoraSelecionada] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [sortConfig, setSortConfig] = useState({ key: 'nome', direction: 'asc' });
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+  const [selectedTransportadoraId, setSelectedTransportadoraId] = useState(null);
+  const [sortConfig, setSortConfig] = useState({ key: 'razaoSocial', direction: 'asc' });
   const [filtro, setFiltro] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [mostrarDocumentoCompleto, setMostrarDocumentoCompleto] = useState(false);
-  const [filtroStatus, setFiltroStatus] = useState('todos'); // 'todos', 'ativos', 'inativos'
-  const navigate = useNavigate();
+  const [filtroStatus, setFiltroStatus] = useState('todos');
 
-  useEffect(() => {
-    Promise.all([
-      fetch('http://localhost:8080/fornecedores').then(res => res.json()),
-      fetch('http://localhost:8080/cidades').then(res => res.json())
-    ])
-    .then(([fornecedoresData, cidadesData]) => {
-      setFornecedores(fornecedoresData);
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const [transportadorasData, cidadesData] = await Promise.all([
+        fetch('http://localhost:8080/transportadoras').then(res => res.json()),
+        fetch('http://localhost:8080/cidades').then(res => res.json())
+      ]);
+      setTransportadoras(transportadorasData);
       setCidades(cidadesData);
-      setLoading(false);
-    })
-    .catch((error) => {
+    } catch (error) {
       console.error('Erro ao buscar dados:', error);
       setError('Erro ao carregar dados');
+    } finally {
       setLoading(false);
-    });
+    }
+  };
+
+  useEffect(() => {
+    loadData();
   }, []);
 
   const getCidadeNome = (cidadeId) => {
@@ -89,7 +92,7 @@ const FornecedorListMUI = () => {
     }
     setSortConfig({ key, direction });
 
-    const sortedFornecedores = [...fornecedores].sort((a, b) => {
+    const sortedTransportadoras = [...transportadoras].sort((a, b) => {
       let aValue = a[key];
       let bValue = b[key];
 
@@ -116,115 +119,120 @@ const FornecedorListMUI = () => {
       }
       return 0;
     });
-    setFornecedores(sortedFornecedores);
+    setTransportadoras(sortedTransportadoras);
   };
 
   const handleDelete = (id) => {
-    const fornecedor = fornecedores.find(f => f.id === id);
-    const isAtivo = fornecedor?.ativo;
-    const acao = isAtivo ? 'excluir' : 'ativar';
+    const transportadora = transportadoras.find(t => t.id === id);
+    const isAtivo = transportadora?.ativo;
+    const acao = isAtivo ? 'inativar' : 'ativar';
     const mensagem = isAtivo ? 
-      'Tem certeza que deseja excluir este fornecedor?' : 
-      'Tem certeza que deseja ativar este fornecedor?';
+      'Tem certeza que deseja inativar esta transportadora?' : 
+      'Tem certeza que deseja ativar esta transportadora?';
     
     if (window.confirm(mensagem)) {
-      fetch(`http://localhost:8080/fornecedores/${id}`, {
-        method: 'DELETE',
-      })
-        .then(() => {
-          // Atualiza o status do fornecedor na lista local
-          setFornecedores(fornecedores.map(fornecedor => 
-            fornecedor.id === id ? { ...fornecedor, ativo: !fornecedor.ativo } : fornecedor
-          ));
+      if (isAtivo) {
+        fetch(`http://localhost:8080/transportadoras/${id}`, {
+          method: 'DELETE',
         })
-        .catch((error) => {
-          console.error(`Erro ao ${acao} fornecedor:`, error);
-          setError(`Erro ao ${acao} fornecedor`);
-        });
+          .then(() => {
+            setTransportadoras(transportadoras.map(transportadora => 
+              transportadora.id === id ? { ...transportadora, ativo: false } : transportadora
+            ));
+          })
+          .catch((error) => {
+            console.error(`Erro ao ${acao} transportadora:`, error);
+            setError(`Erro ao ${acao} transportadora`);
+          });
+      } else {
+        fetch(`http://localhost:8080/transportadoras/${id}/ativar`, {
+          method: 'PUT',
+        })
+          .then(() => {
+            setTransportadoras(transportadoras.map(transportadora => 
+              transportadora.id === id ? { ...transportadora, ativo: true } : transportadora
+            ));
+          })
+          .catch((error) => {
+            console.error(`Erro ao ${acao} transportadora:`, error);
+            setError(`Erro ao ${acao} transportadora`);
+          });
+      }
     }
   };
 
-  const handleView = async (fornecedor) => {
-    // Buscar descrição da condição de pagamento se condicaoPagamentoId estiver presente
-    let fornecedorComCondicaoPagamento = { ...fornecedor };
-    
-    if (fornecedor.condicaoPagamentoId) {
+  const handleView = async (transportadora) => {
+    let transportadoraComDados = { ...transportadora };
+
+    if (transportadora.cidadeId) {
       try {
-        console.log('Buscando condição de pagamento com ID:', fornecedor.condicaoPagamentoId);
-        const condicaoResponse = await fetch(`http://localhost:8080/condicoes-pagamento/${fornecedor.condicaoPagamentoId}`);
-        
+        const cidadeResponse = await fetch(`http://localhost:8080/cidades/${transportadora.cidadeId}`);
+        if (cidadeResponse.ok) {
+          const cidadeData = await cidadeResponse.json();
+          transportadoraComDados.cidadeNome = cidadeData.nome || '';
+          transportadoraComDados.cidadeEstado = cidadeData.estado?.nome || '';
+          transportadoraComDados.cidadeEstadoPais = cidadeData.estado?.pais?.nome || '';
+        } else {
+          transportadoraComDados.cidadeNome = 'Erro ao carregar';
+        }
+      } catch (error) {
+        console.error('Erro ao buscar cidade:', error);
+        transportadoraComDados.cidadeNome = 'Erro ao carregar';
+      }
+    }
+
+    if (transportadora.condicaoPagamentoId) {
+      try {
+        const condicaoResponse = await fetch(`http://localhost:8080/condicoes-pagamento/${transportadora.condicaoPagamentoId}`);
         if (condicaoResponse.ok) {
           const condicaoData = await condicaoResponse.json();
-          fornecedorComCondicaoPagamento.condicaoPagamentoDescricao = condicaoData.descricao || '';
-          console.log('Descrição da condição de pagamento encontrada:', condicaoData.descricao);
+          transportadoraComDados.condicaoPagamentoDescricao = condicaoData.nome || '';
         } else {
-          console.error('Erro ao buscar condição de pagamento, status:', condicaoResponse.status);
-          fornecedorComCondicaoPagamento.condicaoPagamentoDescricao = 'Erro ao carregar';
+          transportadoraComDados.condicaoPagamentoDescricao = 'Erro ao carregar';
         }
       } catch (error) {
         console.error('Erro ao buscar condição de pagamento:', error);
-        fornecedorComCondicaoPagamento.condicaoPagamentoDescricao = 'Erro ao carregar';
+        transportadoraComDados.condicaoPagamentoDescricao = 'Erro ao carregar';
       }
     }
     
-    setFornecedorSelecionado(fornecedorComCondicaoPagamento);
+    setTransportadoraSelecionada(transportadoraComDados);
     setIsModalOpen(true);
   };
 
+  const handleEdit = (id) => {
+    setSelectedTransportadoraId(id);
+    setIsFormModalOpen(true);
+  };
+
   const handleCloseModal = () => {
-    setFornecedorSelecionado(null);
+    setTransportadoraSelecionada(null);
     setIsModalOpen(false);
   };
 
-  const fornecedoresFiltrados = fornecedores.filter(fornecedor => {
-    // Filtro por texto (código, nome, CPF/CNPJ, email, cidade)
-    const matchesText = fornecedor.id?.toString().includes(filtro) ||
-      fornecedor.nome?.toLowerCase().includes(filtro.toLowerCase()) ||
-      fornecedor.cnpjCpf?.toLowerCase().includes(filtro.toLowerCase()) ||
-      fornecedor.email?.toLowerCase().includes(filtro.toLowerCase()) ||
-      getCidadeNome(fornecedor.cidadeId)?.toLowerCase().includes(filtro.toLowerCase());
+  const transportadorasFiltradas = transportadoras.filter(transportadora => {
+    const matchesText = transportadora.id?.toString().includes(filtro) ||
+      transportadora.razaoSocial?.toLowerCase().includes(filtro.toLowerCase()) ||
+      transportadora.nomeFantasia?.toLowerCase().includes(filtro.toLowerCase()) ||
+      transportadora.cpfCnpj?.toLowerCase().includes(filtro.toLowerCase()) ||
+      transportadora.email?.toLowerCase().includes(filtro.toLowerCase()) ||
+      getCidadeNome(transportadora.cidadeId)?.toLowerCase().includes(filtro.toLowerCase());
     
-    // Filtro por status
     const matchesStatus = filtroStatus === 'todos' || 
-      (filtroStatus === 'ativos' && fornecedor.ativo) ||
-      (filtroStatus === 'inativos' && !fornecedor.ativo);
+      (filtroStatus === 'ativos' && transportadora.ativo) ||
+      (filtroStatus === 'inativos' && !transportadora.ativo);
     
     return matchesText && matchesStatus;
   });
 
   const getTipoLabel = (tipo) => {
-    if (typeof tipo === 'number') {
-      return tipo === 0 ? 'Pessoa Física' : 'Pessoa Jurídica';
-    }
-    return tipo === 'FISICA' ? 'Pessoa Física' : 'Pessoa Jurídica';
-  };
-
-  const getSexoLabel = (sexo) => {
-    switch (sexo) {
-      case 'M': return 'Masculino';
-      case 'F': return 'Feminino';
-      case 'O': return 'Outro';
-      default: return 'Não informado';
-    }
-  };
-
-  const getEstadoCivilLabel = (estadoCivil) => {
-    switch (estadoCivil) {
-      case 'SOLTEIRO': return 'Solteiro(a)';
-      case 'CASADO': return 'Casado(a)';
-      case 'DIVORCIADO': return 'Divorciado(a)';
-      case 'VIUVO': return 'Viúvo(a)';
-      case 'UNIAO_ESTAVEL': return 'União Estável';
-      case 'SEPARADO': return 'Separado(a)';
-      case 'OUTRO': return 'Outro';
-      default: return 'Não informado';
-    }
+    return tipo === 'F' ? 'Pessoa Física' : 'Pessoa Jurídica';
   };
 
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
-        <Typography>Carregando fornecedores...</Typography>
+        <Typography>Carregando transportadoras...</Typography>
       </Box>
     );
   }
@@ -246,7 +254,7 @@ const FornecedorListMUI = () => {
           overflow: 'hidden'
         }}
       >
-        {/* Cabeçalho com pesquisa e botão */}
+        {/* Cabeçalho  */}        
         <Box sx={{ 
           display: 'flex', 
           justifyContent: 'space-between', 
@@ -258,61 +266,52 @@ const FornecedorListMUI = () => {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexGrow: 1, flexWrap: { xs: 'wrap', md: 'nowrap' } }}>
             <TextField
               variant="outlined"
-              placeholder="Pesquisar por código, nome, CPF/CNPJ, email..."
+              placeholder="Pesquisar por código, razão social, CPF/CNPJ, email..."
               value={filtro}
               onChange={(e) => setFiltro(e.target.value)}
+              size="small"
+              sx={{
+                minWidth: { xs: '100%', md: 300 },
+                flexGrow: { xs: 1, md: 0 }
+              }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <SearchIcon color="action" />
+                    <SearchIcon />
                   </InputAdornment>
                 ),
               }}
-              sx={{ 
-                width: { xs: '100%', sm: 300 },
-                '& .MuiOutlinedInput-root': {
-                  height: 40,
-                  '& fieldset': {
-                    borderColor: '#e0e0e0',
-                  },
-                  '&:hover fieldset': {
-                    borderColor: '#1976d2',
-                  },
-                  '&.Mui-focused fieldset': {
-                    borderColor: '#1976d2',
-                  }
-                }
-              }}
             />
+            
             <FormControl size="small" sx={{ minWidth: 120 }}>
               <InputLabel>Status</InputLabel>
               <Select
                 value={filtroStatus}
                 onChange={(e) => setFiltroStatus(e.target.value)}
                 label="Status"
-                sx={{ height: 40 }}
               >
                 <MenuItem value="todos">Todos</MenuItem>
                 <MenuItem value="ativos">Ativos</MenuItem>
                 <MenuItem value="inativos">Inativos</MenuItem>
               </Select>
             </FormControl>
+            
             <FormControlLabel
               control={
-                <Switch 
+                <Switch
                   checked={mostrarDocumentoCompleto}
                   onChange={(e) => setMostrarDocumentoCompleto(e.target.checked)}
-                  color="primary"
                   size="small"
                 />
               }
-              label={<Typography variant="body2" sx={{ whiteSpace: 'nowrap' }}>Exibir documentos completos</Typography>}
+              label="Mostrar CPF/CNPJ completo"
+              sx={{ ml: 2, whiteSpace: 'nowrap' }}
             />
           </Box>
+          
           <Button
-            component={Link}
-            to="/fornecedores/cadastrar"
             variant="contained"
+            onClick={() => setIsFormModalOpen(true)}
             startIcon={<AddIcon />}
             sx={{ 
               bgcolor: '#1976d2',
@@ -334,16 +333,16 @@ const FornecedorListMUI = () => {
           </Alert>
         )}
 
-        {/* Tabela */}
+        {/* tabela */}
         <Box sx={{ mb: 2 }}>
           <Typography variant="body2" color="text.secondary">
-            Exibindo {fornecedoresFiltrados.length} de {fornecedores.length} fornecedores
+            Exibindo {transportadorasFiltradas.length} de {transportadoras.length} transportadoras
             {filtroStatus !== 'todos' && ` (${filtroStatus})`}
           </Typography>
         </Box>
         
         <TableContainer>
-          <Table>
+          <Table>            
             <TableHead>
               <TableRow sx={{ bgcolor: '#f5f5f5' }}>
                 <TableCell>
@@ -358,12 +357,12 @@ const FornecedorListMUI = () => {
                 </TableCell>
                 <TableCell>
                   <TableSortLabel
-                    active={sortConfig.key === 'nome'}
+                    active={sortConfig.key === 'razaoSocial'}
                     direction={sortConfig.direction}
-                    onClick={() => handleSort('nome')}
+                    onClick={() => handleSort('razaoSocial')}
                     sx={{ fontWeight: 600 }}
                   >
-                    Fornecedor
+                    Transportadora
                   </TableSortLabel>
                 </TableCell>
                 <TableCell>
@@ -378,9 +377,9 @@ const FornecedorListMUI = () => {
                 </TableCell>
                 <TableCell>
                   <TableSortLabel
-                    active={sortConfig.key === 'cnpjCpf'}
+                    active={sortConfig.key === 'cpfCnpj'}
                     direction={sortConfig.direction}
-                    onClick={() => handleSort('cnpjCpf')}
+                    onClick={() => handleSort('cpfCnpj')}
                     sx={{ fontWeight: 600 }}
                   >
                     CPF/CNPJ
@@ -420,32 +419,32 @@ const FornecedorListMUI = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {fornecedoresFiltrados.map((fornecedor) => (
+              {transportadorasFiltradas.map((transportadora) => (                
                 <TableRow 
-                  key={fornecedor.id}
+                  key={transportadora.id}
                   hover
                   sx={{ '&:hover': { bgcolor: '#f8f9fa' } }}
                 >
                   <TableCell>
                     <Typography variant="body2" fontWeight={500} color="primary">
-                      {fornecedor.id}
+                      {transportadora.id}
                     </Typography>
                   </TableCell>
                   <TableCell>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Avatar sx={{ width: 32, height: 32, bgcolor: '#1976d2' }}>
-                        {getTipoLabel(fornecedor.tipo) === 'Pessoa Física' ? 
+                        {getTipoLabel(transportadora.tipo) === 'Pessoa Física' ? 
                           <PersonIcon fontSize="small" /> : 
                           <BusinessIcon fontSize="small" />
                         }
                       </Avatar>
                       <Box>
                         <Typography variant="body2" fontWeight={500}>
-                          {fornecedor.nome}
+                          {transportadora.razaoSocial}
                         </Typography>
-                        {fornecedor.apelido && (
+                        {transportadora.nomeFantasia && (
                           <Typography variant="caption" color="text.secondary">
-                            {fornecedor.apelido}
+                            {transportadora.nomeFantasia}
                           </Typography>
                         )}
                       </Box>
@@ -453,37 +452,37 @@ const FornecedorListMUI = () => {
                   </TableCell>
                   <TableCell>
                     <Chip
-                      label={getTipoLabel(fornecedor.tipo)}
+                      label={getTipoLabel(transportadora.tipo)}
                       size="small"
-                      color={getTipoLabel(fornecedor.tipo) === 'Pessoa Física' ? 'primary' : 'secondary'}
+                      color={getTipoLabel(transportadora.tipo) === 'Pessoa Física' ? 'primary' : 'secondary'}
                       variant="outlined"
                     />
-                  </TableCell>
+                  </TableCell>                  
                   <TableCell>
                     <Typography variant="body2" fontFamily="monospace">
-                      {fornecedor.cnpjCpf ? (
-                        getTipoLabel(fornecedor.tipo) === 'Pessoa Física' ? 
-                        (mostrarDocumentoCompleto ? formatCPF(fornecedor.cnpjCpf) : censurarCPF(fornecedor.cnpjCpf)) : 
-                        (mostrarDocumentoCompleto ? formatCNPJ(fornecedor.cnpjCpf) : censurarCNPJ(fornecedor.cnpjCpf))
+                      {transportadora.cpfCnpj ? (
+                        getTipoLabel(transportadora.tipo) === 'Pessoa Física' ? 
+                        (mostrarDocumentoCompleto ? formatCPF(transportadora.cpfCnpj) : censurarCPF(transportadora.cpfCnpj)) : 
+                        (mostrarDocumentoCompleto ? formatCNPJ(transportadora.cpfCnpj) : censurarCNPJ(transportadora.cpfCnpj))
                       ) : 'Não informado'}
                     </Typography>
                   </TableCell>
                   <TableCell>
                     <Typography variant="body2">
-                      {fornecedor.email || 'Não informado'}
+                      {transportadora.email || 'Não informado'}
                     </Typography>
                   </TableCell>
                   <TableCell>
                     <Typography variant="body2">
-                      {getCidadeNome(fornecedor.cidadeId)}
+                      {getCidadeNome(transportadora.cidadeId)}
                     </Typography>
                   </TableCell>
                   <TableCell>
                     <Chip
-                      label={fornecedor.ativo ? 'Ativo' : 'Inativo'}
+                      label={transportadora.ativo ? 'Ativo' : 'Inativo'}
                       size="small"
-                      color={fornecedor.ativo ? 'success' : 'default'}
-                      variant={fornecedor.ativo ? 'filled' : 'outlined'}
+                      color={transportadora.ativo ? 'success' : 'default'}
+                      variant={transportadora.ativo ? 'filled' : 'outlined'}
                     />
                   </TableCell>
                   <TableCell>
@@ -491,7 +490,7 @@ const FornecedorListMUI = () => {
                       <Tooltip title="Visualizar">
                         <IconButton
                           size="small"
-                          onClick={() => handleView(fornecedor)}
+                          onClick={() => handleView(transportadora)}
                           sx={{ color: '#17a2b8' }}
                         >
                           <VisibilityIcon fontSize="small" />
@@ -500,20 +499,19 @@ const FornecedorListMUI = () => {
                       <Tooltip title="Editar">
                         <IconButton
                           size="small"
-                          component={Link}
-                          to={`/fornecedores/editar/${fornecedor.id}`}
+                          onClick={() => handleEdit(transportadora.id)}
                           sx={{ color: '#28a745' }}
                         >
                           <EditIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
-                      <Tooltip title={fornecedor.ativo ? "Excluir" : "Ativar"}>
+                      <Tooltip title={transportadora.ativo ? "Inativar" : "Ativar"}>
                         <IconButton
                           size="small"
-                          onClick={() => handleDelete(fornecedor.id)}
-                          sx={{ color: fornecedor.ativo ? '#dc3545' : '#28a745' }}
+                          onClick={() => handleDelete(transportadora.id)}
+                          sx={{ color: transportadora.ativo ? '#dc3545' : '#28a745' }}
                         >
-                          {fornecedor.ativo ? <BlockIcon fontSize="small" /> : <CheckCircleIcon fontSize="small" />}
+                          {transportadora.ativo ? <BlockIcon fontSize="small" /> : <CheckCircleIcon fontSize="small" />}
                         </IconButton>
                       </Tooltip>
                     </Box>
@@ -524,12 +522,12 @@ const FornecedorListMUI = () => {
           </Table>
         </TableContainer>
 
-        {fornecedoresFiltrados.length === 0 && (
+        {transportadorasFiltradas.length === 0 && (
           <Box sx={{ textAlign: 'center', py: 4 }}>
             <Typography variant="h6" color="text.secondary">
-              {fornecedores.length === 0 
-                ? 'Nenhum fornecedor cadastrado' 
-                : `Nenhum fornecedor ${filtroStatus === 'todos' ? '' : filtroStatus === 'ativos' ? 'ativo' : 'inativo'} encontrado`
+              {transportadoras.length === 0 
+                ? 'Nenhuma transportadora cadastrada' 
+                : `Nenhuma transportadora ${filtroStatus === 'todos' ? '' : filtroStatus === 'ativos' ? 'ativa' : 'inativa'} encontrada`
               }
             </Typography>
             {filtro && (
@@ -541,7 +539,19 @@ const FornecedorListMUI = () => {
         )}
       </Paper>
 
-      {/* Modal de Visualização */}
+      {/* modal form */}
+      <TransportadoraModalForm
+        open={isFormModalOpen}
+        onClose={() => {
+          setIsFormModalOpen(false);
+          setSelectedTransportadoraId(null);
+          loadData();
+        }}
+        transportadoraId={selectedTransportadoraId}
+        onSave={loadData}
+      />
+
+      {/* modal detalhes */}
       <Dialog
         open={isModalOpen}
         onClose={handleCloseModal}
@@ -559,16 +569,17 @@ const FornecedorListMUI = () => {
           pb: 2
         }}>
           <Typography variant="h6" fontWeight={600}>
-            Visualizar Fornecedor
+            Visualizar Transportadora
           </Typography>
           <IconButton onClick={handleCloseModal} size="small">
             <CloseIcon />
           </IconButton>
         </DialogTitle>
         
-        {fornecedorSelecionado && (
+        {transportadoraSelecionada && (
           <DialogContent sx={{ p: 4 }}>
-            {/* Cabeçalho com título e switch Ativo */}
+
+            {/* titulo e switch */}
             <Box sx={{ 
               display: 'flex', 
               justifyContent: 'space-between', 
@@ -582,13 +593,13 @@ const FornecedorListMUI = () => {
                 align="center" 
                 sx={{ color: '#333', fontWeight: 600, flex: 1 }}
               >
-                Dados do Fornecedor
-              </Typography>
+                Dados da Transportadora
+              </Typography>              
               <Box sx={{ width: 120, display: 'flex', justifyContent: 'flex-end' }}>
                 <FormControlLabel
                   control={
                     <Switch
-                      checked={fornecedorSelecionado.ativo}
+                      checked={transportadoraSelecionada.ativo}
                       disabled
                       color="primary"
                     />
@@ -599,14 +610,14 @@ const FornecedorListMUI = () => {
               </Box>
             </Box>
 
-            {/* Linha 1: Código, Tipo de Pessoa, Nome, Apelido, Estado Civil */}
+            {/* linha 1*/}
             <Grid container spacing={2} alignItems="center" sx={{ mb: 4 }}>
               <Grid item sx={{ width: '6%', minWidth: 80 }}>
                 <TextField
                   fullWidth
                   size="small"
                   label="Código"
-                  value={fornecedorSelecionado.id || ''}
+                  value={transportadoraSelecionada.id || ''}
                   InputProps={{ readOnly: true }}
                   variant="outlined"
                 />
@@ -617,7 +628,7 @@ const FornecedorListMUI = () => {
                   fullWidth
                   size="small"
                   label="Tipo de Pessoa"
-                  value={getTipoLabel(fornecedorSelecionado.tipo)}
+                  value={getTipoLabel(transportadoraSelecionada.tipo)}
                   InputProps={{ readOnly: true }}
                   variant="outlined"
                 />
@@ -627,46 +638,48 @@ const FornecedorListMUI = () => {
                 <TextField
                   fullWidth
                   size="small"
-                  label="Fornecedor"
-                  value={fornecedorSelecionado.nome || ''}
+                  label="Razão Social"
+                  value={transportadoraSelecionada.razaoSocial || ''}
                   InputProps={{ readOnly: true }}
                   variant="outlined"
                 />
-              </Grid>
+              </Grid>              
 
-              <Grid item sx={{ width: getTipoLabel(fornecedorSelecionado.tipo) === 'Pessoa Física' ? '18%' : '38%' }}>
+              <Grid item sx={{ width: '30%' }}>
                 <TextField
                   fullWidth
                   size="small"
-                  label={getTipoLabel(fornecedorSelecionado.tipo) === 'Pessoa Física' ? 'Apelido' : 'Nome Fantasia'}
-                  value={fornecedorSelecionado.apelido || ''}
+                  label="Nome Fantasia"
+                  value={transportadoraSelecionada.nomeFantasia || ''}
                   InputProps={{ readOnly: true }}
                   variant="outlined"
                 />
               </Grid>
 
-              {getTipoLabel(fornecedorSelecionado.tipo) === 'Pessoa Física' && (
-                <Grid item sx={{ width: '20%' }}>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    label="Estado Civil"
-                    value={getEstadoCivilLabel(fornecedorSelecionado.estadoCivil)}
-                    InputProps={{ readOnly: true }}
-                    variant="outlined"
-                  />
-                </Grid>
-              )}
+              <Grid item sx={{ width: '18%' }}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="CPF/CNPJ"
+                  value={transportadoraSelecionada.cpfCnpj ? (
+                    getTipoLabel(transportadoraSelecionada.tipo) === 'Pessoa Física' ? 
+                    formatCPF(transportadoraSelecionada.cpfCnpj) : 
+                    formatCNPJ(transportadoraSelecionada.cpfCnpj)
+                  ) : ''}
+                  InputProps={{ readOnly: true }}
+                  variant="outlined"
+                />
+              </Grid>
             </Grid>
 
-            {/* Linha 2: Rua, Número, Complemento, Bairro, CEP, Cidade */}
+            {/* linha 2 */}
             <Grid container spacing={2} sx={{ mb: 4 }}>
               <Grid item sx={{ width: '25%' }}>
                 <TextField
                   fullWidth
                   size="small"
                   label="Endereço"
-                  value={fornecedorSelecionado.endereco || ''}
+                  value={transportadoraSelecionada.endereco || ''}
                   InputProps={{ readOnly: true }}
                   variant="outlined"
                 />
@@ -677,7 +690,7 @@ const FornecedorListMUI = () => {
                   fullWidth
                   size="small"
                   label="Número"
-                  value={fornecedorSelecionado.numero || ''}
+                  value={transportadoraSelecionada.numero || ''}
                   InputProps={{ readOnly: true }}
                   variant="outlined"
                 />
@@ -688,7 +701,7 @@ const FornecedorListMUI = () => {
                   fullWidth
                   size="small"
                   label="Complemento"
-                  value={fornecedorSelecionado.complemento || ''}
+                  value={transportadoraSelecionada.complemento || ''}
                   InputProps={{ readOnly: true }}
                   variant="outlined"
                 />
@@ -699,7 +712,7 @@ const FornecedorListMUI = () => {
                   fullWidth
                   size="small"
                   label="Bairro"
-                  value={fornecedorSelecionado.bairro || ''}
+                  value={transportadoraSelecionada.bairro || ''}
                   InputProps={{ readOnly: true }}
                   variant="outlined"
                 />
@@ -710,7 +723,7 @@ const FornecedorListMUI = () => {
                   fullWidth
                   size="small"
                   label="CEP"
-                  value={formatCEP(fornecedorSelecionado.cep) || ''}
+                  value={formatCEP(transportadoraSelecionada.cep) || ''}
                   InputProps={{ readOnly: true }}
                   variant="outlined"
                 />
@@ -721,87 +734,43 @@ const FornecedorListMUI = () => {
                   fullWidth
                   size="small"
                   label="Cidade"
-                  value={getCidadeNome(fornecedorSelecionado.cidadeId)}
+                  value={transportadoraSelecionada.cidadeNome ? `${transportadoraSelecionada.cidadeNome} - ${transportadoraSelecionada.cidadeEstado}` : ''}
                   InputProps={{ readOnly: true }}
                   variant="outlined"
                 />
               </Grid>
-            </Grid>
 
-            {/* Linha 3: Telefone, Email, Sexo (somente para PF), Data de Nascimento */}
-            <Grid container spacing={2} sx={{ mb: 4 }}>
-              <Grid item sx={{ width: '15%', minWidth: 150 }}>
+              <Grid item sx={{ width: '14%', minWidth: 120 }}>
                 <TextField
                   fullWidth
                   size="small"
                   label="Telefone"
-                  value={formatTelefone(fornecedorSelecionado.telefone) || ''}
-                  InputProps={{ readOnly: true }}
-                  variant="outlined"
-                />
-              </Grid>
-
-              <Grid item sx={{ width: '25%' }}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  label="Email"
-                  value={fornecedorSelecionado.email || ''}
-                  InputProps={{ readOnly: true }}
-                  variant="outlined"
-                />
-              </Grid>
-
-              {getTipoLabel(fornecedorSelecionado.tipo) === 'Pessoa Física' && (
-                <Grid item sx={{ width: '10%', minWidth: 120 }}>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    label="Sexo"
-                    value={getSexoLabel(fornecedorSelecionado.sexo)}
-                    InputProps={{ readOnly: true }}
-                    variant="outlined"
-                  />
-                </Grid>
-              )}
-              <Grid item sx={{ width: '15%', minWidth: 150 }}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  label={getTipoLabel(fornecedorSelecionado.tipo) === 'Pessoa Física' ? 'Data de Nascimento' : 'Data de Abertura'}
-                  value={fornecedorSelecionado.dataNascimento ? 
-                    new Date(fornecedorSelecionado.dataNascimento).toLocaleDateString('pt-BR') : 
-                    ''
-                  }
+                  value={formatTelefone(transportadoraSelecionada.telefone) || ''}
                   InputProps={{ readOnly: true }}
                   variant="outlined"
                 />
               </Grid>
             </Grid>
 
-            {/* Linha 4: RG/IE, CPF/CNPJ, Limite de Crédito, Condição de Pagamento */}
+            {/* linha 3 */}
             <Grid container spacing={2} sx={{ mb: 4 }}>
-                <Grid item sx={{ width: '20%' }}>
+              <Grid item sx={{ width: '20%', minWidth: 140 }}>
                 <TextField
                   fullWidth
                   size="small"
-                  label={getTipoLabel(fornecedorSelecionado.tipo) === 'Pessoa Física' ? 'RG' : 'Inscrição Estadual'}
-                  value={fornecedorSelecionado.rgInscricaoEstadual || ''}
+                  label="Email"
+                  value={transportadoraSelecionada.email || ''}
                   InputProps={{ readOnly: true }}
                   variant="outlined"
                 />
               </Grid>
 
-              <Grid item sx={{ width: '20%', minWidth: 150 }}>
+              <Grid item sx={{ width: '20%', minWidth: 140 }}>
                 <TextField
                   fullWidth
                   size="small"
-                  label={getTipoLabel(fornecedorSelecionado.tipo) === 'Pessoa Física' ? 'CPF' : 'CNPJ'}
-                  value={fornecedorSelecionado.cnpjCpf ? (
-                    getTipoLabel(fornecedorSelecionado.tipo) === 'Pessoa Física' ? 
-                    formatCPF(fornecedorSelecionado.cnpjCpf) : 
-                    formatCNPJ(fornecedorSelecionado.cnpjCpf)
-                  ) : ''}
+                  label="Website"
+                  value={transportadoraSelecionada.website || ''}
                   InputProps={{ readOnly: true }}
                   variant="outlined"
                 />
@@ -811,95 +780,58 @@ const FornecedorListMUI = () => {
                 <TextField
                   fullWidth
                   size="small"
-                  label="Limite de Crédito"
-                  value={fornecedorSelecionado.limiteCredito ? 
-                    `R$ ${parseFloat(fornecedorSelecionado.limiteCredito).toFixed(2).replace('.', ',')}` : 
-                    ''
-                  }
+                  label={transportadoraSelecionada.tipo === 'F' ? 'RG' : 'Inscrição Estadual'}
+                  value={transportadoraSelecionada.rgInscricaoEstadual || ''}
                   InputProps={{ readOnly: true }}
                   variant="outlined"
                 />
               </Grid>
 
-              <Grid item sx={{ width: '35%' }}>
+              <Grid item sx={{ width: '20%', minWidth: 140 }}>
                 <TextField
                   fullWidth
                   size="small"
                   label="Condição de Pagamento"
-                  value={fornecedorSelecionado.condicaoPagamentoDescricao || ''}
+                  value={transportadoraSelecionada.condicaoPagamentoDescricao || ''}
                   InputProps={{ readOnly: true }}
                   variant="outlined"
                 />
               </Grid>
-            </Grid>
 
-            {/* Linha 5: Observações */}
-            <Grid container spacing={2} sx={{ mb: 2 }}>
-              <Grid item sx={{width: '100%'}}>
+              <Grid item sx={{ width: '25%' }}>
                 <TextField
                   fullWidth
-                  multiline
-                  rows={3}
                   size="small"
-                  label="Observações"
-                  value={fornecedorSelecionado.observacao || ''}
+                  label="Observação"
+                  value={transportadoraSelecionada.observacao || ''}
                   InputProps={{ readOnly: true }}
                   variant="outlined"
+                  multiline
+                  minRows={1}
                 />
               </Grid>
             </Grid>
-
-            {/* Informações de cadastro */}
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'flex-start',
-                alignItems: 'center',
-                gap: 2,
-                mt: 3,
-                pt: 2,
-                borderTop: '1px solid #eee',
-              }}
-            >
-              <Stack spacing={0.5} sx={{ flex: 1 }}>
-                {fornecedorSelecionado.dataCadastro && (
-                  <Typography variant="caption" color="text.secondary">
-                    Data de cadastro: {new Date(fornecedorSelecionado.dataCadastro).toLocaleString('pt-BR')}
-                  </Typography>
-                )}
-                {fornecedorSelecionado.ultimaModificacao && (
-                  <Typography variant="caption" color="text.secondary">
-                    Última modificação: {new Date(fornecedorSelecionado.ultimaModificacao).toLocaleString('pt-BR')}
-                  </Typography>
-                )}
-              </Stack>
-            </Box>
           </DialogContent>
         )}
         
-        <DialogActions sx={{ p: 3, bgcolor: '#f5f5f5' }}>
-          <Button
-            onClick={handleCloseModal}
-            variant="outlined"
-            color="inherit"
-          >
+        <DialogActions sx={{ borderTop: '1px solid #e0e0e0', gap: 1 }}>
+          <Button onClick={handleCloseModal} color="inherit">
             Fechar
           </Button>
-          {fornecedorSelecionado && (
-            <Button
-              component={Link}
-              to={`/fornecedores/editar/${fornecedorSelecionado.id}`}
-              variant="contained"
-              startIcon={<EditIcon />}
-              onClick={handleCloseModal}
-            >
-              Editar
-            </Button>
-          )}
+          <Button 
+            variant="contained" 
+            onClick={() => {
+              handleCloseModal();
+              handleEdit(transportadoraSelecionada?.id);
+            }}
+            startIcon={<EditIcon />}
+          >
+            Editar
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>
   );
 };
 
-export default FornecedorListMUI;
+export default TransportadoraListMUI;

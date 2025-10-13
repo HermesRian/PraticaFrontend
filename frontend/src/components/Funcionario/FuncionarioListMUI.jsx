@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -58,7 +58,6 @@ const FuncionarioListMUI = () => {
   const [error, setError] = useState('');
   const [mostrarDocumentoCompleto, setMostrarDocumentoCompleto] = useState(false);
   const [filtroStatus, setFiltroStatus] = useState('todos'); // 'todos', 'ativos', 'inativos'
-  const navigate = useNavigate();
 
   useEffect(() => {
     Promise.all([
@@ -84,8 +83,8 @@ const FuncionarioListMUI = () => {
     return cidade ? cidade.nome : 'Não informada';
   };
 
-  const getCargoNome = (cargoId) => {
-    const cargo = cargos.find((c) => c.id === cargoId);
+  const getCargoNome = (funcaoFuncionarioId) => {
+    const cargo = cargos.find((c) => c.id === funcaoFuncionarioId);
     return cargo ? cargo.nome : 'Não informado';
   };
 
@@ -103,6 +102,11 @@ const FuncionarioListMUI = () => {
       if (key === 'cidade') {
         aValue = getCidadeNome(a.cidadeId);
         bValue = getCidadeNome(b.cidadeId);
+      }
+
+      if (key === 'cargo') {
+        aValue = getCargoNome(a.funcaoFuncionarioId);
+        bValue = getCargoNome(b.funcaoFuncionarioId);
       }
 
       if (key === 'ativo') {
@@ -428,7 +432,7 @@ const FuncionarioListMUI = () => {
                   </TableCell>
                   <TableCell>
                     <Chip
-                      label={getCargoNome(funcionario.cargoId)}
+                      label={getCargoNome(funcionario.funcaoFuncionarioId)}
                       size="small"
                       color="secondary"
                       variant="outlined"
@@ -612,7 +616,7 @@ const FuncionarioListMUI = () => {
                   fullWidth
                   size="small"
                   label="Cargo"
-                  value={getCargoNome(funcionarioSelecionado.cargoId)}
+                  value={getCargoNome(funcionarioSelecionado.funcaoFuncionarioId)}
                   InputProps={{ readOnly: true }}
                   variant="outlined"
                 />

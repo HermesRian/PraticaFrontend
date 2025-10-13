@@ -36,7 +36,7 @@ const FuncionarioFormMUI = () => {
   const [funcionario, setFuncionario] = useState({
     nome: '',
     cpfCnpj: '',
-    cargoId: '',
+    funcaoFuncionarioId: '',
     cargoNome: '',
     salario: '',
     email: '',
@@ -93,9 +93,9 @@ const FuncionarioFormMUI = () => {
           }
 
           let cargoNome = '';
-          if (data.cargoId) {
+          if (data.funcaoFuncionarioId) {
             try {
-              const cargoResponse = await fetch(`http://localhost:8080/funcoes-funcionario/${data.cargoId}`);
+              const cargoResponse = await fetch(`http://localhost:8080/funcoes-funcionario/${data.funcaoFuncionarioId}`);
               if (cargoResponse.ok) {
                 const cargoData = await cargoResponse.json();
                 cargoNome = cargoData.nome || '';
@@ -141,7 +141,7 @@ const FuncionarioFormMUI = () => {
     setFuncionario({ ...funcionario, [name]: type === 'checkbox' ? checked : value });
   };
 
-  const handleNumericChange = (e, maxLength, maskFunction) => {
+  const handleNumericChange = (e, maxLength) => {
     const { name } = e.target;
     let value = e.target.value.replace(/[^0-9]/g, '');
     
@@ -195,7 +195,7 @@ const FuncionarioFormMUI = () => {
       errors.cpfCnpj = 'CPF inválido';
     }
     
-    if (!funcionario.cargoId) {
+    if (!funcionario.funcaoFuncionarioId) {
       errors.cargo = 'Selecione um cargo';
     }
     
@@ -268,7 +268,7 @@ const FuncionarioFormMUI = () => {
             try {
               const errorObj = JSON.parse(text);
               error = errorObj.erro || errorObj.message || 'Erro desconhecido ao salvar funcionário';
-            } catch (e) {
+            } catch {
               error = text || 'Erro ao salvar funcionário';
             }
             throw new Error(error);
@@ -333,7 +333,7 @@ const FuncionarioFormMUI = () => {
     
     setFuncionario({
       ...funcionario,
-      cargoId: cargo.id,
+      funcaoFuncionarioId: cargo.id,
       cargoNome: cargo.nome,
     });
     setIsCargoModalOpen(false);

@@ -9,6 +9,9 @@ import ClienteForm from '../Cliente/ClienteFormMUI';
 import FornecedorList from '../Fornecedor/FornecedorListMUI';
 import FornecedorForm from '../Fornecedor/FornecedorFormMUI';
 
+import TransportadoraList from '../Transportadora/TransportadoraListMUI';
+import TransportadoraForm from '../Transportadora/TransportadoraFormMUI';
+
 import FuncionarioList from '../Funcionario/FuncionarioListMUI';
 import FuncionarioForm from '../Funcionario/FuncionarioFormMUI';
 
@@ -53,6 +56,10 @@ const MainContent = () => {
         <Route path="/fornecedores" element={<FornecedorList />} />
         <Route path="/fornecedores/cadastrar" element={<FornecedorForm />} />
         <Route path="/fornecedores/editar/:id" element={<FornecedorForm />} />
+
+        <Route path="/transportadoras" element={<TransportadoraList />} />
+        <Route path="/transportadoras/novo" element={<TransportadoraForm />} />
+        <Route path="/transportadoras/:id/editar" element={<TransportadoraForm />} />
 
         <Route path="/funcionarios" element={<FuncionarioList />} />
         <Route path="/funcionarios/cadastrar" element={<FuncionarioForm />} />
