@@ -118,7 +118,13 @@ const NotaEntradaFormMUI = () => {
 
   // Função para validar datas
   const validarDatas = () => {
-    const hoje = new Date().toISOString().split('T')[0];
+    // Obter data atual no fuso horário local
+    const agora = new Date();
+    const ano = agora.getFullYear();
+    const mes = String(agora.getMonth() + 1).padStart(2, '0');
+    const dia = String(agora.getDate()).padStart(2, '0');
+    const hoje = `${ano}-${mes}-${dia}`;
+    
     const { dataEmissao, dataChegada } = notaEntrada;
     
     // Validar data de emissão não pode ser maior que hoje
@@ -134,9 +140,13 @@ const NotaEntradaFormMUI = () => {
     return null;
   };
 
-  // Função para obter data máxima para emissão (hoje)
+  // Função para obter data máxima para emissão (hoje) - corrigindo fuso horário
   const getMaxDataEmissao = () => {
-    return new Date().toISOString().split('T')[0];
+    const hoje = new Date();
+    const ano = hoje.getFullYear();
+    const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+    const dia = String(hoje.getDate()).padStart(2, '0');
+    return `${ano}-${mes}-${dia}`;
   };
 
   // Função para obter data mínima para chegada (data de emissão)
@@ -274,21 +284,22 @@ const NotaEntradaFormMUI = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [produtoAtual.quantidade, produtoAtual.precoUnitario, produtoAtual.desconto]);
 
-  // Validar datas em tempo real
   useEffect(() => {
-    const hoje = new Date().toISOString().split('T')[0];
+    const agora = new Date();
+    const ano = agora.getFullYear();
+    const mes = String(agora.getMonth() + 1).padStart(2, '0');
+    const dia = String(agora.getDate()).padStart(2, '0');
+    const hoje = `${ano}-${mes}-${dia}`;
+    
     const { dataEmissao, dataChegada } = notaEntrada;
     
-    // Limpar erros anteriores
     setErroDataEmissao('');
     setErroDataChegada('');
     
-    // Validar data de emissão
     if (dataEmissao && dataEmissao > hoje) {
       setErroDataEmissao('Data não pode ser maior que hoje');
     }
     
-    // Validar data de chegada
     if (dataEmissao && dataChegada && dataChegada < dataEmissao) {
       setErroDataChegada('Data deve ser maior ou igual à data de emissão');
     }
@@ -300,7 +311,6 @@ const NotaEntradaFormMUI = () => {
     setLoading(true);
     setError('');
 
-    // Validar datas antes de enviar
     const erroValidacao = validarDatas();
     if (erroValidacao) {
       setError(erroValidacao);
