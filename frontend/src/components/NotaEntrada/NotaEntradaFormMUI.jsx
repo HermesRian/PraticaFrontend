@@ -40,31 +40,41 @@ const NotaEntradaFormMUI = () => {
 
   const [notaEntrada, setNotaEntrada] = useState({
     numero: '',
+    codigo: '',
     modelo: '',
     serie: '',
     fornecedorId: '',
     dataEmissao: '',
     dataChegada: '',
-    tipoFrete: 'NENHUM', // CIF, FOB, NENHUM
+    dataRecebimento: '',
+    condicaoPagamentoId: '',
+    condicaoPagamento: '', // Descrição da condição de pagamento
+    status: 'PENDENTE',
+    tipoFrete: 'CIF',
+    transportadoraId: '',
     valorFrete: 0,
     valorSeguro: 0,
     outrasDespesas: 0,
-    codigoCondicaoPagamento: '',
-    condicaoPagamento: '',
-    observacao: '',
-    produtos: [],
+    valorDesconto: 0,
+    observacoes: '',
+    itens: [],
     ativo: true
   });
 
-  // Estado para adicionar produtos
-  const [produtoAtual, setProdutoAtual] = useState({
-    codigoProduto: '',
+  // Estado para adicionar itens (produtos)
+  const [itemAtual, setItemAtual] = useState({
+    produtoId: '',
+    produtoCodigo: '', // Para exibição do código
     produtoNome: '',
     unidade: '',
     quantidade: 0,
-    precoUnitario: 0,
-    desconto: 0,
-    total: 0
+    valorUnitario: 0,
+    valorDesconto: 0,
+    percentualDesconto: 0,
+    valorTotal: 0,
+    rateioFrete: 0,
+    rateioSeguro: 0,
+    rateioOutras: 0
   });
 
   const [loading, setLoading] = useState(false);
@@ -116,9 +126,22 @@ const NotaEntradaFormMUI = () => {
     }));
   };
 
-  // Função para validar datas
-  const validarDatas = () => {
-    // Obter data atual no fuso horário local
+  // Função para validar todos os dados antes do envio
+  const validarDados = () => {
+    // Validações de campos obrigatórios
+    if (!notaEntrada.numero) {
+      return 'Número da nota é obrigatório';
+    }
+    
+    if (!notaEntrada.fornecedorId) {
+      return 'Fornecedor é obrigatório';
+    }
+    
+    if (!notaEntrada.dataEmissao) {
+      return 'Data de emissão é obrigatória';
+    }
+    
+    // Validar datas
     const agora = new Date();
     const ano = agora.getFullYear();
     const mes = String(agora.getMonth() + 1).padStart(2, '0');
@@ -135,6 +158,16 @@ const NotaEntradaFormMUI = () => {
     // Validar data de chegada deve ser >= data de emissão
     if (dataEmissao && dataChegada && dataChegada < dataEmissao) {
       return 'Data de chegada deve ser maior ou igual à data de emissão';
+    }
+    
+    // Validar itens
+    if (notaEntrada.itens.length === 0) {
+      return 'Pelo menos um item deve ser adicionado à nota';
+    }
+    
+    // Validar fornecedorId como número
+    if (isNaN(parseInt(notaEntrada.fornecedorId))) {
+      return 'ID do fornecedor inválido';
     }
     
     return null;
@@ -164,57 +197,62 @@ const NotaEntradaFormMUI = () => {
   };
 
   const handleProdutoSelect = (produto) => {
-    setProdutoAtual(prev => ({
+    setItemAtual(prev => ({
       ...prev,
-      codigoProduto: produto.codigo || produto.id.toString(),
+      produtoId: produto.id, // ID numérico para a API
+      produtoCodigo: produto.codigo || produto.id.toString(), // Código para exibição
       produtoNome: produto.nome,
       unidade: produto.unidade || 'UN',
-      precoUnitario: produto.preco || 0
+      valorUnitario: produto.preco || 0
     }));
-    calcularTotalProduto({
-      ...produtoAtual,
-      codigoProduto: produto.codigo || produto.id.toString(),
-      produtoNome: produto.nome,
-      unidade: produto.unidade || 'UN',
-      precoUnitario: produto.preco || 0
-    });
+    calcularTotalItem();
   };
 
 
 
-  // Função para calcular total do produto atual
-  const calcularTotalProduto = () => {
-    const { quantidade, precoUnitario, desconto } = produtoAtual;
-    const subtotal = quantidade * precoUnitario;
-    const total = subtotal - desconto;
-    setProdutoAtual(prev => ({ ...prev, total }));
+  // Função para calcular total do item atual
+  // Função para calcular total do item (apenas para display na tela)
+  const calcularTotalItem = () => {
+    const { quantidade, valorUnitario, valorDesconto } = itemAtual;
+    const subtotal = quantidade * valorUnitario;
+    const total = subtotal - valorDesconto;
+    
+    setItemAtual(prev => ({ 
+      ...prev, 
+      valorTotal: total 
+    }));
   };
 
-  // Função para adicionar produto à lista
-  const adicionarProduto = () => {
-    if (produtoAtual.codigoProduto && produtoAtual.quantidade > 0) {
+  // Função para adicionar item à lista
+  const adicionarItem = () => {
+    if (itemAtual.produtoId && itemAtual.quantidade > 0) {
       setNotaEntrada(prev => ({
         ...prev,
-        produtos: [...prev.produtos, { ...produtoAtual, id: Date.now() }]
+        itens: [...prev.itens, { ...itemAtual, id: Date.now() }]
       }));
-      // Limpar formulário de produto
-      setProdutoAtual({
-        codigoProduto: '',
+      // Limpar formulário de item
+      setItemAtual({
+        produtoId: '',
+        produtoCodigo: '',
         produtoNome: '',
         unidade: '',
         quantidade: 0,
-        precoUnitario: 0,
-        desconto: 0,
-        total: 0
+        valorUnitario: 0,
+        valorDesconto: 0,
+        percentualDesconto: 0,
+        valorTotal: 0,
+        rateioFrete: 0,
+        rateioSeguro: 0,
+        rateioOutras: 0
       });
     }
   };
 
-  // Função para remover produto da lista
-  const removerProduto = (id) => {
+  // Função para remover item da lista
+  const removerItem = (id) => {
     setNotaEntrada(prev => ({
       ...prev,
-      produtos: prev.produtos.filter(p => p.id !== id)
+      itens: prev.itens.filter(item => item.id !== id)
     }));
   };
 
@@ -224,12 +262,35 @@ const NotaEntradaFormMUI = () => {
     console.log('Campos disponíveis:', Object.keys(fornecedor));
     
     // Se o fornecedor já tem as informações de condição de pagamento
-    if (fornecedor.codigoCondicaoPagamento || fornecedor.condicaoPagamento) {
-      setNotaEntrada(prev => ({
-        ...prev,
-        codigoCondicaoPagamento: fornecedor.codigoCondicaoPagamento || '',
-        condicaoPagamento: fornecedor.condicaoPagamento || ''
-      }));
+    if (fornecedor.condicaoPagamentoId || fornecedor.codigoCondicaoPagamento) {
+      const condicaoId = fornecedor.condicaoPagamentoId || fornecedor.codigoCondicaoPagamento;
+      
+      // Buscar a descrição da condição de pagamento
+      try {
+        const response = await fetch(`http://localhost:8080/condicoes-pagamento/${condicaoId}`);
+        if (response.ok) {
+          const condicao = await response.json();
+          setNotaEntrada(prev => ({
+            ...prev,
+            condicaoPagamentoId: condicaoId,
+            condicaoPagamento: condicao.descricao || condicao.nome || `Condição ${condicaoId}`
+          }));
+        } else {
+          // Se não conseguir buscar a descrição, usar apenas o ID
+          setNotaEntrada(prev => ({
+            ...prev,
+            condicaoPagamentoId: condicaoId,
+            condicaoPagamento: `Condição ${condicaoId}`
+          }));
+        }
+      } catch (error) {
+        console.error('Erro ao buscar descrição da condição:', error);
+        setNotaEntrada(prev => ({
+          ...prev,
+          condicaoPagamentoId: condicaoId,
+          condicaoPagamento: `Condição ${condicaoId}`
+        }));
+      }
       return;
     }
 
@@ -242,47 +303,52 @@ const NotaEntradaFormMUI = () => {
         
         // Tentar diferentes campos que podem conter a condição de pagamento
         let codigo = '';
-        let descricao = '';
         
         // Verificar possíveis campos de código
-        if (fornecedorCompleto.codigoCondicaoPagamento) {
-          codigo = fornecedorCompleto.codigoCondicaoPagamento;
-        } else if (fornecedorCompleto.condicaoPagamentoId) {
+        if (fornecedorCompleto.condicaoPagamentoId) {
           codigo = fornecedorCompleto.condicaoPagamentoId;
+        } else if (fornecedorCompleto.codigoCondicaoPagamento) {
+          codigo = fornecedorCompleto.codigoCondicaoPagamento;
         }
         
-        // Se temos um código, buscar a descrição da condição de pagamento
         if (codigo) {
+          // Buscar a descrição da condição de pagamento
           try {
             const condResponse = await fetch(`http://localhost:8080/condicoes-pagamento/${codigo}`);
             if (condResponse.ok) {
               const condicao = await condResponse.json();
-              descricao = condicao.descricao || condicao.nome || '';
+              setNotaEntrada(prev => ({
+                ...prev,
+                condicaoPagamentoId: codigo,
+                condicaoPagamento: condicao.descricao || condicao.nome || `Condição ${codigo}`
+              }));
+            } else {
+              setNotaEntrada(prev => ({
+                ...prev,
+                condicaoPagamentoId: codigo,
+                condicaoPagamento: `Condição ${codigo}`
+              }));
             }
           } catch (err) {
             console.log('Erro ao buscar descrição da condição:', err);
+            setNotaEntrada(prev => ({
+              ...prev,
+              condicaoPagamentoId: codigo,
+              condicaoPagamento: `Condição ${codigo}`
+            }));
           }
         }
-        
-        setNotaEntrada(prev => ({
-          ...prev,
-          codigoCondicaoPagamento: codigo,
-          condicaoPagamento: descricao
-        }));
       }
     } catch (error) {
       console.error('Erro ao buscar condição de pagamento:', error);
     }
   };
 
-  // Atualizar cálculo quando produto atual muda
+  // Atualizar cálculo quando item atual muda
   useEffect(() => {
-    const { quantidade, precoUnitario, desconto } = produtoAtual;
-    const subtotal = quantidade * precoUnitario;
-    const total = subtotal - desconto;
-    setProdutoAtual(prev => ({ ...prev, total }));
+    calcularTotalItem();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [produtoAtual.quantidade, produtoAtual.precoUnitario, produtoAtual.desconto]);
+  }, [itemAtual.quantidade, itemAtual.valorUnitario, itemAtual.valorDesconto]);
 
   useEffect(() => {
     const agora = new Date();
@@ -306,12 +372,58 @@ const NotaEntradaFormMUI = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [notaEntrada.dataEmissao, notaEntrada.dataChegada]);
 
+  // Função para transformar dados do formulário para o formato da API
+  // Backend agora calcula todos os valores automaticamente
+  const transformarDadosParaAPI = () => {
+    // Transformar itens enviando apenas dados brutos (sem cálculos)
+    const itens = notaEntrada.itens.map(item => {
+      const produtoId = parseInt(item.produtoId);
+      if (!produtoId || isNaN(produtoId)) {
+        throw new Error(`ID do produto inválido: ${item.produtoId}`);
+      }
+      
+      return {
+        produtoId: produtoId,
+        quantidade: parseFloat(item.quantidade || 0),
+        valorUnitario: parseFloat(item.valorUnitario || 0),
+        valorDesconto: parseFloat(item.valorDesconto || 0)
+      };
+    });
+    
+    console.log('Enviando dados brutos para o backend:', {
+      itens: itens,
+      valorFrete: notaEntrada.valorFrete,
+      valorSeguro: notaEntrada.valorSeguro,
+      outrasDespesas: notaEntrada.outrasDespesas
+    });
+    
+    return {
+      numero: notaEntrada.numero,
+      modelo: notaEntrada.modelo || "55",
+      serie: notaEntrada.serie || "1",
+      fornecedorId: parseInt(notaEntrada.fornecedorSelecionado?.id || notaEntrada.fornecedorId),
+      dataEmissao: notaEntrada.dataEmissao,
+      dataRecebimento: notaEntrada.dataChegada,
+      condicaoPagamentoId: parseInt(notaEntrada.condicaoPagamentoId || 23),
+      status: notaEntrada.status || "PENDENTE",
+      tipoFrete: notaEntrada.tipoFrete,
+      transportadoraId: parseInt(notaEntrada.transportadoraId || 1),
+      valorFrete: parseFloat(notaEntrada.valorFrete || 0),
+      valorSeguro: parseFloat(notaEntrada.valorSeguro || 0),
+      outrasDespesas: parseFloat(notaEntrada.outrasDespesas || 0),
+      observacoes: notaEntrada.observacoes || '',
+      ativo: notaEntrada.ativo !== false,
+      itens: itens
+    };
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
-    const erroValidacao = validarDatas();
+    // Validações antes de enviar
+    const erroValidacao = validarDados();
     if (erroValidacao) {
       setError(erroValidacao);
       setLoading(false);
@@ -325,22 +437,30 @@ const NotaEntradaFormMUI = () => {
       
       const method = isEdit ? 'PUT' : 'POST';
 
+      // Transformar dados para o formato da API
+      const dadosAPI = transformarDadosParaAPI();
+      console.log('Dados sendo enviados para API:', dadosAPI);
+      console.log('JSON stringified:', JSON.stringify(dadosAPI, null, 2));
+
       const response = await fetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(notaEntrada),
+        body: JSON.stringify(dadosAPI),
       });
 
       if (response.ok) {
         navigate('/notas-entrada');
       } else {
-        setError('Erro ao salvar nota de entrada');
+        // Tentar obter detalhes do erro
+        const errorData = await response.text();
+        console.error('Erro da API:', response.status, errorData);
+        setError(`Erro ${response.status}: ${errorData || 'Erro ao salvar nota de entrada'}`);
       }
     } catch (error) {
       console.error('Erro:', error);
-      setError('Erro ao salvar nota de entrada');
+      setError('Erro ao conectar com o servidor');
     } finally {
       setLoading(false);
     }
@@ -508,14 +628,14 @@ const NotaEntradaFormMUI = () => {
           </Grid>
         </Grid>
 
-        {/* linha 2 add produtos */}
+        {/* linha 2 add itens */}
         <Grid container spacing={2} alignItems="center" sx={{ mb: 2, p: 2, bgcolor: '#f8f9fa', borderRadius: 1 }}>
-          <Grid item sx={{ width: '20%' }}>
+          <Grid item sx={{ width: '18%' }}>
             <TextField
               fullWidth
               size="small"
               label="Cód Produto"
-              value={produtoAtual.codigoProduto}
+              value={itemAtual.produtoCodigo}
               placeholder="Clique para buscar"
               variant="outlined"
               InputProps={{
@@ -538,24 +658,24 @@ const NotaEntradaFormMUI = () => {
             />
           </Grid>
 
-          <Grid item sx={{ width: '28%' }}>
+          <Grid item sx={{ width: '25%' }}>
             <TextField
               fullWidth
               size="small"
               label="Produto"
-              value={produtoAtual.produtoNome}
+              value={itemAtual.produtoNome}
               InputProps={{ readOnly: true }}
               variant="outlined"
               sx={{ bgcolor: '#f5f5f5' }}
             />
           </Grid>
 
-          <Grid item sx={{ width: '10%' }}>
+          <Grid item sx={{ width: '8%' }}>
             <TextField
               fullWidth
               size="small"
               label="Unidade"
-              value={produtoAtual.unidade}
+              value={itemAtual.unidade}
               InputProps={{ readOnly: true }}
               variant="outlined"
               sx={{ bgcolor: '#f5f5f5' }}
@@ -568,28 +688,38 @@ const NotaEntradaFormMUI = () => {
               size="small"
               label="Quantidade"
               type="number"
-              value={produtoAtual.quantidade}
-              onChange={(e) => setProdutoAtual(prev => ({ ...prev, quantidade: parseFloat(e.target.value) || 0 }))}
-              InputProps={{ inputProps: { step: 0.01, min: 0 } }}
+              value={itemAtual.quantidade}
+              onChange={(e) => setItemAtual(prev => ({ ...prev, quantidade: parseFloat(e.target.value) || 0 }))}
+              InputProps={{ 
+                inputProps: { step: 1, min: 0 } // Quantidade sem decimal
+              }}
               variant="outlined"
+              sx={{ 
+                '& .MuiInputBase-input': { 
+                  textAlign: 'right' // Alinhamento à direita
+                }
+              }}
             />
           </Grid>
-
-          {/* <Grid item sx={{ width: '20%' }}></Grid> */}
 
           <Grid item sx={{ width: '12%' }}>
             <TextField
               fullWidth
               size="small"
-              label="Preço Unit."
+              label="Valor Unit."
               type="number"
-              value={produtoAtual.precoUnitario}
-              onChange={(e) => setProdutoAtual(prev => ({ ...prev, precoUnitario: parseFloat(e.target.value) || 0 }))}
+              value={itemAtual.valorUnitario}
+              onChange={(e) => setItemAtual(prev => ({ ...prev, valorUnitario: parseFloat(e.target.value) || 0 }))}
               InputProps={{ 
                 inputProps: { step: 0.01, min: 0 },
                 startAdornment: <Box sx={{ mr: 1, color: 'text.secondary' }}>R$</Box>
               }}
               variant="outlined"
+              sx={{ 
+                '& .MuiInputBase-input': { 
+                  textAlign: 'right' 
+                }
+              }}
             />
           </Grid>
 
@@ -599,39 +729,56 @@ const NotaEntradaFormMUI = () => {
               size="small"
               label="Desconto"
               type="number"
-              value={produtoAtual.desconto}
-              onChange={(e) => setProdutoAtual(prev => ({ ...prev, desconto: parseFloat(e.target.value) || 0 }))}
+              value={itemAtual.valorDesconto}
+              onChange={(e) => {
+                const valor = parseFloat(e.target.value) || 0;
+                setItemAtual(prev => ({ 
+                  ...prev, 
+                  valorDesconto: valor,
+                  percentualDesconto: 0
+                }));
+              }}
               InputProps={{ 
                 inputProps: { step: 0.01, min: 0 },
                 startAdornment: <Box sx={{ mr: 1, color: 'text.secondary' }}>R$</Box>
               }}
               variant="outlined"
+              sx={{ 
+                '& .MuiInputBase-input': { 
+                  textAlign: 'right' 
+                }
+              }}
             />
           </Grid>
 
-          <Grid item sx={{ width: '10%' }}>
+          <Grid item sx={{ width: '12%' }}>
             <TextField
               fullWidth
               size="small"
-              label="Total"
+              label="Total Item"
               type="number"
-              value={produtoAtual.total}
+              value={itemAtual.valorTotal}
               InputProps={{ 
                 readOnly: true,
                 startAdornment: <Box sx={{ mr: 1, color: 'text.secondary' }}>R$</Box>
               }}
               variant="outlined"
-              sx={{ bgcolor: '#f5f5f5' }}
+              sx={{ 
+                bgcolor: '#f5f5f5',
+                '& .MuiInputBase-input': { 
+                  textAlign: 'right' 
+                }
+              }}
             />
           </Grid>
 
-          <Grid item sx={{ width: '4%' }}>
+          <Grid item sx={{ width: '5%' }}>
             <Button
               fullWidth
               variant="contained"
               size="small"
-              onClick={adicionarProduto}
-              disabled={!produtoAtual.codigoProduto || produtoAtual.quantidade <= 0}
+              onClick={adicionarItem}
+              disabled={!itemAtual.produtoId || itemAtual.quantidade <= 0}
               sx={{ minHeight: 40 }}
             >
               <AddIcon />
@@ -639,7 +786,7 @@ const NotaEntradaFormMUI = () => {
           </Grid>
         </Grid>
 
-        {/* Tabela de Produtos */}
+        {/* Tabela de Itens */}
         <TableContainer component={Paper} variant="outlined" sx={{ mb: 4 }}>
           <Table size="small">
             <TableHead>
@@ -648,24 +795,26 @@ const NotaEntradaFormMUI = () => {
                 <TableCell sx={{ fontWeight: 600 }}>Produto</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>Unid</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>Qtd</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Preço Un.</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Valor Un.</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Desconto</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>Total</TableCell>
                 <TableCell sx={{ fontWeight: 600, width: 50 }}>Ações</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {notaEntrada.produtos.map((produto) => (
-                <TableRow key={produto.id} hover>
-                  <TableCell>{produto.codigoProduto}</TableCell>
-                  <TableCell>{produto.produtoNome}</TableCell>
-                  <TableCell>{produto.unidade}</TableCell>
-                  <TableCell>{produto.quantidade}</TableCell>
-                  <TableCell>R$ {produto.precoUnitario.toFixed(2)}</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>R$ {produto.total.toFixed(2)}</TableCell>
+              {notaEntrada.itens.map((item) => (
+                <TableRow key={item.id} hover>
+                  <TableCell>{item.produtoCodigo || item.produtoId}</TableCell>
+                  <TableCell>{item.produtoNome}</TableCell>
+                  <TableCell>{item.unidade}</TableCell>
+                  <TableCell>{item.quantidade}</TableCell>
+                  <TableCell>R$ {item.valorUnitario.toFixed(2)}</TableCell>
+                  <TableCell>R$ {item.valorDesconto.toFixed(2)}</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>R$ {item.valorTotal.toFixed(2)}</TableCell>
                   <TableCell>
                     <IconButton
                       size="small"
-                      onClick={() => removerProduto(produto.id)}
+                      onClick={() => removerItem(item.id)}
                       sx={{ color: '#dc3545' }}
                     >
                       <DeleteIcon fontSize="small" />
@@ -673,10 +822,10 @@ const NotaEntradaFormMUI = () => {
                   </TableCell>
                 </TableRow>
               ))}
-              {notaEntrada.produtos.length === 0 && (
+              {notaEntrada.itens.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={7} align="center" sx={{ py: 3, color: 'text.secondary' }}>
-                    Nenhum produto adicionado
+                  <TableCell colSpan={8} align="center" sx={{ py: 3, color: 'text.secondary' }}>
+                    Nenhum item adicionado
                   </TableCell>
                 </TableRow>
               )}
@@ -746,6 +895,11 @@ const NotaEntradaFormMUI = () => {
                 startAdornment: <Box sx={{ mr: 1, color: 'text.secondary' }}>R$</Box>
               }}
               variant="outlined"
+              sx={{ 
+                '& .MuiInputBase-input': { 
+                  textAlign: 'right' 
+                }
+              }}
             />
           </Grid>
 
@@ -762,6 +916,11 @@ const NotaEntradaFormMUI = () => {
                 startAdornment: <Box sx={{ mr: 1, color: 'text.secondary' }}>R$</Box>
               }}
               variant="outlined"
+              sx={{ 
+                '& .MuiInputBase-input': { 
+                  textAlign: 'right' 
+                }
+              }}
             />
           </Grid>
 
@@ -778,6 +937,11 @@ const NotaEntradaFormMUI = () => {
                 startAdornment: <Box sx={{ mr: 1, color: 'text.secondary' }}>R$</Box>
               }}
               variant="outlined"
+              sx={{ 
+                '& .MuiInputBase-input': { 
+                  textAlign: 'right' 
+                }
+              }}
             />
           </Grid>
         </Grid>
@@ -789,19 +953,19 @@ const NotaEntradaFormMUI = () => {
         <Divider sx={{ mb: 3 }} />
         
         <Grid container spacing={2} alignItems="center" sx={{ mb: 4 }}>
-          <Grid item sx={{ width: '10%' }}>
+          <Grid item sx={{ width: '12%' }}>
             <TextField
               fullWidth
               size="small"
               label="Cód Cond. Pgto"
-              value={notaEntrada.codigoCondicaoPagamento}
+              value={notaEntrada.condicaoPagamentoId}
               InputProps={{ readOnly: true }}
               variant="outlined"
               sx={{ bgcolor: '#f5f5f5' }}
             />
           </Grid>
 
-          <Grid item sx={{ width: '20%' }}>
+          <Grid item sx={{ width: '30%' }}>
             <TextField
               fullWidth
               size="small"
@@ -815,9 +979,6 @@ const NotaEntradaFormMUI = () => {
         </Grid>
 
         {/* Campo Observação */}
-        <Typography variant="h6" gutterBottom color="primary" fontWeight={600} sx={{ mt: 3, mb: 2 }}>
-          Observações
-        </Typography>
         <Divider sx={{ mb: 3 }} />
         
         <Grid container spacing={2} sx={{ mb: 4 }}>
