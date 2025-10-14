@@ -203,7 +203,7 @@ const NotaEntradaFormMUI = () => {
       produtoCodigo: produto.codigo || produto.id.toString(), // Código para exibição
       produtoNome: produto.nome,
       unidade: produto.unidade || 'UN',
-      valorUnitario: produto.preco || 0
+      valorUnitario: produto.valorCompra || 0 // Usar valorCompra fixo do produto
     }));
     calcularTotalItem();
   };
@@ -225,27 +225,42 @@ const NotaEntradaFormMUI = () => {
 
   // Função para adicionar item à lista
   const adicionarItem = () => {
-    if (itemAtual.produtoId && itemAtual.quantidade > 0) {
-      setNotaEntrada(prev => ({
-        ...prev,
-        itens: [...prev.itens, { ...itemAtual, id: Date.now() }]
-      }));
-      // Limpar formulário de item
-      setItemAtual({
-        produtoId: '',
-        produtoCodigo: '',
-        produtoNome: '',
-        unidade: '',
-        quantidade: 0,
-        valorUnitario: 0,
-        valorDesconto: 0,
-        percentualDesconto: 0,
-        valorTotal: 0,
-        rateioFrete: 0,
-        rateioSeguro: 0,
-        rateioOutras: 0
-      });
+    // Validações
+    if (!itemAtual.produtoId) {
+      setError('Selecione um produto antes de adicionar o item');
+      return;
     }
+    if (itemAtual.quantidade <= 0) {
+      setError('Quantidade deve ser maior que zero');
+      return;
+    }
+    if (itemAtual.valorUnitario <= 0) {
+      setError('Valor unitário inválido. Verifique se o produto possui valor de compra cadastrado');
+      return;
+    }
+
+    // Limpar erro e adicionar item
+    setError('');
+    setNotaEntrada(prev => ({
+      ...prev,
+      itens: [...prev.itens, { ...itemAtual, id: Date.now() }]
+    }));
+    
+    // Limpar formulário de item
+    setItemAtual({
+      produtoId: '',
+      produtoCodigo: '',
+      produtoNome: '',
+      unidade: '',
+      quantidade: 0,
+      valorUnitario: 0,
+      valorDesconto: 0,
+      percentualDesconto: 0,
+      valorTotal: 0,
+      rateioFrete: 0,
+      rateioSeguro: 0,
+      rateioOutras: 0
+    });
   };
 
   // Função para remover item da lista
@@ -709,15 +724,16 @@ const NotaEntradaFormMUI = () => {
               label="Valor Unit."
               type="number"
               value={itemAtual.valorUnitario}
-              onChange={(e) => setItemAtual(prev => ({ ...prev, valorUnitario: parseFloat(e.target.value) || 0 }))}
               InputProps={{ 
+                readOnly: true,
                 inputProps: { step: 0.01, min: 0 },
                 startAdornment: <Box sx={{ mr: 1, color: 'text.secondary' }}>R$</Box>
               }}
               variant="outlined"
               sx={{ 
                 '& .MuiInputBase-input': { 
-                  textAlign: 'right' 
+                  textAlign: 'right',
+                  backgroundColor: '#f5f5f5' // Indicar visualmente que é somente leitura
                 }
               }}
             />
