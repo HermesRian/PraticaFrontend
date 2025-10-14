@@ -58,7 +58,8 @@ const FornecedorModal = ({ open, onClose, onSelect }) => {
   };
 
   const fornecedoresFiltrados = fornecedores.filter(fornecedor =>
-    fornecedor.nome?.toLowerCase().includes(filtro.toLowerCase()) ||
+    fornecedor.razaoSocial?.toLowerCase().includes(filtro.toLowerCase()) ||
+    fornecedor.nomeFantasia?.toLowerCase().includes(filtro.toLowerCase()) ||
     fornecedor.cpfCnpj?.toLowerCase().includes(filtro.toLowerCase())
   );
 
@@ -93,7 +94,7 @@ const FornecedorModal = ({ open, onClose, onSelect }) => {
           <TextField
             fullWidth
             variant="outlined"
-            placeholder="Pesquisar por nome ou CPF/CNPJ..."
+            placeholder="Pesquisar por razão social, nome fantasia ou CPF/CNPJ..."
             value={filtro}
             onChange={(e) => setFiltro(e.target.value)}
             InputProps={{
@@ -132,9 +133,9 @@ const FornecedorModal = ({ open, onClose, onSelect }) => {
             <TableHead>
               <TableRow>
                 <TableCell sx={{ fontWeight: 600, bgcolor: '#f8f9fa' }}>Código</TableCell>
-                <TableCell sx={{ fontWeight: 600, bgcolor: '#f8f9fa' }}>Nome</TableCell>
+                <TableCell sx={{ fontWeight: 600, bgcolor: '#f8f9fa' }}>Razão Social</TableCell>
+                <TableCell sx={{ fontWeight: 600, bgcolor: '#f8f9fa' }}>Nome Fantasia</TableCell>
                 <TableCell sx={{ fontWeight: 600, bgcolor: '#f8f9fa' }}>CPF/CNPJ</TableCell>
-                <TableCell sx={{ fontWeight: 600, bgcolor: '#f8f9fa' }}>Email</TableCell>
                 <TableCell sx={{ fontWeight: 600, bgcolor: '#f8f9fa' }}>Status</TableCell>
                 <TableCell sx={{ fontWeight: 600, bgcolor: '#f8f9fa', width: 100 }}>Ação</TableCell>
               </TableRow>
@@ -157,17 +158,17 @@ const FornecedorModal = ({ open, onClose, onSelect }) => {
                   </TableCell>
                   <TableCell>
                     <Typography variant="body2" fontWeight={500}>
-                      {fornecedor.nome}
+                      {fornecedor.razaoSocial}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body2">
+                      {fornecedor.nomeFantasia || 'Não informado'}
                     </Typography>
                   </TableCell>
                   <TableCell>
                     <Typography variant="body2" fontFamily="monospace">
                       {fornecedor.cpfCnpj || 'Não informado'}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2">
-                      {fornecedor.email || 'Não informado'}
                     </Typography>
                   </TableCell>
                   <TableCell>

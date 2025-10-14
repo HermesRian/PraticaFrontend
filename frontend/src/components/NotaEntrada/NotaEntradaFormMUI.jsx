@@ -71,7 +71,19 @@ const NotaEntradaFormMUI = () => {
   const [produtoModalOpen, setProdutoModalOpen] = useState(false);
   const [fornecedorSelecionado, setFornecedorSelecionado] = useState(null);
 
-
+  // Buscar dados do fornecedor quando o ID mudar
+  useEffect(() => {
+    if (notaEntrada.fornecedorId && !fornecedorSelecionado) {
+      fetch(`http://localhost:8080/fornecedores/${notaEntrada.fornecedorId}`)
+        .then(res => res.json())
+        .then(data => {
+          setFornecedorSelecionado(data);
+        })
+        .catch(error => {
+          console.error('Erro ao carregar fornecedor:', error);
+        });
+    }
+  }, [notaEntrada.fornecedorId, fornecedorSelecionado]);
 
   // Carregar nota para edição
   useEffect(() => {
@@ -103,10 +115,8 @@ const NotaEntradaFormMUI = () => {
     setFornecedorSelecionado(fornecedor);
     handleChange('fornecedorId', fornecedor.id);
     
-    // Buscar condição de pagamento do fornecedor
-    if (fornecedor.codigoCondicaoPagamento) {
-      buscarCondicaoPagamento(fornecedor.codigoCondicaoPagamento);
-    }
+    // Preencher condição de pagamento do fornecedor
+    preencherCondicaoPagamento(fornecedor);
   };
 
   const handleProdutoSelect = (produto) => {
@@ -165,15 +175,55 @@ const NotaEntradaFormMUI = () => {
   };
 
   // Função para buscar condição de pagamento do fornecedor
-  const buscarCondicaoPagamento = async (fornecedorId) => {
+  const preencherCondicaoPagamento = async (fornecedor) => {
+    console.log('Preenchendo condição de pagamento para fornecedor:', fornecedor);
+    console.log('Campos disponíveis:', Object.keys(fornecedor));
+    
+    // Se o fornecedor já tem as informações de condição de pagamento
+    if (fornecedor.codigoCondicaoPagamento || fornecedor.condicaoPagamento) {
+      setNotaEntrada(prev => ({
+        ...prev,
+        codigoCondicaoPagamento: fornecedor.codigoCondicaoPagamento || '',
+        condicaoPagamento: fornecedor.condicaoPagamento || ''
+      }));
+      return;
+    }
+
+    // Se não tem, buscar informações completas do fornecedor
     try {
-      const response = await fetch(`http://localhost:8080/fornecedores/${fornecedorId}`);
+      const response = await fetch(`http://localhost:8080/fornecedores/${fornecedor.id}`);
       if (response.ok) {
-        const fornecedor = await response.json();
+        const fornecedorCompleto = await response.json();
+        console.log('Dados completos do fornecedor:', fornecedorCompleto);
+        
+        // Tentar diferentes campos que podem conter a condição de pagamento
+        let codigo = '';
+        let descricao = '';
+        
+        // Verificar possíveis campos de código
+        if (fornecedorCompleto.codigoCondicaoPagamento) {
+          codigo = fornecedorCompleto.codigoCondicaoPagamento;
+        } else if (fornecedorCompleto.condicaoPagamentoId) {
+          codigo = fornecedorCompleto.condicaoPagamentoId;
+        }
+        
+        // Se temos um código, buscar a descrição da condição de pagamento
+        if (codigo) {
+          try {
+            const condResponse = await fetch(`http://localhost:8080/condicoes-pagamento/${codigo}`);
+            if (condResponse.ok) {
+              const condicao = await condResponse.json();
+              descricao = condicao.descricao || condicao.nome || '';
+            }
+          } catch (err) {
+            console.log('Erro ao buscar descrição da condição:', err);
+          }
+        }
+        
         setNotaEntrada(prev => ({
           ...prev,
-          codigoCondicaoPagamento: fornecedor.codigoCondicaoPagamento || '',
-          condicaoPagamento: fornecedor.condicaoPagamento || ''
+          codigoCondicaoPagamento: codigo,
+          condicaoPagamento: descricao
         }));
       }
     } catch (error) {
@@ -281,7 +331,7 @@ const NotaEntradaFormMUI = () => {
         )}
         {/* Linha 1: Número, Modelo, Série, Fornecedor, Data Emissão, Data Chegada */}
         <Grid container spacing={2} alignItems="center" sx={{ mb: 4 }}>
-          <Grid item sx={{ width: '15%' }}>
+          <Grid item sx={{ width: '10%' }}>
             <TextField
               fullWidth
               required
@@ -294,7 +344,7 @@ const NotaEntradaFormMUI = () => {
             />
           </Grid>
 
-          <Grid item sx={{ width: '15%' }}>
+          <Grid item sx={{ width: '10%' }}>
             <TextField
               fullWidth
               size="small"
@@ -324,8 +374,8 @@ const NotaEntradaFormMUI = () => {
               required
               size="small"
               label="Fornecedor"
-              value={fornecedorSelecionado ? fornecedorSelecionado.nome : ''}
-              placeholder="Clique para selecionar"
+              value={fornecedorSelecionado ? (fornecedorSelecionado.nomeFantasia || fornecedorSelecionado.razaoSocial) : (notaEntrada.fornecedorId ? 'Carregando...' : '')}
+              placeholder="Clique para selecionar fornecedor"
               variant="outlined"
               InputProps={{
                 readOnly: true,
@@ -375,9 +425,9 @@ const NotaEntradaFormMUI = () => {
           </Grid>
         </Grid>
 
-        {/* Linha 2: Adição de Produtos */}
+        {/* linha 2 add produtos */}
         <Grid container spacing={2} alignItems="center" sx={{ mb: 2, p: 2, bgcolor: '#f8f9fa', borderRadius: 1 }}>
-          <Grid item sx={{ width: '12%' }}>
+          <Grid item sx={{ width: '20%' }}>
             <TextField
               fullWidth
               size="small"
@@ -429,7 +479,7 @@ const NotaEntradaFormMUI = () => {
             />
           </Grid>
 
-          <Grid item sx={{ width: '12%' }}>
+          <Grid item sx={{ width: '10%' }}>
             <TextField
               fullWidth
               size="small"
@@ -441,6 +491,8 @@ const NotaEntradaFormMUI = () => {
               variant="outlined"
             />
           </Grid>
+
+          {/* <Grid item sx={{ width: '20%' }}></Grid> */}
 
           <Grid item sx={{ width: '12%' }}>
             <TextField
