@@ -19,7 +19,11 @@ import {
   TableHead,
   TableRow,
   IconButton,
-  Divider
+  Divider,
+  Radio,
+  RadioGroup,
+  FormControlLabel,
+  FormLabel
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -608,22 +612,49 @@ const NotaEntradaFormMUI = () => {
         <Divider sx={{ mb: 3 }} />
         
         <Grid container spacing={2} alignItems="center" sx={{ mb: 4 }}>
-          <Grid item sx={{ width: '20%' }}>
-            <FormControl fullWidth size="small">
-              <InputLabel>Tipo Frete</InputLabel>
-              <Select
+          <Grid item sx={{ width: '30%' }}>
+            <FormControl component="fieldset">
+              <FormLabel component="legend" sx={{ fontSize: '0.875rem', fontWeight: 500, mb: 1 }}>
+                Tipo Frete
+              </FormLabel>
+              <RadioGroup
+                row
                 value={notaEntrada.tipoFrete}
                 onChange={(e) => handleChange('tipoFrete', e.target.value)}
-                label="Tipo Frete"
+                sx={{ gap: 1 }}
               >
-                <MenuItem value="CIF">CIF</MenuItem>
-                <MenuItem value="FOB">FOB</MenuItem>
-                <MenuItem value="NENHUM">Nenhum</MenuItem>
-              </Select>
+                <FormControlLabel 
+                  value="CIF" 
+                  control={<Radio size="small" />} 
+                  label="CIF"
+                  sx={{ 
+                    '& .MuiFormControlLabel-label': { fontSize: '0.875rem' },
+                    mr: 1
+                  }}
+                />
+                <FormControlLabel 
+                  value="FOB" 
+                  control={<Radio size="small" />} 
+                  label="FOB"
+                  sx={{ 
+                    '& .MuiFormControlLabel-label': { fontSize: '0.875rem' },
+                    mr: 1
+                  }}
+                />
+                <FormControlLabel 
+                  value="NENHUM" 
+                  control={<Radio size="small" />} 
+                  label="Nenhum"
+                  sx={{ 
+                    '& .MuiFormControlLabel-label': { fontSize: '0.875rem' },
+                    mr: 0
+                  }}
+                />
+              </RadioGroup>
             </FormControl>
           </Grid>
 
-          <Grid item sx={{ width: '25%' }}>
+          <Grid item sx={{ width: '20%' }}>
             <TextField
               fullWidth
               size="small"
@@ -639,7 +670,7 @@ const NotaEntradaFormMUI = () => {
             />
           </Grid>
 
-          <Grid item sx={{ width: '25%' }}>
+          <Grid item sx={{ width: '20%' }}>
             <TextField
               fullWidth
               size="small"
@@ -655,7 +686,7 @@ const NotaEntradaFormMUI = () => {
             />
           </Grid>
 
-          <Grid item sx={{ width: '30%' }}>
+          <Grid item sx={{ width: '20%' }}>
             <TextField
               fullWidth
               size="small"
@@ -679,7 +710,7 @@ const NotaEntradaFormMUI = () => {
         <Divider sx={{ mb: 3 }} />
         
         <Grid container spacing={2} alignItems="center" sx={{ mb: 4 }}>
-          <Grid item sx={{ width: '20%' }}>
+          <Grid item sx={{ width: '10%' }}>
             <TextField
               fullWidth
               size="small"
@@ -691,7 +722,7 @@ const NotaEntradaFormMUI = () => {
             />
           </Grid>
 
-          <Grid item sx={{ width: '80%' }}>
+          <Grid item sx={{ width: '20%' }}>
             <TextField
               fullWidth
               size="small"
