@@ -69,6 +69,8 @@ const NotaEntradaFormMUI = () => {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [erroDataEmissao, setErroDataEmissao] = useState('');
+  const [erroDataChegada, setErroDataChegada] = useState('');
 
   // Estados para controlar os modals
   const [fornecedorModalOpen, setFornecedorModalOpen] = useState(false);
@@ -112,6 +114,34 @@ const NotaEntradaFormMUI = () => {
       ...prev,
       [field]: value
     }));
+  };
+
+  // Função para validar datas
+  const validarDatas = () => {
+    const hoje = new Date().toISOString().split('T')[0];
+    const { dataEmissao, dataChegada } = notaEntrada;
+    
+    // Validar data de emissão não pode ser maior que hoje
+    if (dataEmissao && dataEmissao > hoje) {
+      return 'Data de emissão não pode ser maior que a data atual';
+    }
+    
+    // Validar data de chegada deve ser >= data de emissão
+    if (dataEmissao && dataChegada && dataChegada < dataEmissao) {
+      return 'Data de chegada deve ser maior ou igual à data de emissão';
+    }
+    
+    return null;
+  };
+
+  // Função para obter data máxima para emissão (hoje)
+  const getMaxDataEmissao = () => {
+    return new Date().toISOString().split('T')[0];
+  };
+
+  // Função para obter data mínima para chegada (data de emissão)
+  const getMinDataChegada = () => {
+    return notaEntrada.dataEmissao || undefined;
   };
 
   // Funções para manipular os modals
@@ -244,10 +274,39 @@ const NotaEntradaFormMUI = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [produtoAtual.quantidade, produtoAtual.precoUnitario, produtoAtual.desconto]);
 
+  // Validar datas em tempo real
+  useEffect(() => {
+    const hoje = new Date().toISOString().split('T')[0];
+    const { dataEmissao, dataChegada } = notaEntrada;
+    
+    // Limpar erros anteriores
+    setErroDataEmissao('');
+    setErroDataChegada('');
+    
+    // Validar data de emissão
+    if (dataEmissao && dataEmissao > hoje) {
+      setErroDataEmissao('Data não pode ser maior que hoje');
+    }
+    
+    // Validar data de chegada
+    if (dataEmissao && dataChegada && dataChegada < dataEmissao) {
+      setErroDataChegada('Data deve ser maior ou igual à data de emissão');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [notaEntrada.dataEmissao, notaEntrada.dataChegada]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+
+    // Validar datas antes de enviar
+    const erroValidacao = validarDatas();
+    if (erroValidacao) {
+      setError(erroValidacao);
+      setLoading(false);
+      return;
+    }
 
     try {
       const url = isEdit 
@@ -411,6 +470,11 @@ const NotaEntradaFormMUI = () => {
               value={notaEntrada.dataEmissao}
               onChange={(e) => handleChange('dataEmissao', e.target.value)}
               InputLabelProps={{ shrink: true }}
+              inputProps={{ 
+                max: getMaxDataEmissao()
+              }}
+              error={!!erroDataEmissao}
+              helperText={erroDataEmissao}
               variant="outlined"
             />
           </Grid>
@@ -424,6 +488,11 @@ const NotaEntradaFormMUI = () => {
               value={notaEntrada.dataChegada}
               onChange={(e) => handleChange('dataChegada', e.target.value)}
               InputLabelProps={{ shrink: true }}
+              inputProps={{ 
+                min: getMinDataChegada()
+              }}
+              error={!!erroDataChegada}
+              helperText={erroDataChegada}
               variant="outlined"
             />
           </Grid>
