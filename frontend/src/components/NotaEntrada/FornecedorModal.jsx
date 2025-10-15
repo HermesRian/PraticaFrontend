@@ -25,7 +25,7 @@ import {
   Check as CheckIcon
 } from '@mui/icons-material';
 
-const FornecedorModal = ({ open, onClose, onSelect }) => {
+const FornecedorModal = ({ open, onClose, onSelect, onAddNew }) => {
   const [fornecedores, setFornecedores] = useState([]);
   const [filtro, setFiltro] = useState('');
   const [loading, setLoading] = useState(false);
@@ -120,11 +120,25 @@ const FornecedorModal = ({ open, onClose, onSelect }) => {
           />
         </Box>
 
-        {/* Contador de resultados */}
-        <Box sx={{ mb: 2 }}>
+        {/* Contador de resultados e botão adicionar */}
+        <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="body2" color="text.secondary">
             {loading ? 'Carregando...' : `${fornecedoresFiltrados.length} fornecedor(es) encontrado(s)`}
           </Typography>
+          {onAddNew && (
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={onAddNew}
+              sx={{
+                textTransform: 'none',
+                borderRadius: 2,
+                px: 2
+              }}
+            >
+              Adicionar
+            </Button>
+          )}
         </Box>
 
         {/* Tabela de fornecedores */}

@@ -31,6 +31,7 @@ import {
   Search as SearchIcon
 } from '@mui/icons-material';
 import FornecedorModal from './FornecedorModal';
+import FornecedorModalForm from '../Fornecedor/FornecedorModalForm';
 import ProdutoModal from './ProdutoModal';
 
 const NotaEntradaFormMUI = () => {
@@ -85,6 +86,7 @@ const NotaEntradaFormMUI = () => {
 
   // Estados para controlar os modals
   const [fornecedorModalOpen, setFornecedorModalOpen] = useState(false);
+  const [fornecedorFormModalOpen, setFornecedorFormModalOpen] = useState(false);
   const [produtoModalOpen, setProdutoModalOpen] = useState(false);
   const [fornecedorSelecionado, setFornecedorSelecionado] = useState(null);
 
@@ -1160,12 +1162,24 @@ const NotaEntradaFormMUI = () => {
         open={fornecedorModalOpen}
         onClose={() => setFornecedorModalOpen(false)}
         onSelect={handleFornecedorSelect}
+        onAddNew={() => setFornecedorFormModalOpen(true)}
       />
 
       <ProdutoModal
         open={produtoModalOpen}
         onClose={() => setProdutoModalOpen(false)}
         onSelect={handleProdutoSelect}
+      />
+
+      <FornecedorModalForm
+        open={fornecedorFormModalOpen}
+        onClose={() => setFornecedorFormModalOpen(false)}
+        onSuccess={(novoFornecedor) => {
+          // Fechar modal de cadastro e selecionar o novo fornecedor
+          setFornecedorFormModalOpen(false);
+          setFornecedorModalOpen(false);
+          handleFornecedorSelect(novoFornecedor);
+        }}
       />
     </Box>
   );
