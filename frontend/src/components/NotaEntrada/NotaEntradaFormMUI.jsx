@@ -920,6 +920,16 @@ const NotaEntradaFormMUI = () => {
           </Table>
         </TableContainer>
 
+        {/* Total dos Produtos */}
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 3, mr: 2 }}>
+          <Typography variant="subtitle1" fontWeight={500} color="text.secondary">
+            Total Produtos: 
+            <Typography component="span" variant="subtitle1" fontWeight={600} color="text.primary" sx={{ ml: 1 }}>
+              R$ {notaEntrada.itens.reduce((sum, item) => sum + item.valorTotal, 0).toFixed(2)}
+            </Typography>
+          </Typography>
+        </Box>
+
         {/* Seção Frete e Outras Despesas */}
         <Typography variant="h6" gutterBottom color="primary" fontWeight={600} sx={{ mt: 3, mb: 2 }}>
           Frete e Outras Despesas
@@ -1037,6 +1047,21 @@ const NotaEntradaFormMUI = () => {
             </>
           )}
         </Grid>
+
+        {/* Total da Nota */}
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 3, mr: 2 }}>
+          <Typography variant="subtitle1" fontWeight={500} color="text.secondary">
+            Total da Nota: 
+            <Typography component="span" variant="h6" fontWeight={700} color="text.primary" sx={{ ml: 1 }}>
+              R$ {(
+                notaEntrada.itens.reduce((sum, item) => sum + item.valorTotal, 0) +
+                parseFloat(notaEntrada.valorFrete || 0) +
+                parseFloat(notaEntrada.valorSeguro || 0) +
+                parseFloat(notaEntrada.outrasDespesas || 0)
+              ).toFixed(2)}
+            </Typography>
+          </Typography>
+        </Box>
 
         {/* Seção Condição de Pagamento */}
         <Typography variant="h6" gutterBottom color="primary" fontWeight={600} sx={{ mt: 3, mb: 2 }}>
