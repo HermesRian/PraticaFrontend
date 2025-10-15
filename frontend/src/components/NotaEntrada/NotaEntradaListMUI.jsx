@@ -31,6 +31,7 @@ import {
   Search as SearchIcon,
   Receipt as ReceiptIcon
 } from '@mui/icons-material';
+import NotaEntradaViewModal from './NotaEntradaViewModal';
 
 const NotaEntradaListMUI = () => {
   const [notasEntrada, setNotasEntrada] = useState([]);
@@ -40,6 +41,8 @@ const NotaEntradaListMUI = () => {
   const [filtro, setFiltro] = useState('');
   const [filtroStatus, setFiltroStatus] = useState('todos');
   const [sortConfig, setSortConfig] = useState({ key: 'numero', direction: 'desc' });
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [selectedNotaId, setSelectedNotaId] = useState(null);
 
   const loadData = async () => {
     setLoading(true);
@@ -163,10 +166,20 @@ const NotaEntradaListMUI = () => {
     }
   };
 
+  const handleViewNota = (notaId) => {
+    setSelectedNotaId(notaId);
+    setViewModalOpen(true);
+  };
+
+  const handleCloseViewModal = () => {
+    setViewModalOpen(false);
+    setSelectedNotaId(null);
+  };
+
   const notasFiltradas = notasEntrada.filter(nota => {
     // Filtro por texto
     const matchesText = nota.numero?.toLowerCase().includes(filtro.toLowerCase()) ||
-      getFornecedorNome(nota.fornecedorId)?.toLowerCase().includes(filtro.toLowerCase());
+      getFornecedorNome(nota)?.toLowerCase().includes(filtro.toLowerCase());
     
     // Filtro por status
     const matchesStatus = filtroStatus === 'todos' || nota.status === filtroStatus;
@@ -357,6 +370,7 @@ const NotaEntradaListMUI = () => {
                         size="small"
                         sx={{ color: '#1976d2' }}
                         title="Visualizar"
+                        onClick={() => handleViewNota(nota.id)}
                       >
                         <VisibilityIcon fontSize="small" />
                       </IconButton>
@@ -385,6 +399,13 @@ const NotaEntradaListMUI = () => {
           </Box>
         )}
       </Paper>
+
+      {/* Modal de Visualização */}
+      <NotaEntradaViewModal
+        open={viewModalOpen}
+        onClose={handleCloseViewModal}
+        notaId={selectedNotaId}
+      />
     </Box>
   );
 };

@@ -30,27 +30,48 @@ const ProdutoModal = ({ open, onClose, onSelect, onAddNew }) => {
   const [produtos, setProdutos] = useState([]);
   const [filtro, setFiltro] = useState('');
   const [loading, setLoading] = useState(false);
+  const [unidadesMedida, setUnidadesMedida] = useState([]);
+  const [categorias, setCategorias] = useState([]);
 
   useEffect(() => {
     if (open) {
-      carregarProdutos();
+      carregarDados();
     }
   }, [open]);
 
-  const carregarProdutos = async () => {
+  const carregarDados = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:8080/produtos');
-      if (response.ok) {
-        const data = await response.json();
-        setProdutos(data);
+      const [produtosRes, unidadesRes, categoriasRes] = await Promise.all([
+        fetch('http://localhost:8080/produtos'),
+        fetch('http://localhost:8080/unidades-medida'),
+        fetch('http://localhost:8080/categorias')
+      ]);
+
+      if (produtosRes.ok) {
+        const produtosData = await produtosRes.json();
+        setProdutos(produtosData);
+      }
+
+      if (unidadesRes.ok) {
+        const unidadesData = await unidadesRes.json();
+        console.log('Unidades de medida carregadas:', unidadesData);
+        setUnidadesMedida(unidadesData);
+      }
+
+      if (categoriasRes.ok) {
+        const categoriasData = await categoriasRes.json();
+        console.log('Categorias carregadas:', categoriasData);
+        setCategorias(categoriasData);
       }
     } catch (error) {
-      console.error('Erro ao carregar produtos:', error);
+      console.error('Erro ao carregar dados:', error);
     } finally {
       setLoading(false);
     }
   };
+
+
 
   const handleSelect = (produto) => {
     onSelect(produto);
@@ -63,6 +84,19 @@ const ProdutoModal = ({ open, onClose, onSelect, onAddNew }) => {
     produto.codigo?.toLowerCase().includes(filtro.toLowerCase()) ||
     produto.id?.toString().includes(filtro)
   );
+
+  // Funções helper para buscar nomes
+  const getUnidadeMedidaNome = (unidadeMedidaId) => {
+    if (!unidadeMedidaId || !unidadesMedida.length) return 'UN';
+    const unidade = unidadesMedida.find(u => u.id === unidadeMedidaId);
+    return unidade ? unidade.nome : 'UN';
+  };
+
+  const getCategoriaNome = (categoriaId) => {
+    if (!categoriaId || !categorias.length) return 'Sem categoria';
+    const categoria = categorias.find(c => c.id === categoriaId);
+    return categoria ? categoria.nome : 'Sem categoria';
+  };
 
   const formatarPreco = (preco) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -194,17 +228,17 @@ const ProdutoModal = ({ open, onClose, onSelect, onAddNew }) => {
                   </TableCell>
                   <TableCell>
                     <Typography variant="body2">
-                      {produto.unidade || 'UN'}
+                      {getUnidadeMedidaNome(produto.unidadeMedidaId)}
                     </Typography>
                   </TableCell>
                   <TableCell>
                     <Typography variant="body2" fontFamily="monospace" fontWeight={500} color="success.main">
-                      {formatarPreco(produto.preco)}
+                      {formatarPreco(produto.valorCompra)}
                     </Typography>
                   </TableCell>
                   <TableCell>
                     <Typography variant="body2">
-                      {produto.categoriaNome || 'Sem categoria'}
+                      {getCategoriaNome(produto.categoriaId)}
                     </Typography>
                   </TableCell>
                   <TableCell>

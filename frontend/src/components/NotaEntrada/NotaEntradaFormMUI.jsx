@@ -91,6 +91,18 @@ const NotaEntradaFormMUI = () => {
   const [produtoModalOpen, setProdutoModalOpen] = useState(false);
   const [produtoFormModalOpen, setProdutoFormModalOpen] = useState(false);
   const [fornecedorSelecionado, setFornecedorSelecionado] = useState(null);
+  const [unidadesMedida, setUnidadesMedida] = useState([]);
+
+  // Carregar unidades de medida
+  useEffect(() => {
+    fetch('http://localhost:8080/unidades-medida')
+      .then(res => res.json())
+      .then(data => {
+        console.log('Unidades de medida carregadas:', data);
+        setUnidadesMedida(data);
+      })
+      .catch(error => console.error('Erro ao carregar unidades de medida:', error));
+  }, []);
 
   // Buscar dados do fornecedor quando o ID mudar
   useEffect(() => {
@@ -221,13 +233,26 @@ const NotaEntradaFormMUI = () => {
     preencherCondicaoPagamento(fornecedor);
   };
 
+  // Função para buscar nome da unidade de medida pelo ID
+  const getUnidadeMedidaNome = (unidadeMedidaId) => {
+    if (!unidadeMedidaId || !unidadesMedida.length) return 'UN';
+    const unidade = unidadesMedida.find(u => u.id === unidadeMedidaId);
+    return unidade ? unidade.nome : 'UN';
+  };
+
   const handleProdutoSelect = (produto) => {
+    console.log('Produto selecionado:', produto);
+    console.log('Unidades de medida disponíveis:', unidadesMedida);
+    
+    const unidadeNome = getUnidadeMedidaNome(produto.unidadeMedidaId);
+    console.log(`Unidade encontrada para produto ${produto.nome}:`, unidadeNome);
+    
     setItemAtual(prev => ({
       ...prev,
       produtoId: produto.id, // ID numérico para a API
       produtoCodigo: produto.codigo || produto.id.toString(), // Código para exibição
       produtoNome: produto.nome,
-      unidade: produto.unidade || 'UN',
+      unidade: unidadeNome,
       valorUnitario: produto.valorCompra || 0 // Usar valorCompra fixo do produto
     }));
     calcularTotalItem();
