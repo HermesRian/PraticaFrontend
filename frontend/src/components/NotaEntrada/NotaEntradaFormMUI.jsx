@@ -79,6 +79,7 @@ const NotaEntradaFormMUI = () => {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [erroDataEmissao, setErroDataEmissao] = useState('');
   const [erroDataChegada, setErroDataChegada] = useState('');
 
@@ -239,12 +240,54 @@ const NotaEntradaFormMUI = () => {
       return;
     }
 
-    // Limpar erro e adicionar item
+    // Limpar erro
     setError('');
-    setNotaEntrada(prev => ({
-      ...prev,
-      itens: [...prev.itens, { ...itemAtual, id: Date.now() }]
-    }));
+    
+    // Verificar se o produto já existe na lista
+    setNotaEntrada(prev => {
+      const produtoExistente = prev.itens.find(item => item.produtoId === itemAtual.produtoId);
+      
+      if (produtoExistente) {
+        // Produto já existe: somar quantidade e atualizar desconto
+        console.log(`Produto ${itemAtual.produtoNome} já existe. Atualizando quantidade e desconto.`);
+        
+
+        
+        const itensAtualizados = prev.itens.map(item => {
+          if (item.produtoId === itemAtual.produtoId) {
+            const quantidadeAnterior = item.quantidade;
+            const descontoAnterior = item.valorDesconto;
+            const novaQuantidade = quantidadeAnterior + itemAtual.quantidade;
+            const novoDesconto = itemAtual.valorDesconto; // Sobrescrever desconto
+            const novoTotal = (novaQuantidade * item.valorUnitario) - novoDesconto;
+            
+            console.log(`- Quantidade: ${quantidadeAnterior} + ${itemAtual.quantidade} = ${novaQuantidade}`);
+            console.log(`- Desconto: ${descontoAnterior} → ${novoDesconto} (sobrescrito)`);
+            console.log(`- Total: ${novoTotal}`);
+            
+            return {
+              ...item,
+              quantidade: novaQuantidade,
+              valorDesconto: novoDesconto,
+              valorTotal: novoTotal
+            };
+          }
+          return item;
+        });
+        
+        return {
+          ...prev,
+          itens: itensAtualizados
+        };
+      } else {
+        // Produto novo: adicionar à lista
+        console.log(`Adicionando novo produto: ${itemAtual.produtoNome}`);
+        return {
+          ...prev,
+          itens: [...prev.itens, { ...itemAtual, id: Date.now() }]
+        };
+      }
+    });
     
     // Limpar formulário de item
     setItemAtual({
@@ -535,6 +578,12 @@ const NotaEntradaFormMUI = () => {
         {error && (
           <Alert severity="error" sx={{ mb: 3 }}>
             {error}
+          </Alert>
+        )}
+        
+        {successMessage && (
+          <Alert severity="success" sx={{ mb: 3 }}>
+            {successMessage}
           </Alert>
         )}
         {/* Linha 1: Número, Modelo, Série, Fornecedor, Data Emissão, Data Chegada */}
