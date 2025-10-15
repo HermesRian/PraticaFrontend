@@ -50,7 +50,7 @@ const NotaEntradaFormMUI = () => {
     condicaoPagamentoId: '',
     condicaoPagamento: '', // Descrição da condição de pagamento
     status: 'PENDENTE',
-    tipoFrete: 'CIF',
+    tipoFrete: 'Nenhum',
     transportadoraId: '',
     valorFrete: 0,
     valorSeguro: 0,
@@ -125,6 +125,26 @@ const NotaEntradaFormMUI = () => {
       ...prev,
       [field]: value
     }));
+  };
+
+  // Função específica para tratar mudança do tipo de frete
+  const handleTipoFreteChange = (value) => {
+    if (value === 'Nenhum') {
+      // Zerar valores quando "Nenhum" for selecionado
+      setNotaEntrada(prev => ({
+        ...prev,
+        tipoFrete: value,
+        valorFrete: 0,
+        valorSeguro: 0,
+        outrasDespesas: 0
+      }));
+    } else {
+      // Apenas alterar o tipo de frete para CIF ou FOB
+      setNotaEntrada(prev => ({
+        ...prev,
+        tipoFrete: value
+      }));
+    }
   };
 
   // Função para validar todos os dados antes do envio
@@ -251,7 +271,9 @@ const NotaEntradaFormMUI = () => {
         // Produto já existe: somar quantidade e atualizar desconto
         console.log(`Produto ${itemAtual.produtoNome} já existe. Atualizando quantidade e desconto.`);
         
-
+        // Mostrar mensagem temporária de atualização
+        setSuccessMessage(`Produto "${itemAtual.produtoNome}" atualizado: quantidade somada e desconto sobrescrito`);
+        setTimeout(() => setSuccessMessage(''), 3000);
         
         const itensAtualizados = prev.itens.map(item => {
           if (item.produtoId === itemAtual.produtoId) {
@@ -913,7 +935,7 @@ const NotaEntradaFormMUI = () => {
               <RadioGroup
                 row
                 value={notaEntrada.tipoFrete}
-                onChange={(e) => handleChange('tipoFrete', e.target.value)}
+                onChange={(e) => handleTipoFreteChange(e.target.value)}
                 sx={{ gap: 1 }}
               >
                 <FormControlLabel 
@@ -935,7 +957,7 @@ const NotaEntradaFormMUI = () => {
                   }}
                 />
                 <FormControlLabel 
-                  value="NENHUM" 
+                  value="Nenhum" 
                   control={<Radio size="small" />} 
                   label="Nenhum"
                   sx={{ 
@@ -947,68 +969,73 @@ const NotaEntradaFormMUI = () => {
             </FormControl>
           </Grid>
 
-          <Grid item sx={{ width: '20%' }}>
-            <TextField
-              fullWidth
-              size="small"
-              label="Valor Frete"
-              type="number"
-              value={notaEntrada.valorFrete}
-              onChange={(e) => handleChange('valorFrete', parseFloat(e.target.value) || 0)}
-              InputProps={{ 
-                inputProps: { step: 0.01, min: 0 },
-                startAdornment: <Box sx={{ mr: 1, color: 'text.secondary' }}>R$</Box>
-              }}
-              variant="outlined"
-              sx={{ 
-                '& .MuiInputBase-input': { 
-                  textAlign: 'right' 
-                }
-              }}
-            />
-          </Grid>
+          {/* Campos numéricos só aparecem quando CIF ou FOB for selecionado */}
+          {(notaEntrada.tipoFrete === 'CIF' || notaEntrada.tipoFrete === 'FOB') && (
+            <>
+              <Grid item sx={{ width: '20%' }}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="Valor Frete"
+                  type="number"
+                  value={notaEntrada.valorFrete}
+                  onChange={(e) => handleChange('valorFrete', parseFloat(e.target.value) || 0)}
+                  InputProps={{ 
+                    inputProps: { step: 0.01, min: 0 },
+                    startAdornment: <Box sx={{ mr: 1, color: 'text.secondary' }}>R$</Box>
+                  }}
+                  variant="outlined"
+                  sx={{ 
+                    '& .MuiInputBase-input': { 
+                      textAlign: 'right' 
+                    }
+                  }}
+                />
+              </Grid>
 
-          <Grid item sx={{ width: '20%' }}>
-            <TextField
-              fullWidth
-              size="small"
-              label="Valor Seguro"
-              type="number"
-              value={notaEntrada.valorSeguro}
-              onChange={(e) => handleChange('valorSeguro', parseFloat(e.target.value) || 0)}
-              InputProps={{ 
-                inputProps: { step: 0.01, min: 0 },
-                startAdornment: <Box sx={{ mr: 1, color: 'text.secondary' }}>R$</Box>
-              }}
-              variant="outlined"
-              sx={{ 
-                '& .MuiInputBase-input': { 
-                  textAlign: 'right' 
-                }
-              }}
-            />
-          </Grid>
+              <Grid item sx={{ width: '20%' }}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="Valor Seguro"
+                  type="number"
+                  value={notaEntrada.valorSeguro}
+                  onChange={(e) => handleChange('valorSeguro', parseFloat(e.target.value) || 0)}
+                  InputProps={{ 
+                    inputProps: { step: 0.01, min: 0 },
+                    startAdornment: <Box sx={{ mr: 1, color: 'text.secondary' }}>R$</Box>
+                  }}
+                  variant="outlined"
+                  sx={{ 
+                    '& .MuiInputBase-input': { 
+                      textAlign: 'right' 
+                    }
+                  }}
+                />
+              </Grid>
 
-          <Grid item sx={{ width: '20%' }}>
-            <TextField
-              fullWidth
-              size="small"
-              label="Outras Despesas"
-              type="number"
-              value={notaEntrada.outrasDespesas}
-              onChange={(e) => handleChange('outrasDespesas', parseFloat(e.target.value) || 0)}
-              InputProps={{ 
-                inputProps: { step: 0.01, min: 0 },
-                startAdornment: <Box sx={{ mr: 1, color: 'text.secondary' }}>R$</Box>
-              }}
-              variant="outlined"
-              sx={{ 
-                '& .MuiInputBase-input': { 
-                  textAlign: 'right' 
-                }
-              }}
-            />
-          </Grid>
+              <Grid item sx={{ width: '20%' }}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="Outras Despesas"
+                  type="number"
+                  value={notaEntrada.outrasDespesas}
+                  onChange={(e) => handleChange('outrasDespesas', parseFloat(e.target.value) || 0)}
+                  InputProps={{ 
+                    inputProps: { step: 0.01, min: 0 },
+                    startAdornment: <Box sx={{ mr: 1, color: 'text.secondary' }}>R$</Box>
+                  }}
+                  variant="outlined"
+                  sx={{ 
+                    '& .MuiInputBase-input': { 
+                      textAlign: 'right' 
+                    }
+                  }}
+                />
+              </Grid>
+            </>
+          )}
         </Grid>
 
         {/* Seção Condição de Pagamento */}
