@@ -2,9 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import CidadeModal from '../Cidade/CidadeModal';
 import CondicaoPagamentoModal from '../CondicaoPagamento/CondicaoPagamentoModal';
+import { 
+  validarCPF, 
+  validarCNPJ, 
+  formatCPF, 
+  formatCNPJ 
+} from '../../utils/documentValidation';
 import {
-  // Imports de validação e formatação podem ser adicionados conforme necessário
-} from '../../utils/documentValidation';import {
   Box,
   Typography,
   TextField,
@@ -119,6 +123,16 @@ const TransportadoraFormMUI = ({ id: propId, isModal = false, onClose }) => {
     }
   }, [id]);
 
+  // Função de formatação de campos
+  const applyMask = (name, value) => {
+    switch (name) {
+      case 'cpfCnpj':
+        return transportadora.tipo === 'FISICA' ? formatCPF(value) : formatCNPJ(value);
+      default:
+        return value;
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     
@@ -130,7 +144,10 @@ const TransportadoraFormMUI = ({ id: propId, isModal = false, onClose }) => {
       });
     }
 
-    setTransportadora({ ...transportadora, [name]: type === 'checkbox' ? checked : value });
+    // Aplicar máscara se necessário
+    const finalValue = type === 'checkbox' ? checked : applyMask(name, value);
+
+    setTransportadora({ ...transportadora, [name]: finalValue });
   };
 
 
@@ -160,39 +177,7 @@ const TransportadoraFormMUI = ({ id: propId, isModal = false, onClose }) => {
     setTransportadora({ ...transportadora, [name]: value });
   };
 
-  const handleCpfCnpjChange = (e) => {
-    const { name } = e.target;
-    let value = e.target.value.replace(/\D/g, '');
-    
-    if (transportadora.tipo === 'F') {
-      // CPF
-      if (value.length <= 11) {
-        value = value.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-        value = value.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/, '$1.$2.$3-$4');
-        value = value.replace(/(\d{3})(\d{3})(\d{0,3})/, '$1.$2.$3');
-        value = value.replace(/(\d{3})(\d{0,3})/, '$1.$2');
-      }
-    } else {
-      // CNPJ
-      if (value.length <= 14) {
-        value = value.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
-        value = value.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{0,2})/, '$1.$2.$3/$4-$5');
-        value = value.replace(/(\d{2})(\d{3})(\d{3})(\d{0,4})/, '$1.$2.$3/$4');
-        value = value.replace(/(\d{2})(\d{3})(\d{0,3})/, '$1.$2.$3');
-        value = value.replace(/(\d{2})(\d{0,3})/, '$1.$2');
-      }
-    }
-    
-    if (fieldErrors[name]) {
-      setFieldErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[name];
-        return newErrors;
-      });
-    }
-    
-    setTransportadora({ ...transportadora, [name]: value });
-  };
+
 
   const handleCepChange = (e) => {
     const { name } = e.target;
@@ -220,8 +205,26 @@ const TransportadoraFormMUI = ({ id: propId, isModal = false, onClose }) => {
     setErrorMessage('');
     const errors = {};
     
+    // Preparar CPF/CNPJ sem formatação para validação
+    const cpfCnpjSemMascara = transportadora.cpfCnpj?.replace(/\D/g, '') || '';
+    
     if (!transportadora.razaoSocial?.trim()) {
       errors.razaoSocial = 'Este campo é obrigatório';
+    }
+
+    // Validar CPF/CNPJ se informado
+    if (cpfCnpjSemMascara.length > 0) {
+      const isCpf = transportadora.tipo === 'FISICA';
+      const tamanhoEsperado = isCpf ? 11 : 14;
+      
+      if (cpfCnpjSemMascara.length !== tamanhoEsperado) {
+        errors.cpfCnpj = `O ${isCpf ? 'CPF' : 'CNPJ'} deve ter exatamente ${tamanhoEsperado} dígitos.`;
+      } else {
+        const isDocumentoValido = isCpf ? validarCPF(cpfCnpjSemMascara) : validarCNPJ(cpfCnpjSemMascara);
+        if (!isDocumentoValido) {
+          errors.cpfCnpj = `${isCpf ? 'CPF' : 'CNPJ'} inválido. Verifique os dígitos informados.`;
+        }
+      }
     }
     
     if (Object.keys(errors).length > 0) {
@@ -232,6 +235,7 @@ const TransportadoraFormMUI = ({ id: propId, isModal = false, onClose }) => {
     const transportadoraFormatada = {
       ...transportadora,
       tipo: transportadora.tipo === 'FISICA' ? 'F' : 'J', // Converte de volta para o backend
+      cpfCnpj: cpfCnpjSemMascara, // Enviar sem formatação
       cidadeId: transportadora.cidadeId || null,
       condicaoPagamentoId: transportadora.condicaoPagamentoId || null,
     };
@@ -494,7 +498,7 @@ const TransportadoraFormMUI = ({ id: propId, isModal = false, onClose }) => {
               label={transportadora.tipo === 'FISICA' ? 'CPF' : 'CNPJ'}
               name="cpfCnpj"
               value={transportadora.cpfCnpj}
-              onChange={handleCpfCnpjChange}
+              onChange={handleChange}
               placeholder={transportadora.tipo === 'FISICA' ? '000.000.000-00' : '00.000.000/0000-00'}
               variant="outlined"
               error={!!fieldErrors.cpfCnpj}
