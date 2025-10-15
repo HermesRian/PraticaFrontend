@@ -22,10 +22,11 @@ import {
 import {
   Search as SearchIcon,
   Close as CloseIcon,
-  Check as CheckIcon
+  Check as CheckIcon,
+  Add as AddIcon
 } from '@mui/icons-material';
 
-const ProdutoModal = ({ open, onClose, onSelect }) => {
+const ProdutoModal = ({ open, onClose, onSelect, onAddNew }) => {
   const [produtos, setProdutos] = useState([]);
   const [filtro, setFiltro] = useState('');
   const [loading, setLoading] = useState(false);
@@ -127,11 +128,27 @@ const ProdutoModal = ({ open, onClose, onSelect }) => {
           />
         </Box>
 
-        {/* Contador de resultados */}
-        <Box sx={{ mb: 2 }}>
+        {/* Contador de resultados e botão adicionar */}
+        <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="body2" color="text.secondary">
             {loading ? 'Carregando...' : `${produtosFiltrados.length} produto(s) encontrado(s)`}
           </Typography>
+          {onAddNew && (
+            <Button
+              variant="contained"
+              size="small"
+              startIcon={<AddIcon />}
+              onClick={onAddNew}
+              sx={{
+                textTransform: 'none',
+                borderRadius: 1,
+                px: 2,
+                py: 0.5
+              }}
+            >
+              Adicionar
+            </Button>
+          )}
         </Box>
 
         {/* Tabela de produtos */}

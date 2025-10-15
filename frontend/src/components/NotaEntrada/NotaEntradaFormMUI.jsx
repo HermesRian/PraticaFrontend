@@ -33,6 +33,7 @@ import {
 import FornecedorModal from './FornecedorModal';
 import FornecedorModalForm from '../Fornecedor/FornecedorModalForm';
 import ProdutoModal from './ProdutoModal';
+import ProdutoModalForm from '../Produto/ProdutoModalForm';
 
 const NotaEntradaFormMUI = () => {
   const navigate = useNavigate();
@@ -88,6 +89,7 @@ const NotaEntradaFormMUI = () => {
   const [fornecedorModalOpen, setFornecedorModalOpen] = useState(false);
   const [fornecedorFormModalOpen, setFornecedorFormModalOpen] = useState(false);
   const [produtoModalOpen, setProdutoModalOpen] = useState(false);
+  const [produtoFormModalOpen, setProdutoFormModalOpen] = useState(false);
   const [fornecedorSelecionado, setFornecedorSelecionado] = useState(null);
 
   // Buscar dados do fornecedor quando o ID mudar
@@ -1169,6 +1171,7 @@ const NotaEntradaFormMUI = () => {
         open={produtoModalOpen}
         onClose={() => setProdutoModalOpen(false)}
         onSelect={handleProdutoSelect}
+        onAddNew={() => setProdutoFormModalOpen(true)}
       />
 
       <FornecedorModalForm
@@ -1179,6 +1182,17 @@ const NotaEntradaFormMUI = () => {
           setFornecedorFormModalOpen(false);
           setFornecedorModalOpen(false);
           handleFornecedorSelect(novoFornecedor);
+        }}
+      />
+
+      <ProdutoModalForm
+        open={produtoFormModalOpen}
+        onClose={() => setProdutoFormModalOpen(false)}
+        onSuccess={(novoProduto) => {
+          // Fechar modal de cadastro e selecionar o novo produto
+          setProdutoFormModalOpen(false);
+          setProdutoModalOpen(false);
+          handleProdutoSelect(novoProduto);
         }}
       />
     </Box>
