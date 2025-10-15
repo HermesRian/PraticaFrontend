@@ -32,6 +32,8 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
     marcaDescricao: '',
     unidadeMedidaId: '',
     unidadeMedidaDescricao: '',
+    categoriaId: '',
+    categoriaDescricao: '',
     valorCompra: '',
     valorVenda: '',
     quantidadeMinima: '1',
@@ -43,6 +45,7 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
 
   const [marcas, setMarcas] = useState([]);
   const [unidadesMedida, setUnidadesMedida] = useState([]);
+  const [categorias, setCategorias] = useState([]);
   const [errorMessage, setErrorMessage] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
   const navigate = useNavigate();
@@ -52,11 +55,13 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
   useEffect(() => {
     Promise.all([
       fetch('http://localhost:8080/marcas').then(res => res.json()).catch(() => []),
-      fetch('http://localhost:8080/unidades-medida').then(res => res.json()).catch(() => [])
+      fetch('http://localhost:8080/unidades-medida').then(res => res.json()).catch(() => []),
+      fetch('http://localhost:8080/categorias').then(res => res.json()).catch(() => [])
     ])
-    .then(([marcasData, unidadesMedidaData]) => {
+    .then(([marcasData, unidadesMedidaData, categoriasData]) => {
       setMarcas(marcasData);
       setUnidadesMedida(unidadesMedidaData);
+      setCategorias(categoriasData);
     })
     .catch(error => console.error('Erro ao carregar dados auxiliares:', error));
   }, []);
@@ -93,11 +98,25 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
               console.error('Erro ao buscar unidade de medida:', error);
             }
           }
+
+          let categoriaDescricao = '';
+          if (data.categoriaId) {
+            try {
+              const categoriaResponse = await fetch(`http://localhost:8080/categorias/${data.categoriaId}`);
+              if (categoriaResponse.ok) {
+                const categoriaData = await categoriaResponse.json();
+                categoriaDescricao = categoriaData.nome || '';
+              }
+            } catch (error) {
+              console.error('Erro ao buscar categoria:', error);
+            }
+          }
             
           const produtoAtualizado = {
             ...data,
             marcaDescricao: marcaDescricao,
             unidadeMedidaDescricao: unidadeMedidaDescricao,
+            categoriaDescricao: categoriaDescricao,
             valorCompra: data.valorCompra ? data.valorCompra.toString() : '',
             valorVenda: data.valorVenda ? data.valorVenda.toString() : '',
             percentualLucro: data.percentualLucro ? data.percentualLucro.toString() : '',
@@ -222,6 +241,7 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
       quantidadeMinima: produto.quantidadeMinima ? parseInt(produto.quantidadeMinima) : 1,
       marcaId: produto.marcaId || null,
       unidadeMedidaId: produto.unidadeMedidaId || null,
+      categoriaId: produto.categoriaId || null,
     };
 
     console.log('Dados enviados:', produtoFormatado);
@@ -496,9 +516,9 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
           </Grid>
         </Grid>
 
-        {/* Linha 3: Quantidade em Estoque, Unidade de Medida, Quantidade Mínima */}
+        {/* Linha 3: Quantidade em Estoque, Unidade de Medida, Categoria, Quantidade Mínima */}
         <Grid container spacing={2} sx={{ mb: 4 }}>
-          <Grid item xs={4}>
+          <Grid item xs={3}>
             <TextField
               fullWidth
               required
@@ -514,7 +534,7 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
             />
           </Grid>
 
-          <Grid item sx={{ width: '16%', minWidth: 80 }}>
+          <Grid item sx={{ width: '14%' }}>
             <FormControl fullWidth size="small">
               <InputLabel>Unidade de Medida</InputLabel>
               <Select
@@ -533,7 +553,26 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
             </FormControl>
           </Grid>
 
-          <Grid item xs={4}>
+          <Grid item sx={{ width: '10%' }}>
+            <FormControl fullWidth size="small">
+              <InputLabel>Categoria</InputLabel>
+              <Select
+                name="categoriaId"
+                value={produto.categoriaId}
+                onChange={handleChange}
+                label="Categoria"
+              >
+                <MenuItem value="">Selecione...</MenuItem>
+                {categorias.map((categoria) => (
+                  <MenuItem key={categoria.id} value={categoria.id}>
+                    {categoria.nome}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+
+          <Grid item xs={3}>
             <TextField
               fullWidth
               size="small"

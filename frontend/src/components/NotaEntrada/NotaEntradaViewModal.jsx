@@ -30,10 +30,12 @@ const NotaEntradaViewModal = ({ open, onClose, notaId }) => {
   const [nota, setNota] = useState(null);
   const [loading, setLoading] = useState(false);
   const [unidadesMedida, setUnidadesMedida] = useState([]);
+  const [produtos, setProdutos] = useState([]);
 
-  // Carregar unidades de medida
+  // Carregar unidades de medida e produtos
   useEffect(() => {
     if (open) {
+      // Carregar unidades de medida
       fetch('http://localhost:8080/unidades-medida')
         .then(res => res.json())
         .then(data => {
@@ -41,6 +43,15 @@ const NotaEntradaViewModal = ({ open, onClose, notaId }) => {
           setUnidadesMedida(data);
         })
         .catch(error => console.error('Erro ao carregar unidades de medida:', error));
+
+      // Carregar produtos
+      fetch('http://localhost:8080/produtos')
+        .then(res => res.json())
+        .then(data => {
+          console.log('Produtos carregados no modal:', data);
+          setProdutos(data);
+        })
+        .catch(error => console.error('Erro ao carregar produtos:', error));
     }
   }, [open]);
 
@@ -50,6 +61,7 @@ const NotaEntradaViewModal = ({ open, onClose, notaId }) => {
       const response = await fetch(`http://localhost:8080/notas-entrada/${notaId}`);
       const data = await response.json();
       console.log('Nota carregada para visualização:', data);
+      console.log('Itens da nota:', data.itens);
       setNota(data);
     } catch (error) {
       console.error('Erro ao carregar nota:', error);
@@ -69,6 +81,13 @@ const NotaEntradaViewModal = ({ open, onClose, notaId }) => {
     if (!unidadeMedidaId || !unidadesMedida.length) return 'UN';
     const unidade = unidadesMedida.find(u => u.id === unidadeMedidaId);
     return unidade ? unidade.nome : 'UN';
+  };
+
+  // Função para buscar nome do produto pelo ID
+  const getProdutoNome = (produtoId) => {
+    if (!produtoId || !produtos.length) return '-';
+    const produto = produtos.find(p => p.id === parseInt(produtoId));
+    return produto ? produto.nome : '-';
   };
 
   const formatDate = (date) => {
@@ -232,7 +251,7 @@ const NotaEntradaViewModal = ({ open, onClose, notaId }) => {
                     nota.itens.map((item, index) => (
                       <TableRow key={index} hover>
                         <TableCell>{item.produtoCodigo || item.produtoId || '-'}</TableCell>
-                        <TableCell>{item.produtoNome || '-'}</TableCell>
+                        <TableCell>{item.produtoNome || getProdutoNome(item.produtoId) || '-'}</TableCell>
                         <TableCell>{item.unidade || getUnidadeMedidaNome(item.produto?.unidadeMedidaId) || '-'}</TableCell>
                         <TableCell>{item.quantidade || 0}</TableCell>
                         <TableCell>R$ {(item.valorUnitario || 0).toFixed(2)}</TableCell>
