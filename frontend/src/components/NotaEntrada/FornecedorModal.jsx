@@ -22,7 +22,8 @@ import {
 import {
   Search as SearchIcon,
   Close as CloseIcon,
-  Check as CheckIcon
+  Check as CheckIcon,
+  Add as AddIcon
 } from '@mui/icons-material';
 
 const FornecedorModal = ({ open, onClose, onSelect, onAddNew }) => {
@@ -127,13 +128,15 @@ const FornecedorModal = ({ open, onClose, onSelect, onAddNew }) => {
           </Typography>
           {onAddNew && (
             <Button
-              variant="outlined"
+              variant="contained"
               size="small"
+              startIcon={<AddIcon />}
               onClick={onAddNew}
               sx={{
                 textTransform: 'none',
-                borderRadius: 2,
-                px: 2
+                borderRadius: 1,
+                px: 2,
+                py: 0.5
               }}
             >
               Adicionar
