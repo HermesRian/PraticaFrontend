@@ -11,23 +11,25 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TableSortLabel,
   IconButton,
   Chip,
   TextField,
   InputAdornment,
   Alert,
-  Container,
   FormControl,
   InputLabel,
   Select,
-  MenuItem
+  MenuItem,
+  Tooltip
 } from '@mui/material';
 import {
   Visibility as VisibilityIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
   Add as AddIcon,
-  Search as SearchIcon
+  Search as SearchIcon,
+  Receipt as ReceiptIcon
 } from '@mui/icons-material';
 
 const NotaEntradaListMUI = () => {
@@ -37,28 +39,83 @@ const NotaEntradaListMUI = () => {
   const [error, setError] = useState('');
   const [filtro, setFiltro] = useState('');
   const [filtroStatus, setFiltroStatus] = useState('todos');
+  const [sortConfig, setSortConfig] = useState({ key: 'numero', direction: 'desc' });
 
-  // Carregar dados
-  useEffect(() => {
-    Promise.all([
-      fetch('http://localhost:8080/notas-entrada').then(res => res.json()),
-      fetch('http://localhost:8080/fornecedores').then(res => res.json())
-    ])
-    .then(([notasData, fornecedoresData]) => {
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const [notasData, fornecedoresData] = await Promise.all([
+        fetch('http://localhost:8080/notas-entrada').then(res => res.json()),
+        fetch('http://localhost:8080/fornecedores').then(res => res.json())
+      ]);
+      console.log('Notas carregadas:', notasData);
+      console.log('Fornecedores carregados:', fornecedoresData);
       setNotasEntrada(notasData);
       setFornecedores(fornecedoresData);
-      setLoading(false);
-    })
-    .catch((error) => {
+    } catch (error) {
       console.error('Erro ao buscar dados:', error);
       setError('Erro ao carregar dados');
+    } finally {
       setLoading(false);
-    });
+    }
+  };
+
+  useEffect(() => {
+    loadData();
   }, []);
 
-  const getFornecedorNome = (fornecedorId) => {
-    const fornecedor = fornecedores.find((f) => f.id === fornecedorId);
-    return fornecedor ? fornecedor.nome : 'Não informado';
+  const handleSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+
+    const sortedNotas = [...notasEntrada].sort((a, b) => {
+      let aValue = a[key];
+      let bValue = b[key];
+
+      if (key === 'fornecedor') {
+        aValue = getFornecedorNome(a);
+        bValue = getFornecedorNome(b);
+      }
+
+      if (key === 'dataEmissao' || key === 'dataRecebimento') {
+        aValue = new Date(aValue);
+        bValue = new Date(bValue);
+      }
+
+      if (typeof aValue === 'string') {
+        aValue = aValue.toLowerCase();
+        bValue = bValue.toLowerCase();
+      }
+
+      if (aValue < bValue) {
+        return direction === 'asc' ? -1 : 1;
+      }
+      if (aValue > bValue) {
+        return direction === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
+    setNotasEntrada(sortedNotas);
+  };
+
+  const getFornecedorNome = (nota) => {
+    // Tenta pegar do objeto fornecedor aninhado primeiro
+    if (nota.fornecedor) {
+      return nota.fornecedor.nomeFantasia || nota.fornecedor.razaoSocial || 'Nome não informado';
+    }
+    
+    // Fallback: busca na lista de fornecedores usando o ID
+    if (nota.fornecedorId) {
+      const fornecedor = fornecedores.find((f) => f.id === nota.fornecedorId);
+      if (fornecedor) {
+        return fornecedor.nomeFantasia || fornecedor.razaoSocial || fornecedor.nome || 'Nome não informado';
+      }
+    }
+    
+    return 'Fornecedor não informado';
   };
 
   const getStatusColor = (status) => {
@@ -128,38 +185,49 @@ const NotaEntradaListMUI = () => {
 
   if (loading) {
     return (
-      <Container maxWidth="xl" sx={{ py: 3 }}>
+      <Box sx={{ 
+        padding: { xs: 2, md: 3 }, 
+        bgcolor: '#f8f9fa', 
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
         <Typography>Carregando notas de entrada...</Typography>
-      </Container>
+      </Box>
     );
   }
 
   return (
-    <Container maxWidth="xl" sx={{ py: 3 }}>
-      <Paper elevation={3} sx={{ p: 3 }}>
+    <Box sx={{ 
+      padding: { xs: 2, md: 3 }, 
+      bgcolor: '#f8f9fa', 
+      minHeight: '100vh' 
+    }}>
+      <Paper 
+        elevation={10}
+        sx={{
+          width: '95%',
+          maxWidth: 1400,
+          mx: 'auto',
+          p: { xs: 2, md: 3, lg: 4 },
+          borderRadius: 2,
+          overflow: 'hidden'
+        }}
+      >
         {/* Cabeçalho */}
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="h4" component="h1" gutterBottom fontWeight={600}>
-            Notas de Entrada
-          </Typography>
-          <Typography variant="subtitle1" color="text.secondary">
-            Gerenciar notas de entrada do sistema
-          </Typography>
-        </Box>
-
-        {/* Filtros e Botão Adicionar */}
         <Box sx={{ 
           display: 'flex', 
           justifyContent: 'space-between', 
           alignItems: 'center', 
           mb: 3,
           gap: 2,
-          flexWrap: 'wrap'
+          flexWrap: { xs: 'wrap', md: 'nowrap' }
         }}>
-          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexGrow: 1, flexWrap: { xs: 'wrap', md: 'nowrap' } }}>
             <TextField
               variant="outlined"
-              placeholder="Pesquisar por número ou fornecedor..."
+              placeholder="Pesquisar por número, fornecedor..."
               value={filtro}
               onChange={(e) => setFiltro(e.target.value)}
               InputProps={{
@@ -169,16 +237,29 @@ const NotaEntradaListMUI = () => {
                   </InputAdornment>
                 ),
               }}
-              sx={{ width: 300 }}
-              size="small"
+              sx={{ 
+                width: { xs: '100%', sm: 300 },
+                '& .MuiOutlinedInput-root': {
+                  height: 40,
+                  '& fieldset': {
+                    borderColor: '#e0e0e0',
+                  },
+                  '&:hover fieldset': {
+                    borderColor: '#1976d2',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#1976d2',
+                  }
+                }
+              }}
             />
-            
             <FormControl size="small" sx={{ minWidth: 150 }}>
               <InputLabel>Status</InputLabel>
               <Select
                 value={filtroStatus}
                 onChange={(e) => setFiltroStatus(e.target.value)}
                 label="Status"
+                sx={{ height: 40 }}
               >
                 <MenuItem value="todos">Todos</MenuItem>
                 <MenuItem value="PENDENTE">Pendente</MenuItem>
@@ -188,7 +269,6 @@ const NotaEntradaListMUI = () => {
               </Select>
             </FormControl>
           </Box>
-          
           <Button
             component={Link}
             to="/notas-entrada/cadastrar"
@@ -196,12 +276,19 @@ const NotaEntradaListMUI = () => {
             startIcon={<AddIcon />}
             sx={{ 
               bgcolor: '#1976d2',
-              '&:hover': { bgcolor: '#1565c0' }
+              '&:hover': { bgcolor: '#1565c0' },
+              borderRadius: 2,
+              px: 3,
+              py: 1,
+              height: 40,
+              whiteSpace: 'nowrap'
             }}
           >
-            Nova Nota
+            Adicionar
           </Button>
         </Box>
+
+
 
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
@@ -224,7 +311,6 @@ const NotaEntradaListMUI = () => {
                 <TableCell sx={{ fontWeight: 600 }}>Número</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>Fornecedor</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>Data Emissão</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Data Recebimento</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>Total</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>Ações</TableCell>
@@ -244,7 +330,7 @@ const NotaEntradaListMUI = () => {
                   </TableCell>
                   <TableCell>
                     <Typography variant="body2">
-                      {getFornecedorNome(nota.fornecedorId)}
+                      {getFornecedorNome(nota)}
                     </Typography>
                   </TableCell>
                   <TableCell>
@@ -253,13 +339,8 @@ const NotaEntradaListMUI = () => {
                     </Typography>
                   </TableCell>
                   <TableCell>
-                    <Typography variant="body2">
-                      {formatDate(nota.dataRecebimento)}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
                     <Typography variant="body2" fontWeight={500}>
-                      {formatCurrency(nota.totalAPagar)}
+                      {formatCurrency(nota.valorTotal || nota.totalAPagar || nota.total || 0)}
                     </Typography>
                   </TableCell>
                   <TableCell>
@@ -278,23 +359,6 @@ const NotaEntradaListMUI = () => {
                         title="Visualizar"
                       >
                         <VisibilityIcon fontSize="small" />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        component={Link}
-                        to={`/notas-entrada/editar/${nota.id}`}
-                        sx={{ color: '#28a745' }}
-                        title="Editar"
-                      >
-                        <EditIcon fontSize="small" />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        onClick={() => handleDelete(nota.id)}
-                        sx={{ color: '#dc3545' }}
-                        title="Excluir"
-                      >
-                        <DeleteIcon fontSize="small" />
                       </IconButton>
                     </Box>
                   </TableCell>
@@ -321,7 +385,7 @@ const NotaEntradaListMUI = () => {
           </Box>
         )}
       </Paper>
-    </Container>
+    </Box>
   );
 };
 
