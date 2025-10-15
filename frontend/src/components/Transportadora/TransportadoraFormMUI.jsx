@@ -462,12 +462,12 @@ const TransportadoraFormMUI = ({ id: propId, isModal = false, onClose }) => {
             </FormControl>
           </Grid>
 
-          <Grid item sx={{ width: '30%' }}>
+          <Grid item sx={{ width: '25%' }}>
             <TextField
               fullWidth
               required
               size="small"
-              label="Transportadora"
+              label="Razão Social"
               name="razaoSocial"
               value={transportadora.razaoSocial}
               onChange={handleChange}
@@ -478,7 +478,7 @@ const TransportadoraFormMUI = ({ id: propId, isModal = false, onClose }) => {
             />
           </Grid>
 
-          <Grid item sx={{ width: '30%' }}>
+          <Grid item sx={{ width: '25%' }}>
             <TextField
               fullWidth
               size="small"
@@ -624,7 +624,12 @@ const TransportadoraFormMUI = ({ id: propId, isModal = false, onClose }) => {
             </FormControl>
           </Grid>
 
-          <Grid item sx={{ width: '11%', minWidth: 100 }}>
+          
+        </Grid>
+
+        {/* Linha 3*/}
+        <Grid container spacing={2} sx={{ mb: 4 }}>
+          <Grid item sx={{ width: '20%', minWidth: 100 }}>
             <TextField
               fullWidth
               size="small"
@@ -636,10 +641,6 @@ const TransportadoraFormMUI = ({ id: propId, isModal = false, onClose }) => {
               variant="outlined"
             />
           </Grid>
-        </Grid>
-
-        {/* Linha 3*/}
-        <Grid container spacing={2} sx={{ mb: 4 }}>
           <Grid item sx={{ width: '20%', minWidth: 150 }}>
             <TextField
               fullWidth
@@ -708,19 +709,19 @@ const TransportadoraFormMUI = ({ id: propId, isModal = false, onClose }) => {
             </FormControl>
           </Grid>
 
-          <Grid item sx={{ width: '45%' }}>
+          <Grid item sx={{ width: '100%' }}>
             <TextField
-              fullWidth
-              size="small"
-              label="Observação"
-              name="observacao"
-              value={transportadora.observacao}
-              onChange={handleChange}
-              placeholder="Observações gerais"
-              variant="outlined"
-              multiline
-              minRows={1}
-            />
+                          fullWidth
+                          multiline
+                          rows={3}
+                          size="small"
+                          label="Observações"
+                          name="observacao"
+                          value={transportadora.observacao}
+                          onChange={handleChange}
+                          placeholder="Informações adicionais sobre o cliente"
+                          variant="outlined"
+                        />
           </Grid>
         </Grid>
 
