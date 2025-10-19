@@ -376,9 +376,9 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
           </Box>
         </Box>
 
-        {/* Linha 1: Código, Nome do Produto, Descrição, Marca, Código do Produto */}
+        {/* Linha 1: Código, Produto, Descrição, Marca, Código do Produto */}
         <Grid container spacing={2} alignItems="center" sx={{ mb: 4 }}>
-          <Grid item xs={1}>
+          <Grid item sx={{ width: '6%', minWidth: 80 }}>
             <TextField
               fullWidth
               size="small"
@@ -396,15 +396,33 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
               fullWidth
               required
               size="small"
-              label="Nome do Produto"
+              label="Produto"
               name="nome"
               value={produto.nome}
               onChange={handleChange}
-              placeholder="Nome do produto"
+              placeholder="Produto"
               variant="outlined"
               error={!!fieldErrors.nome}
               helperText={fieldErrors.nome || ''}
             />
+          </Grid>
+          <Grid item sx={{ width: '14%' }}>
+            <FormControl fullWidth size="small">
+              <InputLabel>Unidade de Medida</InputLabel>
+              <Select
+                name="unidadeMedidaId"
+                value={produto.unidadeMedidaId}
+                onChange={handleChange}
+                label="Unidade de Medida"
+              >
+                <MenuItem value="">Selecione...</MenuItem>
+                {unidadesMedida.map((unidade) => (
+                  <MenuItem key={unidade.id} value={unidade.id}>
+                    {unidade.nome}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
           </Grid>
 
           <Grid item xs={3}>
@@ -437,22 +455,6 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
                 ))}
               </Select>
             </FormControl>
-          </Grid>
-
-          <Grid item xs={2.5}>
-            <TextField
-              fullWidth
-              required
-              size="small"
-              label="Código do Produto"
-              name="codigo"
-              value={produto.codigo}
-              onChange={handleChange}
-              placeholder="Código único"
-              variant="outlined"
-              error={!!fieldErrors.codigo}
-              helperText={fieldErrors.codigo || ''}
-            />
           </Grid>
         </Grid>
 
@@ -534,26 +536,7 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
             />
           </Grid>
 
-          <Grid item sx={{ width: '14%' }}>
-            <FormControl fullWidth size="small">
-              <InputLabel>Unidade de Medida</InputLabel>
-              <Select
-                name="unidadeMedidaId"
-                value={produto.unidadeMedidaId}
-                onChange={handleChange}
-                label="Unidade de Medida"
-              >
-                <MenuItem value="">Selecione...</MenuItem>
-                {unidadesMedida.map((unidade) => (
-                  <MenuItem key={unidade.id} value={unidade.id}>
-                    {unidade.nome}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-
-          <Grid item sx={{ width: '10%' }}>
+          <Grid item sx={{ width: '15%' }}>
             <FormControl fullWidth size="small">
               <InputLabel>Categoria</InputLabel>
               <Select

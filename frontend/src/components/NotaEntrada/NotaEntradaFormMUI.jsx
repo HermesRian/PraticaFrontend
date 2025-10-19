@@ -136,6 +136,18 @@ const NotaEntradaFormMUI = () => {
     }
   }, [id, isEdit]);
 
+  // Função para verificar se todos os campos obrigatórios da primeira linha estão preenchidos
+  const isPrimeiraLinhaCompleta = () => {
+    return !!(
+      notaEntrada.modelo &&
+      notaEntrada.serie &&
+      notaEntrada.numero &&
+      notaEntrada.fornecedorId &&
+      notaEntrada.dataEmissao &&
+      notaEntrada.dataChegada
+    );
+  };
+
   const handleChange = (field, value) => {
     setNotaEntrada(prev => ({
       ...prev,
@@ -637,20 +649,8 @@ const NotaEntradaFormMUI = () => {
             {successMessage}
           </Alert>
         )}
-        {/* Linha 1: Número, Modelo, Série, Fornecedor, Data Emissão, Data Chegada */}
+        {/* Linha 1: Modelo, Série, Número, Fornecedor, Data Emissão, Data Chegada */}
         <Grid container spacing={2} alignItems="center" sx={{ mb: 4 }}>
-          <Grid item sx={{ width: '10%' }}>
-            <TextField
-              fullWidth
-              required
-              size="small"
-              label="Número"
-              value={notaEntrada.numero}
-              onChange={(e) => handleChange('numero', e.target.value)}
-              placeholder="123456"
-              variant="outlined"
-            />
-          </Grid>
 
           <Grid item sx={{ width: '10%' }}>
             <TextField
@@ -672,6 +672,19 @@ const NotaEntradaFormMUI = () => {
               value={notaEntrada.serie}
               onChange={(e) => handleChange('serie', e.target.value)}
               placeholder="1"
+              variant="outlined"
+            />
+          </Grid>
+
+          <Grid item sx={{ width: '10%' }}>
+            <TextField
+              fullWidth
+              required
+              size="small"
+              label="Número"
+              value={notaEntrada.numero}
+              onChange={(e) => handleChange('numero', e.target.value)}
+              placeholder="123456"
               variant="outlined"
             />
           </Grid>
@@ -751,11 +764,12 @@ const NotaEntradaFormMUI = () => {
               size="small"
               label="Cód Produto"
               value={itemAtual.produtoCodigo}
-              placeholder="Clique para buscar"
+              placeholder={isPrimeiraLinhaCompleta() ? "Clique para buscar" : "Preencha os dados acima primeiro"}
               variant="outlined"
+              disabled={!isPrimeiraLinhaCompleta()}
               InputProps={{
                 readOnly: true,
-                endAdornment: (
+                endAdornment: isPrimeiraLinhaCompleta() && (
                   <SearchIcon 
                     sx={{ 
                       cursor: 'pointer', 
@@ -765,10 +779,10 @@ const NotaEntradaFormMUI = () => {
                   />
                 )
               }}
-              onClick={() => setProdutoModalOpen(true)}
+              onClick={() => isPrimeiraLinhaCompleta() && setProdutoModalOpen(true)}
               sx={{ 
-                cursor: 'pointer',
-                '& .MuiInputBase-input': { cursor: 'pointer' }
+                cursor: isPrimeiraLinhaCompleta() ? 'pointer' : 'not-allowed',
+                '& .MuiInputBase-input': { cursor: isPrimeiraLinhaCompleta() ? 'pointer' : 'not-allowed' }
               }}
             />
           </Grid>
@@ -779,9 +793,11 @@ const NotaEntradaFormMUI = () => {
               size="small"
               label="Produto"
               value={itemAtual.produtoNome}
+              placeholder={!isPrimeiraLinhaCompleta() ? "Preencha os dados acima primeiro" : ""}
+              disabled={!isPrimeiraLinhaCompleta()}
               InputProps={{ readOnly: true }}
               variant="outlined"
-              sx={{ bgcolor: '#f5f5f5' }}
+              sx={{ bgcolor: isPrimeiraLinhaCompleta() ? '#f5f5f5' : '#e0e0e0' }}
             />
           </Grid>
 
@@ -791,9 +807,10 @@ const NotaEntradaFormMUI = () => {
               size="small"
               label="Unidade"
               value={itemAtual.unidade}
+              disabled={!isPrimeiraLinhaCompleta()}
               InputProps={{ readOnly: true }}
               variant="outlined"
-              sx={{ bgcolor: '#f5f5f5' }}
+              sx={{ bgcolor: isPrimeiraLinhaCompleta() ? '#f5f5f5' : '#e0e0e0' }}
             />
           </Grid>
 
@@ -804,7 +821,8 @@ const NotaEntradaFormMUI = () => {
               label="Quantidade"
               type="number"
               value={itemAtual.quantidade}
-              onChange={(e) => setItemAtual(prev => ({ ...prev, quantidade: parseFloat(e.target.value) || 0 }))}
+              disabled={!isPrimeiraLinhaCompleta()}
+              onChange={(e) => isPrimeiraLinhaCompleta() && setItemAtual(prev => ({ ...prev, quantidade: parseFloat(e.target.value) || 0 }))}
               InputProps={{ 
                 inputProps: { step: 1, min: 0 } // Quantidade sem decimal
               }}
@@ -824,6 +842,7 @@ const NotaEntradaFormMUI = () => {
               label="Valor Unit."
               type="number"
               value={itemAtual.valorUnitario}
+              disabled={!isPrimeiraLinhaCompleta()}
               InputProps={{ 
                 readOnly: true,
                 inputProps: { step: 0.01, min: 0 },
@@ -833,7 +852,7 @@ const NotaEntradaFormMUI = () => {
               sx={{ 
                 '& .MuiInputBase-input': { 
                   textAlign: 'right',
-                  backgroundColor: '#f5f5f5' // Indicar visualmente que é somente leitura
+                  backgroundColor: isPrimeiraLinhaCompleta() ? '#f5f5f5' : '#e0e0e0' // Indicar visualmente que é somente leitura
                 }
               }}
             />
@@ -846,13 +865,16 @@ const NotaEntradaFormMUI = () => {
               label="Desconto"
               type="number"
               value={itemAtual.valorDesconto}
+              disabled={!isPrimeiraLinhaCompleta()}
               onChange={(e) => {
-                const valor = parseFloat(e.target.value) || 0;
-                setItemAtual(prev => ({ 
-                  ...prev, 
-                  valorDesconto: valor,
-                  percentualDesconto: 0
-                }));
+                if (isPrimeiraLinhaCompleta()) {
+                  const valor = parseFloat(e.target.value) || 0;
+                  setItemAtual(prev => ({ 
+                    ...prev, 
+                    valorDesconto: valor,
+                    percentualDesconto: 0
+                  }));
+                }
               }}
               InputProps={{ 
                 inputProps: { step: 0.01, min: 0 },
@@ -874,13 +896,14 @@ const NotaEntradaFormMUI = () => {
               label="Total Item"
               type="number"
               value={itemAtual.valorTotal}
+              disabled={!isPrimeiraLinhaCompleta()}
               InputProps={{ 
                 readOnly: true,
                 startAdornment: <Box sx={{ mr: 1, color: 'text.secondary' }}>R$</Box>
               }}
               variant="outlined"
               sx={{ 
-                bgcolor: '#f5f5f5',
+                bgcolor: isPrimeiraLinhaCompleta() ? '#f5f5f5' : '#e0e0e0',
                 '& .MuiInputBase-input': { 
                   textAlign: 'right' 
                 }
@@ -894,7 +917,7 @@ const NotaEntradaFormMUI = () => {
               variant="contained"
               size="small"
               onClick={adicionarItem}
-              disabled={!itemAtual.produtoId || itemAtual.quantidade <= 0}
+              disabled={!isPrimeiraLinhaCompleta() || !itemAtual.produtoId || itemAtual.quantidade <= 0}
               sx={{ minHeight: 40 }}
             >
               <AddIcon />
