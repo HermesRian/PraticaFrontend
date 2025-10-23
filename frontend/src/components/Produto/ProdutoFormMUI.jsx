@@ -200,11 +200,6 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
       errors.nome = 'Este campo é obrigatório';
     }
     
-    if (!produto.codigo?.trim()) {
-      errors.codigo = 'Este campo é obrigatório';
-    }
-    
-    
     if (!produto.quantidadeEstoque) {
       errors.quantidadeEstoque = 'Este campo é obrigatório';
     } else if (isNaN(parseInt(produto.quantidadeEstoque)) || parseInt(produto.quantidadeEstoque) < 0) {
@@ -244,7 +239,13 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
       categoriaId: produto.categoriaId || null,
     };
 
-    console.log('Dados enviados:', produtoFormatado);
+    // Remover campos que não devem ser enviados ou que estão vazios
+    if (!produtoFormatado.codigo || produtoFormatado.codigo.trim() === '') {
+      delete produtoFormatado.codigo;
+    }
+    delete produtoFormatado.marcaDescricao;
+    delete produtoFormatado.unidadeMedidaDescricao;
+    delete produtoFormatado.categoriaDescricao;
 
     const method = id ? 'PUT' : 'POST';
     const url = id ? `http://localhost:8080/produtos/${id}` : 'http://localhost:8080/produtos';
@@ -258,18 +259,14 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
     })
       .then((response) => {
         if (!response.ok) {
-          console.error('Erro na resposta:', response.status, response.statusText);
-          
           return response.text().then(text => {
             let error;
             let errorObj = null;
             try {
               errorObj = JSON.parse(text);
               error = errorObj.erro || errorObj.message || 'Erro desconhecido ao salvar produto';
-              console.error('Resposta do servidor:', errorObj);
             } catch {
               error = text || 'Erro ao salvar produto';
-              console.error('Resposta do servidor (texto):', text);
             }
             
             if (errorObj && errorObj.erro) {
