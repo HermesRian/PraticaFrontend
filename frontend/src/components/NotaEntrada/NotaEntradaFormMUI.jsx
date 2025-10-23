@@ -84,6 +84,7 @@ const NotaEntradaFormMUI = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [erroDataEmissao, setErroDataEmissao] = useState('');
   const [erroDataChegada, setErroDataChegada] = useState('');
+  const [erroDesconto, setErroDesconto] = useState('');
 
   // Estados para controlar os modals
   const [fornecedorModalOpen, setFornecedorModalOpen] = useState(false);
@@ -146,6 +147,11 @@ const NotaEntradaFormMUI = () => {
       notaEntrada.dataEmissao &&
       notaEntrada.dataChegada
     );
+  };
+
+  // Função para verificar se há produtos adicionados na tabela
+  const temProdutosAdicionados = () => {
+    return notaEntrada.itens.length > 0;
   };
 
   const handleChange = (field, value) => {
@@ -259,6 +265,9 @@ const NotaEntradaFormMUI = () => {
     const unidadeNome = getUnidadeMedidaNome(produto.unidadeMedidaId);
     console.log(`Unidade encontrada para produto ${produto.nome}:`, unidadeNome);
     
+    // Limpar erro de desconto ao selecionar novo produto
+    setErroDesconto('');
+    
     setItemAtual(prev => ({
       ...prev,
       produtoId: produto.id, // ID numérico para a API
@@ -301,8 +310,9 @@ const NotaEntradaFormMUI = () => {
       return;
     }
 
-    // Limpar erro
+    // Limpar erros
     setError('');
+    setErroDesconto('');
     
     // Verificar se o produto já existe na lista
     setNotaEntrada(prev => {
@@ -869,18 +879,32 @@ const NotaEntradaFormMUI = () => {
               onChange={(e) => {
                 if (isPrimeiraLinhaCompleta()) {
                   const valor = parseFloat(e.target.value) || 0;
-                  setItemAtual(prev => ({ 
-                    ...prev, 
-                    valorDesconto: valor,
-                    percentualDesconto: 0
-                  }));
+                  const valorUnitario = itemAtual.valorUnitario || 0;
+                  
+                  // Validação: desconto não pode ser maior que o valor unitário
+                  if (valor > valorUnitario) {
+                    setItemAtual(prev => ({ 
+                      ...prev, 
+                      valorDesconto: valorUnitario,
+                      percentualDesconto: 0
+                    }));
+                  } else {
+                    setErroDesconto('');
+                    setItemAtual(prev => ({ 
+                      ...prev, 
+                      valorDesconto: valor,
+                      percentualDesconto: 0
+                    }));
+                  }
                 }
               }}
               InputProps={{ 
-                inputProps: { step: 0.01, min: 0 },
+                inputProps: { step: 0.01, min: 0, max: itemAtual.valorUnitario || 999999 },
                 startAdornment: <Box sx={{ mr: 1, color: 'text.secondary' }}>R$</Box>
               }}
               variant="outlined"
+              error={!!erroDesconto}
+              helperText={erroDesconto}
               sx={{ 
                 '& .MuiInputBase-input': { 
                   textAlign: 'right' 
@@ -895,7 +919,7 @@ const NotaEntradaFormMUI = () => {
               size="small"
               label="Total Item"
               type="number"
-              value={itemAtual.valorTotal}
+              value={itemAtual.quantidade > 0 ? itemAtual.valorTotal : ''}
               disabled={!isPrimeiraLinhaCompleta()}
               InputProps={{ 
                 readOnly: true,
@@ -988,6 +1012,7 @@ const NotaEntradaFormMUI = () => {
         </Typography>
         <Divider sx={{ mb: 3 }} />
         
+        
         <Grid container spacing={2} alignItems="center" sx={{ mb: 4 }}>
           <Grid item sx={{ width: '30%' }}>
             <FormControl component="fieldset">
@@ -997,33 +1022,42 @@ const NotaEntradaFormMUI = () => {
               <RadioGroup
                 row
                 value={notaEntrada.tipoFrete}
-                onChange={(e) => handleTipoFreteChange(e.target.value)}
+                onChange={(e) => temProdutosAdicionados() && handleTipoFreteChange(e.target.value)}
                 sx={{ gap: 1 }}
               >
                 <FormControlLabel 
                   value="CIF" 
-                  control={<Radio size="small" />} 
+                  control={<Radio size="small" disabled={!temProdutosAdicionados()} />} 
                   label="CIF"
                   sx={{ 
-                    '& .MuiFormControlLabel-label': { fontSize: '0.875rem' },
+                    '& .MuiFormControlLabel-label': { 
+                      fontSize: '0.875rem',
+                      color: temProdutosAdicionados() ? 'inherit' : '#999'
+                    },
                     mr: 1
                   }}
                 />
                 <FormControlLabel 
                   value="FOB" 
-                  control={<Radio size="small" />} 
+                  control={<Radio size="small" disabled={!temProdutosAdicionados()} />} 
                   label="FOB"
                   sx={{ 
-                    '& .MuiFormControlLabel-label': { fontSize: '0.875rem' },
+                    '& .MuiFormControlLabel-label': { 
+                      fontSize: '0.875rem',
+                      color: temProdutosAdicionados() ? 'inherit' : '#999'
+                    },
                     mr: 1
                   }}
                 />
                 <FormControlLabel 
                   value="Nenhum" 
-                  control={<Radio size="small" />} 
+                  control={<Radio size="small" disabled={!temProdutosAdicionados()} />} 
                   label="Nenhum"
                   sx={{ 
-                    '& .MuiFormControlLabel-label': { fontSize: '0.875rem' },
+                    '& .MuiFormControlLabel-label': { 
+                      fontSize: '0.875rem',
+                      color: temProdutosAdicionados() ? 'inherit' : '#999'
+                    },
                     mr: 0
                   }}
                 />
@@ -1041,13 +1075,15 @@ const NotaEntradaFormMUI = () => {
                   label="Valor Frete"
                   type="number"
                   value={notaEntrada.valorFrete}
-                  onChange={(e) => handleChange('valorFrete', parseFloat(e.target.value) || 0)}
+                  disabled={!temProdutosAdicionados()}
+                  onChange={(e) => temProdutosAdicionados() && handleChange('valorFrete', parseFloat(e.target.value) || 0)}
                   InputProps={{ 
                     inputProps: { step: 0.01, min: 0 },
                     startAdornment: <Box sx={{ mr: 1, color: 'text.secondary' }}>R$</Box>
                   }}
                   variant="outlined"
                   sx={{ 
+                    bgcolor: temProdutosAdicionados() ? 'inherit' : '#e0e0e0',
                     '& .MuiInputBase-input': { 
                       textAlign: 'right' 
                     }
@@ -1062,13 +1098,15 @@ const NotaEntradaFormMUI = () => {
                   label="Valor Seguro"
                   type="number"
                   value={notaEntrada.valorSeguro}
-                  onChange={(e) => handleChange('valorSeguro', parseFloat(e.target.value) || 0)}
+                  disabled={!temProdutosAdicionados()}
+                  onChange={(e) => temProdutosAdicionados() && handleChange('valorSeguro', parseFloat(e.target.value) || 0)}
                   InputProps={{ 
                     inputProps: { step: 0.01, min: 0 },
                     startAdornment: <Box sx={{ mr: 1, color: 'text.secondary' }}>R$</Box>
                   }}
                   variant="outlined"
                   sx={{ 
+                    bgcolor: temProdutosAdicionados() ? 'inherit' : '#e0e0e0',
                     '& .MuiInputBase-input': { 
                       textAlign: 'right' 
                     }
@@ -1083,13 +1121,15 @@ const NotaEntradaFormMUI = () => {
                   label="Outras Despesas"
                   type="number"
                   value={notaEntrada.outrasDespesas}
-                  onChange={(e) => handleChange('outrasDespesas', parseFloat(e.target.value) || 0)}
+                  disabled={!temProdutosAdicionados()}
+                  onChange={(e) => temProdutosAdicionados() && handleChange('outrasDespesas', parseFloat(e.target.value) || 0)}
                   InputProps={{ 
                     inputProps: { step: 0.01, min: 0 },
                     startAdornment: <Box sx={{ mr: 1, color: 'text.secondary' }}>R$</Box>
                   }}
                   variant="outlined"
                   sx={{ 
+                    bgcolor: temProdutosAdicionados() ? 'inherit' : '#e0e0e0',
                     '& .MuiInputBase-input': { 
                       textAlign: 'right' 
                     }
