@@ -1,66 +1,306 @@
-import React from 'react';
-import SelectOrCreateModal from '../common/SelectOrCreateModal';
-import ProdutoFormMUI from './ProdutoFormMUI';
+import React, { useState, useEffect } from 'react';
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  TextField,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  IconButton,
+  InputAdornment,
+  Box,
+  Typography,
+  Chip
+} from '@mui/material';
+import {
+  Search as SearchIcon,
+  Close as CloseIcon,
+  Check as CheckIcon,
+  Add as AddIcon
+} from '@mui/icons-material';
 
-/**
- * Modal para selecionar ou criar produto usando o componente genérico
- */
-const ProdutoModal = ({ open, onClose, onSelect }) => {
-  // Função que busca produtos do backend
-  const fetchProdutos = async () => {
-    const response = await fetch('http://localhost:8080/produtos');
-    if (!response.ok) {
-      throw new Error('Erro ao buscar produtos');
+const ProdutoModal = ({ open, onClose, onSelect, onAddNew, refreshTrigger }) => {
+  const [produtos, setProdutos] = useState([]);
+  const [filtro, setFiltro] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [unidadesMedida, setUnidadesMedida] = useState([]);
+  const [categorias, setCategorias] = useState([]);
+
+  // Carrega dados quando o modal abre
+  useEffect(() => {
+    if (open) {
+      carregarDados();
     }
-    return response.json();
+  }, [open]);
+
+  // Recarrega produtos quando refreshTrigger muda (novo produto cadastrado)
+  useEffect(() => {
+    if (refreshTrigger > 0) {
+      carregarDados();
+    }
+  }, [refreshTrigger]);
+
+  const carregarDados = async () => {
+    setLoading(true);
+    try {
+      const [produtosRes, unidadesRes, categoriasRes] = await Promise.all([
+        fetch('http://localhost:8080/produtos'),
+        fetch('http://localhost:8080/unidades-medida'),
+        fetch('http://localhost:8080/categorias')
+      ]);
+
+      if (produtosRes.ok) {
+        const produtosData = await produtosRes.json();
+        setProdutos(produtosData);
+      }
+
+      if (unidadesRes.ok) {
+        const unidadesData = await unidadesRes.json();
+        setUnidadesMedida(unidadesData);
+      }
+
+      if (categoriasRes.ok) {
+        const categoriasData = await categoriasRes.json();
+        setCategorias(categoriasData);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar dados:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Função que filtra produtos baseado no termo de busca
-  const filterProdutos = (produtos, searchTerm) => {
-    if (!searchTerm) return produtos;
-    
-    const term = searchTerm.toLowerCase();
-    return produtos.filter(produto =>
-      produto.nome?.toLowerCase().includes(term) ||
-      produto.codigo?.toLowerCase().includes(term) ||
-      produto.categoriaDescricao?.toLowerCase().includes(term) ||
-      produto.marcaDescricao?.toLowerCase().includes(term)
-    );
+
+
+  const handleSelect = (produto) => {
+    onSelect(produto);
+    onClose();
+    setFiltro('');
   };
 
-  // Função que renderiza as células de cada linha
-  const renderRow = (produto) => [
-    produto.codigo || '-',
-    produto.nome,
-    produto.categoriaDescricao || '-',
-    produto.marcaDescricao || '-',
-    produto.unidadeMedidaDescricao || '-',
-    produto.valorVenda ? `R$ ${Number(produto.valorVenda).toFixed(2)}` : '-'
-  ];
+  const produtosFiltrados = produtos.filter(produto =>
+    produto.nome?.toLowerCase().includes(filtro.toLowerCase()) ||
+    produto.codigo?.toLowerCase().includes(filtro.toLowerCase()) ||
+    produto.id?.toString().includes(filtro)
+  );
 
-  // Definição das colunas da tabela
-  const columns = [
-    { label: 'Código', minWidth: 100 },
-    { label: 'Nome', minWidth: 200 },
-    { label: 'Categoria', minWidth: 150 },
-    { label: 'Marca', minWidth: 150 },
-    { label: 'Unidade', minWidth: 100 },
-    { label: 'Valor', minWidth: 120 }
-  ];
+  // Funções helper para buscar nomes
+  const getUnidadeMedidaNome = (unidadeMedidaId) => {
+    if (!unidadeMedidaId || !unidadesMedida.length) return 'UN';
+    const unidade = unidadesMedida.find(u => u.id === unidadeMedidaId);
+    return unidade ? unidade.nome : 'UN';
+  };
+
+  const getCategoriaNome = (categoriaId) => {
+    if (!categoriaId || !categorias.length) return 'Sem categoria';
+    const categoria = categorias.find(c => c.id === categoriaId);
+    return categoria ? categoria.nome : 'Sem categoria';
+  };
+
+  const formatarPreco = (preco) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(preco || 0);
+  };
 
   return (
-    <SelectOrCreateModal
+    <Dialog
       open={open}
       onClose={onClose}
-      onSelect={onSelect}
-      title="Selecionar Produto"
-      fetchItems={fetchProdutos}
-      renderRow={renderRow}
-      columns={columns}
-      filterItems={filterProdutos}
-      CreateFormModal={ProdutoFormMUI}
-      createFormProps={{ isModal: true }}
-    />
+      maxWidth="xl"
+      fullWidth
+      PaperProps={{
+        sx: { borderRadius: 2, minHeight: '70vh' }
+      }}
+    >
+      <DialogTitle sx={{ 
+        bgcolor: '#f5f5f5', 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center',
+        pb: 2
+      }}>
+        <Typography variant="h6" fontWeight={600}>
+          Selecionar Produto
+        </Typography>
+        <IconButton onClick={onClose} size="small">
+          <CloseIcon />
+        </IconButton>
+      </DialogTitle>
+
+      <DialogContent sx={{ p: 3 }}>
+        {/* Campo de busca */}
+        <Box sx={{ mb: 3 }}>
+          <TextField
+            fullWidth
+            variant="outlined"
+            placeholder="Pesquisar por código, nome ou ID do produto..."
+            value={filtro}
+            onChange={(e) => setFiltro(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon color="action" />
+                </InputAdornment>
+              ),
+            }}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                '& fieldset': {
+                  borderColor: '#e0e0e0',
+                },
+                '&:hover fieldset': {
+                  borderColor: '#1976d2',
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: '#1976d2',
+                }
+              }
+            }}
+          />
+        </Box>
+
+        {/* Contador de resultados e botão adicionar */}
+        <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="body2" color="text.secondary">
+            {loading ? 'Carregando...' : `${produtosFiltrados.length} produto(s) encontrado(s)`}
+          </Typography>
+          {onAddNew && (
+            <Button
+              variant="contained"
+              size="small"
+              startIcon={<AddIcon />}
+              onClick={onAddNew}
+              sx={{
+                textTransform: 'none',
+                borderRadius: 1,
+                px: 2,
+                py: 0.5
+              }}
+            >
+              Adicionar
+            </Button>
+          )}
+        </Box>
+
+        {/* Tabela de produtos */}
+        <TableContainer component={Paper} variant="outlined" sx={{ maxHeight: 400 }}>
+          <Table stickyHeader>
+            <TableHead>
+              <TableRow>
+                <TableCell sx={{ fontWeight: 600, bgcolor: '#f8f9fa' }}>ID</TableCell>
+                <TableCell sx={{ fontWeight: 600, bgcolor: '#f8f9fa' }}>Código</TableCell>
+                <TableCell sx={{ fontWeight: 600, bgcolor: '#f8f9fa' }}>Nome</TableCell>
+                <TableCell sx={{ fontWeight: 600, bgcolor: '#f8f9fa' }}>Unidade</TableCell>
+                <TableCell sx={{ fontWeight: 600, bgcolor: '#f8f9fa' }}>Preço</TableCell>
+                <TableCell sx={{ fontWeight: 600, bgcolor: '#f8f9fa' }}>Categoria</TableCell>
+                <TableCell sx={{ fontWeight: 600, bgcolor: '#f8f9fa' }}>Status</TableCell>
+                <TableCell sx={{ fontWeight: 600, bgcolor: '#f8f9fa', width: 100 }}>Ação</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {produtosFiltrados.map((produto) => (
+                <TableRow 
+                  key={produto.id} 
+                  hover
+                  sx={{ 
+                    cursor: 'pointer',
+                    '&:hover': { bgcolor: '#f8f9fa' }
+                  }}
+                  onClick={() => handleSelect(produto)}
+                >
+                  <TableCell>
+                    <Typography variant="body2" fontWeight={500} color="primary">
+                      {produto.id}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body2" fontFamily="monospace" fontWeight={500}>
+                      {produto.codigo || 'N/A'}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body2" fontWeight={500}>
+                      {produto.nome}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body2">
+                      {getUnidadeMedidaNome(produto.unidadeMedidaId)}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body2" fontFamily="monospace" fontWeight={500} color="success.main">
+                      {formatarPreco(produto.valorCompra)}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body2">
+                      {getCategoriaNome(produto.categoriaId)}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Chip
+                      label={produto.ativo ? 'Ativo' : 'Inativo'}
+                      size="small"
+                      color={produto.ativo ? 'success' : 'default'}
+                      variant={produto.ativo ? 'filled' : 'outlined'}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      size="small"
+                      variant="contained"
+                      startIcon={<CheckIcon />}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSelect(produto);
+                      }}
+                      sx={{
+                        minWidth: 'auto',
+                        px: 2,
+                        bgcolor: '#28a745',
+                        '&:hover': { bgcolor: '#218838' }
+                      }}
+                    >
+                      Selecionar
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+              
+              {produtosFiltrados.length === 0 && !loading && (
+                <TableRow>
+                  <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
+                    <Typography variant="body1" color="text.secondary">
+                      {filtro ? 'Nenhum produto encontrado com o filtro aplicado' : 'Nenhum produto cadastrado'}
+                    </Typography>
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </DialogContent>
+
+      <DialogActions sx={{ p: 3, bgcolor: '#f5f5f5' }}>
+        <Button
+          onClick={onClose}
+          variant="outlined"
+          color="inherit"
+        >
+          Cancelar
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
 };
 

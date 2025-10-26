@@ -30,9 +30,9 @@ import {
   Delete as DeleteIcon,
   Search as SearchIcon
 } from '@mui/icons-material';
-import FornecedorModal from './FornecedorModal';
+import FornecedorModal from '../Fornecedor/FornecedorModal';
 import FornecedorModalForm from '../Fornecedor/FornecedorModalForm';
-import ProdutoModal from './ProdutoModal';
+import ProdutoModal from '../Produto/ProdutoModal';
 import ProdutoModalForm from '../Produto/ProdutoModalForm';
 
 const NotaEntradaFormMUI = () => {
