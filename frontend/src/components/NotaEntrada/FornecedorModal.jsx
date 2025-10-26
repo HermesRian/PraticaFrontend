@@ -26,16 +26,24 @@ import {
   Add as AddIcon
 } from '@mui/icons-material';
 
-const FornecedorModal = ({ open, onClose, onSelect, onAddNew }) => {
+const FornecedorModal = ({ open, onClose, onSelect, onAddNew, refreshTrigger }) => {
   const [fornecedores, setFornecedores] = useState([]);
   const [filtro, setFiltro] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Carrega fornecedores quando o modal abre
   useEffect(() => {
     if (open) {
       carregarFornecedores();
     }
   }, [open]);
+
+  // Recarrega fornecedores quando refreshTrigger muda (novo fornecedor cadastrado)
+  useEffect(() => {
+    if (refreshTrigger > 0) {
+      carregarFornecedores();
+    }
+  }, [refreshTrigger]);
 
   const carregarFornecedores = async () => {
     setLoading(true);

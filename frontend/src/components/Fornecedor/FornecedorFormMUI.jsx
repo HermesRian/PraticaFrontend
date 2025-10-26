@@ -475,9 +475,26 @@ const FornecedorForm = ({ id: propId, isModal = false, onClose }) => {
         }
         return response.json();
       })
-      .then(() => {
-        if (isModal) {
-          onClose();
+      .then((fornecedorSalvo) => {
+        // Se estiver em modo modal e o fornecedor foi criado (POST) mas não retornou ID
+        if (isModal && !id && (!fornecedorSalvo || !fornecedorSalvo.id)) {
+          // Buscar o fornecedor recém-criado pela API
+          fetch('http://localhost:8080/fornecedores')
+            .then(res => res.json())
+            .then(fornecedores => {
+              // Encontrar o fornecedor pelo CPF/CNPJ ou razão social
+              const fornecedorEncontrado = fornecedores.find(f => 
+                f.cpfCnpj === fornecedorFormatado.cpfCnpj || 
+                f.razaoSocial === fornecedorFormatado.razaoSocial
+              );
+              onClose(fornecedorEncontrado || fornecedorSalvo);
+            })
+            .catch(err => {
+              console.error('Erro ao buscar fornecedor:', err);
+              onClose(fornecedorSalvo);
+            });
+        } else if (isModal) {
+          onClose(fornecedorSalvo); // Passa o fornecedor salvo para o callback
         } else {
           navigate('/fornecedores');
         }

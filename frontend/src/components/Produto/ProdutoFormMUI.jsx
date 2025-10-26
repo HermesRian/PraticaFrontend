@@ -285,9 +285,23 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
         }
         return response.json();
       })
-      .then(() => {
-        if (isModal) {
-          onClose();
+      .then((produtoSalvo) => {
+        // Se estiver em modo modal e o produto foi criado (POST) mas não retornou ID
+        if (isModal && !id && (!produtoSalvo || !produtoSalvo.id)) {
+          // Buscar o produto recém-criado pela API
+          fetch('http://localhost:8080/produtos')
+            .then(res => res.json())
+            .then(produtos => {
+              // Encontrar o produto pelo nome (assumindo que acabou de ser criado)
+              const produtoEncontrado = produtos.find(p => p.nome === produtoFormatado.nome);
+              onClose(produtoEncontrado || produtoSalvo);
+            })
+            .catch(err => {
+              console.error('Erro ao buscar produto:', err);
+              onClose(produtoSalvo);
+            });
+        } else if (isModal) {
+          onClose(produtoSalvo); // Passa o produto salvo para o callback
         } else {
           navigate('/produtos');
         }

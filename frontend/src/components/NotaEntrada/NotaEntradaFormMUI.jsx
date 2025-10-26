@@ -93,6 +93,10 @@ const NotaEntradaFormMUI = () => {
   const [produtoFormModalOpen, setProdutoFormModalOpen] = useState(false);
   const [fornecedorSelecionado, setFornecedorSelecionado] = useState(null);
   const [unidadesMedida, setUnidadesMedida] = useState([]);
+  
+  // Contadores para forçar refresh dos modais quando novos itens são criados
+  const [fornecedorRefreshTrigger, setFornecedorRefreshTrigger] = useState(0);
+  const [produtoRefreshTrigger, setProdutoRefreshTrigger] = useState(0);
 
   // Carregar unidades de medida
   useEffect(() => {
@@ -259,11 +263,7 @@ const NotaEntradaFormMUI = () => {
   };
 
   const handleProdutoSelect = (produto) => {
-    console.log('Produto selecionado:', produto);
-    console.log('Unidades de medida disponíveis:', unidadesMedida);
-    
     const unidadeNome = getUnidadeMedidaNome(produto.unidadeMedidaId);
-    console.log(`Unidade encontrada para produto ${produto.nome}:`, unidadeNome);
     
     // Limpar erro de desconto ao selecionar novo produto
     setErroDesconto('');
@@ -271,7 +271,7 @@ const NotaEntradaFormMUI = () => {
     setItemAtual(prev => ({
       ...prev,
       produtoId: produto.id, // ID numérico para a API
-      produtoCodigo: produto.codigo || produto.id.toString(), // Código para exibição
+      produtoCodigo: produto.codigo || (produto.id ? produto.id.toString() : ''), // Código para exibição
       produtoNome: produto.nome,
       unidade: unidadeNome,
       valorUnitario: produto.valorCompra || 0 // Usar valorCompra fixo do produto
@@ -1253,6 +1253,7 @@ const NotaEntradaFormMUI = () => {
         onClose={() => setFornecedorModalOpen(false)}
         onSelect={handleFornecedorSelect}
         onAddNew={() => setFornecedorFormModalOpen(true)}
+        refreshTrigger={fornecedorRefreshTrigger}
       />
 
       <ProdutoModal
@@ -1260,27 +1261,30 @@ const NotaEntradaFormMUI = () => {
         onClose={() => setProdutoModalOpen(false)}
         onSelect={handleProdutoSelect}
         onAddNew={() => setProdutoFormModalOpen(true)}
+        refreshTrigger={produtoRefreshTrigger}
       />
 
       <FornecedorModalForm
         open={fornecedorFormModalOpen}
         onClose={() => setFornecedorFormModalOpen(false)}
-        onSuccess={(novoFornecedor) => {
-          // Fechar modal de cadastro e selecionar o novo fornecedor
+        onSaveSuccess={(novoFornecedor) => {
+          // Fechar apenas o modal de cadastro, mantém o modal de listagem aberto
           setFornecedorFormModalOpen(false);
-          setFornecedorModalOpen(false);
           handleFornecedorSelect(novoFornecedor);
+          // Incrementar o trigger para forçar refresh do modal de fornecedores
+          setFornecedorRefreshTrigger(prev => prev + 1);
         }}
       />
 
       <ProdutoModalForm
         open={produtoFormModalOpen}
         onClose={() => setProdutoFormModalOpen(false)}
-        onSuccess={(novoProduto) => {
-          // Fechar modal de cadastro e selecionar o novo produto
+        onSaveSuccess={(novoProduto) => {
+          // Fechar apenas o modal de cadastro, mantém o modal de listagem aberto
           setProdutoFormModalOpen(false);
-          setProdutoModalOpen(false);
           handleProdutoSelect(novoProduto);
+          // Incrementar o trigger para forçar refresh do modal de produtos
+          setProdutoRefreshTrigger(prev => prev + 1);
         }}
       />
     </Box>

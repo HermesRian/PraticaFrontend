@@ -26,18 +26,26 @@ import {
   Add as AddIcon
 } from '@mui/icons-material';
 
-const ProdutoModal = ({ open, onClose, onSelect, onAddNew }) => {
+const ProdutoModal = ({ open, onClose, onSelect, onAddNew, refreshTrigger }) => {
   const [produtos, setProdutos] = useState([]);
   const [filtro, setFiltro] = useState('');
   const [loading, setLoading] = useState(false);
   const [unidadesMedida, setUnidadesMedida] = useState([]);
   const [categorias, setCategorias] = useState([]);
 
+  // Carrega dados quando o modal abre
   useEffect(() => {
     if (open) {
       carregarDados();
     }
   }, [open]);
+
+  // Recarrega produtos quando refreshTrigger muda (novo produto cadastrado)
+  useEffect(() => {
+    if (refreshTrigger > 0) {
+      carregarDados();
+    }
+  }, [refreshTrigger]);
 
   const carregarDados = async () => {
     setLoading(true);
@@ -55,13 +63,11 @@ const ProdutoModal = ({ open, onClose, onSelect, onAddNew }) => {
 
       if (unidadesRes.ok) {
         const unidadesData = await unidadesRes.json();
-        console.log('Unidades de medida carregadas:', unidadesData);
         setUnidadesMedida(unidadesData);
       }
 
       if (categoriasRes.ok) {
         const categoriasData = await categoriasRes.json();
-        console.log('Categorias carregadas:', categoriasData);
         setCategorias(categoriasData);
       }
     } catch (error) {
