@@ -30,7 +30,6 @@ const ProdutoModal = ({ open, onClose, onSelect, onAddNew, refreshTrigger }) => 
   const [produtos, setProdutos] = useState([]);
   const [filtro, setFiltro] = useState('');
   const [loading, setLoading] = useState(false);
-  const [unidadesMedida, setUnidadesMedida] = useState([]);
   const [categorias, setCategorias] = useState([]);
 
   // Carrega dados quando o modal abre
@@ -50,20 +49,14 @@ const ProdutoModal = ({ open, onClose, onSelect, onAddNew, refreshTrigger }) => 
   const carregarDados = async () => {
     setLoading(true);
     try {
-      const [produtosRes, unidadesRes, categoriasRes] = await Promise.all([
+      const [produtosRes, categoriasRes] = await Promise.all([
         fetch('http://localhost:8080/produtos'),
-        fetch('http://localhost:8080/unidades-medida'),
         fetch('http://localhost:8080/categorias')
       ]);
 
       if (produtosRes.ok) {
         const produtosData = await produtosRes.json();
         setProdutos(produtosData);
-      }
-
-      if (unidadesRes.ok) {
-        const unidadesData = await unidadesRes.json();
-        setUnidadesMedida(unidadesData);
       }
 
       if (categoriasRes.ok) {
@@ -91,24 +84,11 @@ const ProdutoModal = ({ open, onClose, onSelect, onAddNew, refreshTrigger }) => 
     produto.id?.toString().includes(filtro)
   );
 
-  // Funções helper para buscar nomes
-  const getUnidadeMedidaNome = (unidadeMedidaId) => {
-    if (!unidadeMedidaId || !unidadesMedida.length) return 'UN';
-    const unidade = unidadesMedida.find(u => u.id === unidadeMedidaId);
-    return unidade ? unidade.nome : 'UN';
-  };
-
+  // Função helper para buscar nome da categoria
   const getCategoriaNome = (categoriaId) => {
     if (!categoriaId || !categorias.length) return 'Sem categoria';
     const categoria = categorias.find(c => c.id === categoriaId);
     return categoria ? categoria.nome : 'Sem categoria';
-  };
-
-  const formatarPreco = (preco) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(preco || 0);
   };
 
   return (
@@ -196,12 +176,10 @@ const ProdutoModal = ({ open, onClose, onSelect, onAddNew, refreshTrigger }) => 
           <Table stickyHeader>
             <TableHead>
               <TableRow>
-                <TableCell sx={{ fontWeight: 600, bgcolor: '#f8f9fa' }}>ID</TableCell>
                 <TableCell sx={{ fontWeight: 600, bgcolor: '#f8f9fa' }}>Código</TableCell>
-                <TableCell sx={{ fontWeight: 600, bgcolor: '#f8f9fa' }}>Nome</TableCell>
-                <TableCell sx={{ fontWeight: 600, bgcolor: '#f8f9fa' }}>Unidade</TableCell>
-                <TableCell sx={{ fontWeight: 600, bgcolor: '#f8f9fa' }}>Preço</TableCell>
+                <TableCell sx={{ fontWeight: 600, bgcolor: '#f8f9fa' }}>Descrição</TableCell>
                 <TableCell sx={{ fontWeight: 600, bgcolor: '#f8f9fa' }}>Categoria</TableCell>
+                <TableCell sx={{ fontWeight: 600, bgcolor: '#f8f9fa' }}>Estoque</TableCell>
                 <TableCell sx={{ fontWeight: 600, bgcolor: '#f8f9fa' }}>Status</TableCell>
                 <TableCell sx={{ fontWeight: 600, bgcolor: '#f8f9fa', width: 100 }}>Ação</TableCell>
               </TableRow>
@@ -218,11 +196,6 @@ const ProdutoModal = ({ open, onClose, onSelect, onAddNew, refreshTrigger }) => 
                   onClick={() => handleSelect(produto)}
                 >
                   <TableCell>
-                    <Typography variant="body2" fontWeight={500} color="primary">
-                      {produto.id}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
                     <Typography variant="body2" fontFamily="monospace" fontWeight={500}>
                       {produto.codigo || 'N/A'}
                     </Typography>
@@ -234,17 +207,12 @@ const ProdutoModal = ({ open, onClose, onSelect, onAddNew, refreshTrigger }) => 
                   </TableCell>
                   <TableCell>
                     <Typography variant="body2">
-                      {getUnidadeMedidaNome(produto.unidadeMedidaId)}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2" fontFamily="monospace" fontWeight={500} color="success.main">
-                      {formatarPreco(produto.valorCompra)}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2">
                       {getCategoriaNome(produto.categoriaId)}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body2" fontWeight={500}>
+                      {produto.quantidadeEstoque || 0}
                     </Typography>
                   </TableCell>
                   <TableCell>
