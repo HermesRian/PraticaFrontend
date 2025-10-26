@@ -153,7 +153,7 @@ const FornecedorModal = ({ open, onClose, onSelect, onAddNew, refreshTrigger }) 
         </Box>
 
         {/* Tabela de fornecedores */}
-        <TableContainer component={Paper} variant="outlined" sx={{ maxHeight: 400 }}>
+        <TableContainer component={Paper} variant="outlined" sx={{ maxHeight: 300 }}>
           <Table stickyHeader>
             <TableHead>
               <TableRow>
