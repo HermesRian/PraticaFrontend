@@ -1199,8 +1199,8 @@ const NotaEntradaFormMUI = () => {
               rows={4}
               size="small"
               label="Observações"
-              value={notaEntrada.observacao}
-              onChange={(e) => handleChange('observacao', e.target.value)}
+              value={notaEntrada.observacoes}
+              onChange={(e) => handleChange('observacoes', e.target.value)}
               placeholder="Observações gerais sobre a nota de entrada..."
               variant="outlined"
             />

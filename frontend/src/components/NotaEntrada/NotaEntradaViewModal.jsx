@@ -409,12 +409,7 @@ const NotaEntradaViewModal = ({ open, onClose, notaId }) => {
                   fullWidth
                   size="small"
                   label="Condição de Pagamento"
-                  value={nota.condicaoPagamento ? 
-                    (typeof nota.condicaoPagamento === 'object' ? 
-                      nota.condicaoPagamento.descricao : 
-                      nota.condicaoPagamento) : 
-                    ''
-                  }
+                  value={nota.condicaoPagamento?.nome}
                   InputProps={{ readOnly: true }}
                   variant="outlined"
                   sx={{ bgcolor: '#f5f5f5' }}
