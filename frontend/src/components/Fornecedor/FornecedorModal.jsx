@@ -28,13 +28,15 @@ import {
 
 const FornecedorModal = ({ open, onClose, onSelect, onAddNew, refreshTrigger }) => {
   const [fornecedores, setFornecedores] = useState([]);
+  const [condicoesPagamento, setCondicoesPagamento] = useState([]);
   const [filtro, setFiltro] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Carrega fornecedores quando o modal abre
+  // Carrega fornecedores e condições de pagamento quando o modal abre
   useEffect(() => {
     if (open) {
       carregarFornecedores();
+      carregarCondicoesPagamento();
     }
   }, [open]);
 
@@ -58,6 +60,24 @@ const FornecedorModal = ({ open, onClose, onSelect, onAddNew, refreshTrigger }) 
     } finally {
       setLoading(false);
     }
+  };
+
+  const carregarCondicoesPagamento = async () => {
+    try {
+      const response = await fetch('http://localhost:8080/condicoes-pagamento');
+      if (response.ok) {
+        const data = await response.json();
+        setCondicoesPagamento(data);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar condições de pagamento:', error);
+    }
+  };
+
+  const getCondicaoPagamentoNome = (condicaoId) => {
+    if (!condicaoId) return 'Não informada';
+    const condicao = condicoesPagamento.find(c => c.id === condicaoId);
+    return condicao ? condicao.nome : 'Não informada';
   };
 
   const handleSelect = (fornecedor) => {
@@ -161,6 +181,7 @@ const FornecedorModal = ({ open, onClose, onSelect, onAddNew, refreshTrigger }) 
                 <TableCell sx={{ fontWeight: 600, bgcolor: '#f8f9fa' }}>Razão Social</TableCell>
                 <TableCell sx={{ fontWeight: 600, bgcolor: '#f8f9fa' }}>Nome Fantasia</TableCell>
                 <TableCell sx={{ fontWeight: 600, bgcolor: '#f8f9fa' }}>CPF/CNPJ</TableCell>
+                <TableCell sx={{ fontWeight: 600, bgcolor: '#f8f9fa' }}>Condição Pagamento</TableCell>
                 <TableCell sx={{ fontWeight: 600, bgcolor: '#f8f9fa' }}>Status</TableCell>
                 <TableCell sx={{ fontWeight: 600, bgcolor: '#f8f9fa', width: 100 }}>Ação</TableCell>
               </TableRow>
@@ -197,6 +218,11 @@ const FornecedorModal = ({ open, onClose, onSelect, onAddNew, refreshTrigger }) 
                     </Typography>
                   </TableCell>
                   <TableCell>
+                    <Typography variant="body2">
+                      {getCondicaoPagamentoNome(fornecedor.condicaoPagamentoId)}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
                     <Chip
                       label={fornecedor.ativo ? 'Ativo' : 'Inativo'}
                       size="small"
@@ -228,7 +254,7 @@ const FornecedorModal = ({ open, onClose, onSelect, onAddNew, refreshTrigger }) 
               
               {fornecedoresFiltrados.length === 0 && !loading && (
                 <TableRow>
-                  <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
+                  <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
                     <Typography variant="body1" color="text.secondary">
                       {filtro ? 'Nenhum fornecedor encontrado com o filtro aplicado' : 'Nenhum fornecedor cadastrado'}
                     </Typography>

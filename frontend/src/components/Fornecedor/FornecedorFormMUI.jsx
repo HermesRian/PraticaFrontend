@@ -84,7 +84,7 @@ const FornecedorForm = ({ id: propId, isModal = false, onClose }) => {
     telefone: '',
     email: '',
     ativo: true,
-    apelido: '',
+    nomeFantasia: '',
     limiteCredito: '',
     limiteCredito2: '',
     nacionalidade: '',
@@ -682,8 +682,8 @@ const FornecedorForm = ({ id: propId, isModal = false, onClose }) => {
               fullWidth
               size="small"
               label={fornecedor.tipo === 'FISICA' ? 'Apelido' : 'Nome Fantasia'}
-              name="apelido"
-              value={fornecedor.apelido}
+              name="nomeFantasia"
+              value={fornecedor.nomeFantasia}
               onChange={handleChange}
               placeholder={fornecedor.tipo === 'FISICA' ? "Apelido" : "Nome Fantasia"}
               variant="outlined"

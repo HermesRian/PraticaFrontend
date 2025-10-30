@@ -198,8 +198,8 @@ const FornecedorListMUI = () => {
         
         if (condicaoResponse.ok) {
           const condicaoData = await condicaoResponse.json();
-          fornecedorComCondicaoPagamento.condicaoPagamentoDescricao = condicaoData.descricao || '';
-          console.log('Descrição da condição de pagamento encontrada:', condicaoData.descricao);
+          fornecedorComCondicaoPagamento.condicaoPagamentoDescricao = condicaoData.nome || 'Não informada';
+          console.log('Nome da condição de pagamento encontrada:', condicaoData.nome);
         } else {
           console.error('Erro ao buscar condição de pagamento, status:', condicaoResponse.status);
           fornecedorComCondicaoPagamento.condicaoPagamentoDescricao = 'Erro ao carregar';
@@ -208,6 +208,8 @@ const FornecedorListMUI = () => {
         console.error('Erro ao buscar condição de pagamento:', error);
         fornecedorComCondicaoPagamento.condicaoPagamentoDescricao = 'Erro ao carregar';
       }
+    } else {
+      fornecedorComCondicaoPagamento.condicaoPagamentoDescricao = 'Não informada';
     }
     
     setFornecedorSelecionado(fornecedorComCondicaoPagamento);
@@ -700,7 +702,7 @@ const FornecedorListMUI = () => {
                   fullWidth
                   size="small"
                   label={getTipoLabel(fornecedorSelecionado.tipo) === 'Pessoa Física' ? 'Apelido' : 'Nome Fantasia'}
-                  value={fornecedorSelecionado.apelido || ''}
+                  value={fornecedorSelecionado.nomeFantasia || ''}
                   InputProps={{ readOnly: true }}
                   variant="outlined"
                 />

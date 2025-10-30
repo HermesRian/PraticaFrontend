@@ -44,6 +44,8 @@ import CategoriaFormMUI from '../Categoria/CategoriaFormMUI';
 import NotaEntradaListMUI from '../NotaEntrada/NotaEntradaListMUI';
 import NotaEntradaFormMUI from '../NotaEntrada/NotaEntradaFormMUI';
 
+import ContaPagarListMUI from '../ContaPagar/ContaPagarListMUI';
+
 const MainContent = () => {
   return (
     <main>      
@@ -100,6 +102,9 @@ const MainContent = () => {
         <Route path="/notas-entrada" element={<NotaEntradaListMUI />} />
         <Route path="/notas-entrada/cadastrar" element={<NotaEntradaFormMUI />} />
         <Route path="/notas-entrada/editar/:id" element={<NotaEntradaFormMUI />} />
+
+        {/* Contas a Pagar */}
+        <Route path="/contas-pagar" element={<ContaPagarListMUI />} />
       </Routes>
     </main>
   );
