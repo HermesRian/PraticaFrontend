@@ -26,6 +26,7 @@
     Category as CategoryIcon,
     Sell as SellIcon,
     Receipt as ReceiptIcon,
+    RequestQuote as RequestQuoteIcon,
   } from '@mui/icons-material';
 
   const NAVIGATION = [
@@ -99,6 +100,11 @@
       segment: 'notas-entrada',
       title: 'Notas de Entrada',
       icon: <ReceiptIcon />,
+    },
+    {
+      segment: 'contas-pagar',
+      title: 'Contas a Pagar',
+      icon: <RequestQuoteIcon />,
     },
     {
       kind: 'divider',
