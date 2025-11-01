@@ -93,6 +93,7 @@ const NotaEntradaFormMUI = () => {
   const [produtoFormModalOpen, setProdutoFormModalOpen] = useState(false);
   const [fornecedorSelecionado, setFornecedorSelecionado] = useState(null);
   const [unidadesMedida, setUnidadesMedida] = useState([]);
+  const [parcelasCondicao, setParcelasCondicao] = useState([]);
   
   // Contadores para forçar refresh dos modais quando novos itens são criados
   const [fornecedorRefreshTrigger, setFornecedorRefreshTrigger] = useState(0);
@@ -262,6 +263,30 @@ const NotaEntradaFormMUI = () => {
     return unidade ? unidade.nome : 'UN';
   };
 
+  // Função para calcular o total da nota
+  const calcularTotalNota = () => {
+    const totalProdutos = notaEntrada.itens.reduce((sum, item) => sum + item.valorTotal, 0);
+    const totalNota = totalProdutos +
+      parseFloat(notaEntrada.valorFrete || 0) +
+      parseFloat(notaEntrada.valorSeguro || 0) +
+      parseFloat(notaEntrada.outrasDespesas || 0);
+    return totalNota;
+  };
+
+  // Função para calcular o valor de cada parcela com base no percentual
+  const calcularValorParcela = (parcela) => {
+    const totalNota = calcularTotalNota();
+    const percentual = parseFloat(parcela.percentual || 0);
+    return (totalNota * percentual) / 100;
+  };
+
+  // Função para formatar data para exibição
+  const formatarDataExibicao = (data) => {
+    if (!data) return 'A definir';
+    const dataObj = new Date(data + 'T00:00:00');
+    return dataObj.toLocaleDateString('pt-BR');
+  };
+
   const handleProdutoSelect = (produto) => {
     const unidadeNome = getUnidadeMedidaNome(produto.unidadeMedidaId);
     
@@ -322,9 +347,6 @@ const NotaEntradaFormMUI = () => {
         // Produto já existe: somar quantidade e atualizar desconto
         console.log(`Produto ${itemAtual.produtoNome} já existe. Atualizando quantidade e desconto.`);
         
-        // Mostrar mensagem temporária de atualização
-        setSuccessMessage(`Produto "${itemAtual.produtoNome}" atualizado: quantidade somada e desconto sobrescrito`);
-        setTimeout(() => setSuccessMessage(''), 3000);
         
         const itensAtualizados = prev.itens.map(item => {
           if (item.produtoId === itemAtual.produtoId) {
@@ -396,7 +418,7 @@ const NotaEntradaFormMUI = () => {
     if (fornecedor.condicaoPagamentoId || fornecedor.codigoCondicaoPagamento) {
       const condicaoId = fornecedor.condicaoPagamentoId || fornecedor.codigoCondicaoPagamento;
       
-      // Buscar a descrição da condição de pagamento
+      // Buscar a descrição da condição de pagamento e suas parcelas
       try {
         const response = await fetch(`http://localhost:8080/condicoes-pagamento/${condicaoId}`);
         if (response.ok) {
@@ -406,6 +428,13 @@ const NotaEntradaFormMUI = () => {
             condicaoPagamentoId: condicaoId,
             condicaoPagamento: condicao.descricao || condicao.nome || `Condição ${condicaoId}`
           }));
+          
+          // Carregar as parcelas da condição
+          if (condicao.parcelasCondicao && condicao.parcelasCondicao.length > 0) {
+            setParcelasCondicao(condicao.parcelasCondicao);
+          } else {
+            setParcelasCondicao([]);
+          }
         } else {
           // Se não conseguir buscar a descrição, usar apenas o ID
           setNotaEntrada(prev => ({
@@ -413,6 +442,7 @@ const NotaEntradaFormMUI = () => {
             condicaoPagamentoId: condicaoId,
             condicaoPagamento: `Condição ${condicaoId}`
           }));
+          setParcelasCondicao([]);
         }
       } catch (error) {
         console.error('Erro ao buscar descrição da condição:', error);
@@ -421,6 +451,7 @@ const NotaEntradaFormMUI = () => {
           condicaoPagamentoId: condicaoId,
           condicaoPagamento: `Condição ${condicaoId}`
         }));
+        setParcelasCondicao([]);
       }
       return;
     }
@@ -443,7 +474,7 @@ const NotaEntradaFormMUI = () => {
         }
         
         if (codigo) {
-          // Buscar a descrição da condição de pagamento
+          // Buscar a descrição da condição de pagamento e suas parcelas
           try {
             const condResponse = await fetch(`http://localhost:8080/condicoes-pagamento/${codigo}`);
             if (condResponse.ok) {
@@ -453,12 +484,20 @@ const NotaEntradaFormMUI = () => {
                 condicaoPagamentoId: codigo,
                 condicaoPagamento: condicao.descricao || condicao.nome || `Condição ${codigo}`
               }));
+              
+              // Carregar as parcelas da condição
+              if (condicao.parcelasCondicao && condicao.parcelasCondicao.length > 0) {
+                setParcelasCondicao(condicao.parcelasCondicao);
+              } else {
+                setParcelasCondicao([]);
+              }
             } else {
               setNotaEntrada(prev => ({
                 ...prev,
                 condicaoPagamentoId: codigo,
                 condicaoPagamento: `Condição ${codigo}`
               }));
+              setParcelasCondicao([]);
             }
           } catch (err) {
             console.log('Erro ao buscar descrição da condição:', err);
@@ -467,6 +506,7 @@ const NotaEntradaFormMUI = () => {
               condicaoPagamentoId: codigo,
               condicaoPagamento: `Condição ${codigo}`
             }));
+            setParcelasCondicao([]);
           }
         }
       }
@@ -1187,6 +1227,36 @@ const NotaEntradaFormMUI = () => {
             />
           </Grid>
         </Grid>
+
+        {/* Grid de Parcelas da Condição de Pagamento */}
+        {parcelasCondicao.length > 0 && (
+          <TableContainer component={Paper} variant="outlined" sx={{ mb: 4 }}>
+            <Table size="small">
+              <TableHead>
+                <TableRow sx={{ bgcolor: '#f5f5f5' }}>
+                  <TableCell sx={{ fontWeight: 600 }}>Parcela</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Cód. Forma Pgto</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Forma de Pgto</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Data Vencimento</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Valor Parcela</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {parcelasCondicao.map((parcela, index) => (
+                  <TableRow key={index} hover>
+                    <TableCell>{parcela.numeroParcela}</TableCell>
+                    <TableCell>{parcela.formaPagamento?.id || '-'}</TableCell>
+                    <TableCell>{parcela.formaPagamento?.nome || 'Não informada'}</TableCell>
+                    <TableCell>{formatarDataExibicao(parcela.dataVencimento)}</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>
+                      R$ {calcularValorParcela(parcela).toFixed(2)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
 
         {/* Campo Observação */}
         <Divider sx={{ mb: 3 }} />
