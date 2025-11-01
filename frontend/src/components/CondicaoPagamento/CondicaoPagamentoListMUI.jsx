@@ -124,8 +124,16 @@ const CondicaoPagamentoListMUI = () => {
   };
 
   const handleView = async (condicao) => {
-    setCondicaoSelecionada(condicao);
-    setIsModalOpen(true);
+    try {
+      // Buscar dados completos da condição de pagamento com parcelas
+      const response = await fetch(`http://localhost:8080/condicoes-pagamento/${condicao.id}`);
+      const condicaoCompleta = await response.json();
+      setCondicaoSelecionada(condicaoCompleta);
+      setIsModalOpen(true);
+    } catch (error) {
+      console.error('Erro ao buscar condição de pagamento:', error);
+      setError('Erro ao carregar detalhes da condição de pagamento');
+    }
   };
 
   const handleCloseModal = () => {

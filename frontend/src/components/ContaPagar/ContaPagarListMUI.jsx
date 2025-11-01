@@ -27,7 +27,8 @@ import {
   Delete as DeleteIcon,
   Search as SearchIcon,
   Visibility as VisibilityIcon,
-  Payment as PaymentIcon
+  Payment as PaymentIcon,
+  Cancel as CancelIcon
 } from '@mui/icons-material';
 
 const ContaPagarListMUI = () => {
@@ -68,6 +69,44 @@ const ContaPagarListMUI = () => {
       } catch (error) {
         console.error('Erro ao excluir:', error);
         alert('Erro ao excluir conta a pagar');
+      }
+    }
+  };
+
+  const handlePagar = async (id) => {
+    if (window.confirm('Tem certeza que deseja marcar esta conta como paga?')) {
+      try {
+        const response = await fetch(`http://localhost:8080/contas-pagar/${id}/pagar`, {
+          method: 'PUT',
+        });
+        if (response.ok) {
+          carregarContas();
+          alert('Conta marcada como paga com sucesso!');
+        } else {
+          alert('Erro ao marcar conta como paga');
+        }
+      } catch (error) {
+        console.error('Erro ao pagar conta:', error);
+        alert('Erro ao marcar conta como paga');
+      }
+    }
+  };
+
+  const handleCancelar = async (id) => {
+    if (window.confirm('Tem certeza que deseja cancelar esta conta a pagar?')) {
+      try {
+        const response = await fetch(`http://localhost:8080/contas-pagar/${id}/cancelar`, {
+          method: 'PUT',
+        });
+        if (response.ok) {
+          carregarContas();
+          alert('Conta cancelada com sucesso!');
+        } else {
+          alert('Erro ao cancelar conta');
+        }
+      } catch (error) {
+        console.error('Erro ao cancelar conta:', error);
+        alert('Erro ao cancelar conta');
       }
     }
   };
@@ -327,25 +366,29 @@ const ContaPagarListMUI = () => {
                     </TableCell>
                     <TableCell align="center">
                       <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
-                        <Tooltip title="Editar">
-                          <IconButton 
-                            component={Link}
-                            to={`/contas-pagar/editar/${conta.id}`}
-                            size="small" 
-                            color="primary"
-                          >
-                            <EditIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Excluir">
-                          <IconButton 
-                            size="small" 
-                            color="error"
-                            onClick={() => handleDelete(conta.id)}
-                          >
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
+                        {conta.status === 'PENDENTE' && (
+                          <>
+                            <Tooltip title="Pagar">
+                              <IconButton 
+                                size="small" 
+                                color="success"
+                                onClick={() => handlePagar(conta.id)}
+                              >
+                                <PaymentIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Cancelar">
+                              <IconButton 
+                                size="small" 
+                                color="warning"
+                                onClick={() => handleCancelar(conta.id)}
+                              >
+                                <CancelIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          </>
+                        )}
+                        
                       </Box>
                     </TableCell>
                   </TableRow>
