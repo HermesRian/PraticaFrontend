@@ -77,13 +77,18 @@ const ContaPagarListMUI = () => {
     if (window.confirm('Tem certeza que deseja marcar esta conta como paga?')) {
       try {
         const response = await fetch(`http://localhost:8080/contas-pagar/${id}/pagar`, {
-          method: 'PUT',
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
         });
         if (response.ok) {
           carregarContas();
           alert('Conta marcada como paga com sucesso!');
         } else {
-          alert('Erro ao marcar conta como paga');
+          const errorText = await response.text();
+          console.error('Erro ao pagar conta:', response.status, errorText);
+          alert(`Erro ao marcar conta como paga: ${errorText || response.status}`);
         }
       } catch (error) {
         console.error('Erro ao pagar conta:', error);
@@ -96,13 +101,18 @@ const ContaPagarListMUI = () => {
     if (window.confirm('Tem certeza que deseja cancelar esta conta a pagar?')) {
       try {
         const response = await fetch(`http://localhost:8080/contas-pagar/${id}/cancelar`, {
-          method: 'PUT',
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
         });
         if (response.ok) {
           carregarContas();
           alert('Conta cancelada com sucesso!');
         } else {
-          alert('Erro ao cancelar conta');
+          const errorText = await response.text();
+          console.error('Erro ao cancelar conta:', response.status, errorText);
+          alert(`Erro ao cancelar conta: ${errorText || response.status}`);
         }
       } catch (error) {
         console.error('Erro ao cancelar conta:', error);
