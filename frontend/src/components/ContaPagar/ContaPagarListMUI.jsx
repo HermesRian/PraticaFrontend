@@ -106,34 +106,28 @@ const ContaPagarListMUI = () => {
   };
 
   const getStatusColor = (status) => {
-    switch (status) {
+    const statusUpper = status?.toUpperCase();
+    switch (statusUpper) {
       case 'PENDENTE':
         return 'warning';
       case 'PAGA':
         return 'success';
-      case 'VENCIDA':
-        return 'error';
       case 'CANCELADA':
-        return 'default';
-      case 'PARCIALMENTE_PAGA':
-        return 'info';
+        return 'error';
       default:
         return 'default';
     }
   };
 
   const getStatusLabel = (status) => {
-    switch (status) {
+    const statusUpper = status?.toUpperCase();
+    switch (statusUpper) {
       case 'PENDENTE':
         return 'Pendente';
       case 'PAGA':
         return 'Paga';
-      case 'VENCIDA':
-        return 'Vencida';
       case 'CANCELADA':
         return 'Cancelada';
-      case 'PARCIALMENTE_PAGA':
-        return 'Parcial';
       default:
         return status;
     }
@@ -163,7 +157,8 @@ const ContaPagarListMUI = () => {
   };
 
   const isVencida = (conta) => {
-    if (conta.status === 'PAGA' || conta.status === 'CANCELADA') return false;
+    const statusUpper = conta.status?.toUpperCase();
+    if (statusUpper === 'PAGA' || statusUpper === 'CANCELADA') return false;
     const hoje = new Date();
     const vencimento = new Date(conta.dataVencimento);
     return vencimento < hoje;
@@ -175,7 +170,9 @@ const ContaPagarListMUI = () => {
       conta.descricao?.toLowerCase().includes(filtro.toLowerCase()) ||
       conta.id?.toString().includes(filtro);
 
-    const matchesStatus = filtroStatus === 'todos' || conta.status === filtroStatus;
+    // Normaliza o status para uppercase para garantir a comparação correta
+    const statusNormalizado = conta.status?.toUpperCase();
+    const matchesStatus = filtroStatus === 'todos' || statusNormalizado === filtroStatus;
 
     return matchesText && matchesStatus;
   });
@@ -261,9 +258,7 @@ const ContaPagarListMUI = () => {
                 <MenuItem value="todos">Todos</MenuItem>
                 <MenuItem value="PENDENTE">Pendente</MenuItem>
                 <MenuItem value="PAGA">Paga</MenuItem>
-                <MenuItem value="VENCIDA">Vencida</MenuItem>
                 <MenuItem value="CANCELADA">Cancelada</MenuItem>
-                <MenuItem value="PARCIALMENTE_PAGA">Parcial</MenuItem>
               </Select>
             </FormControl>
           </Box>
@@ -372,7 +367,7 @@ const ContaPagarListMUI = () => {
                             <VisibilityIcon fontSize="small" />
                           </IconButton>
                         </Tooltip>
-                        {conta.status === 'PENDENTE' && (
+                        {conta.status?.toUpperCase() === 'PENDENTE' && (
                           <Tooltip title="Pagar">
                             <IconButton 
                               size="small" 

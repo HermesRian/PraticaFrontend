@@ -122,13 +122,12 @@ const NotaEntradaListMUI = () => {
   };
 
   const getStatusColor = (status) => {
-    switch (status) {
+    const statusUpper = status?.toUpperCase();
+    switch (statusUpper) {
       case 'PENDENTE':
         return 'warning';
-      case 'RECEBIDA':
+      case 'PAGA':
         return 'success';
-      case 'PARCIALMENTE_RECEBIDA':
-        return 'info';
       case 'CANCELADA':
         return 'error';
       default:
@@ -137,13 +136,12 @@ const NotaEntradaListMUI = () => {
   };
 
   const getStatusLabel = (status) => {
-    switch (status) {
+    const statusUpper = status?.toUpperCase();
+    switch (statusUpper) {
       case 'PENDENTE':
         return 'Pendente';
-      case 'RECEBIDA':
-        return 'Recebida';
-      case 'PARCIALMENTE_RECEBIDA':
-        return 'Parcial';
+      case 'PAGA':
+        return 'Paga';
       case 'CANCELADA':
         return 'Cancelada';
       default:
@@ -181,8 +179,9 @@ const NotaEntradaListMUI = () => {
     const matchesText = nota.numero?.toLowerCase().includes(filtro.toLowerCase()) ||
       getFornecedorNome(nota)?.toLowerCase().includes(filtro.toLowerCase());
     
-    // Filtro por status
-    const matchesStatus = filtroStatus === 'todos' || nota.status === filtroStatus;
+    // Filtro por status (normalizado para uppercase)
+    const statusNormalizado = nota.status?.toUpperCase();
+    const matchesStatus = filtroStatus === 'todos' || statusNormalizado === filtroStatus;
     
     return matchesText && matchesStatus;
   });
@@ -279,8 +278,7 @@ const NotaEntradaListMUI = () => {
               >
                 <MenuItem value="todos">Todos</MenuItem>
                 <MenuItem value="PENDENTE">Pendente</MenuItem>
-                <MenuItem value="RECEBIDA">Recebida</MenuItem>
-                <MenuItem value="PARCIALMENTE_RECEBIDA">Parcial</MenuItem>
+                <MenuItem value="PAGA">Paga</MenuItem>
                 <MenuItem value="CANCELADA">Cancelada</MenuItem>
               </Select>
             </FormControl>
