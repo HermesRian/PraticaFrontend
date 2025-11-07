@@ -543,6 +543,17 @@ const NotaEntradaFormMUI = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [notaEntrada.dataEmissao, notaEntrada.dataChegada]);
 
+  // Função para garantir que a data seja enviada no formato correto com horário do meio-dia
+  // Isso evita problemas de timezone onde o backend pode subtrair um dia
+  const formatarDataParaAPI = (data) => {
+    if (!data) return null;
+    // Se já está no formato YYYY-MM-DD, adiciona horário do meio-dia
+    if (typeof data === 'string' && data.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      return `${data}T12:00:00`;
+    }
+    return data;
+  };
+
   // Função para transformar dados do formulário para o formato da API
   // Backend agora calcula todos os valores automaticamente
   const transformarDadosParaAPI = () => {
@@ -573,9 +584,9 @@ const NotaEntradaFormMUI = () => {
       modelo: notaEntrada.modelo || "55",
       serie: notaEntrada.serie || "1",
       fornecedorId: parseInt(notaEntrada.fornecedorSelecionado?.id || notaEntrada.fornecedorId),
-      dataEmissao: notaEntrada.dataEmissao,
-      dataChegada: notaEntrada.dataChegada,
-      dataRecebimento: notaEntrada.dataRecebimento,
+      dataEmissao: formatarDataParaAPI(notaEntrada.dataEmissao),
+      dataChegada: formatarDataParaAPI(notaEntrada.dataChegada),
+      dataRecebimento: formatarDataParaAPI(notaEntrada.dataRecebimento),
       condicaoPagamentoId: parseInt(notaEntrada.condicaoPagamentoId || 23),
       status: notaEntrada.status || "PENDENTE",
       tipoFrete: notaEntrada.tipoFrete,
@@ -612,6 +623,11 @@ const NotaEntradaFormMUI = () => {
       // Transformar dados para o formato da API
       const dadosAPI = transformarDadosParaAPI();
       console.log('Dados sendo enviados para API:', dadosAPI);
+      console.log('Datas antes do envio:', {
+        dataEmissao: dadosAPI.dataEmissao,
+        dataChegada: dadosAPI.dataChegada,
+        dataRecebimento: dadosAPI.dataRecebimento
+      });
       console.log('JSON stringified:', JSON.stringify(dadosAPI, null, 2));
 
       const response = await fetch(url, {
