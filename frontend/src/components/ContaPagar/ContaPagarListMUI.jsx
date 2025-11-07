@@ -141,7 +141,10 @@ const ContaPagarListMUI = () => {
 
   const formatarData = (data) => {
     if (!data) return 'N/A';
-    return new Date(data).toLocaleDateString('pt-BR');
+    // Extrai apenas a parte da data (YYYY-MM-DD) para evitar problemas de timezone
+    const dateStr = data.split('T')[0];
+    const [year, month, day] = dateStr.split('-');
+    return `${day}/${month}/${year}`;
   };
 
   const formatarValor = (valor) => {
