@@ -287,6 +287,23 @@ const NotaEntradaFormMUI = () => {
     return dataObj.toLocaleDateString('pt-BR');
   };
 
+  // Função para calcular a data de vencimento da parcela baseada na data de emissão
+  const calcularDataVencimento = (parcela) => {
+    if (!notaEntrada.dataEmissao || !parcela.dias) {
+      return 'A definir';
+    }
+    
+    // Cria uma data a partir da data de emissão
+    const dataEmissao = new Date(notaEntrada.dataEmissao + 'T00:00:00');
+    
+    // Adiciona os dias da parcela
+    const dataVencimento = new Date(dataEmissao);
+    dataVencimento.setDate(dataVencimento.getDate() + parseInt(parcela.dias));
+    
+    // Formata a data
+    return dataVencimento.toLocaleDateString('pt-BR');
+  };
+
   const handleProdutoSelect = (produto) => {
     const unidadeNome = getUnidadeMedidaNome(produto.unidadeMedidaId);
     
@@ -1263,7 +1280,7 @@ const NotaEntradaFormMUI = () => {
                     <TableCell>{parcela.numeroParcela}</TableCell>
                     <TableCell>{parcela.formaPagamento?.id || '-'}</TableCell>
                     <TableCell>{parcela.formaPagamento?.nome || 'Não informada'}</TableCell>
-                    <TableCell>{formatarDataExibicao(parcela.dataVencimento)}</TableCell>
+                    <TableCell>{calcularDataVencimento(parcela)}</TableCell>
                     <TableCell sx={{ fontWeight: 600 }}>
                       R$ {calcularValorParcela(parcela).toFixed(2)}
                     </TableCell>
