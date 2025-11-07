@@ -193,7 +193,10 @@ const NotaEntradaListMUI = () => {
 
   const formatDate = (date) => {
     if (!date) return '-';
-    return new Date(date).toLocaleDateString('pt-BR');
+    // Extrai apenas a parte da data (YYYY-MM-DD) para evitar problemas de timezone
+    const dateStr = date.split('T')[0];
+    const [year, month, day] = dateStr.split('-');
+    return `${day}/${month}/${year}`;
   };
 
   if (loading) {
