@@ -19,7 +19,13 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
-  Tooltip
+  Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Grid,
+  Divider
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -28,7 +34,7 @@ import {
   Search as SearchIcon,
   Visibility as VisibilityIcon,
   Payment as PaymentIcon,
-  Cancel as CancelIcon
+  Close as CloseIcon
 } from '@mui/icons-material';
 
 const ContaPagarListMUI = () => {
@@ -36,6 +42,8 @@ const ContaPagarListMUI = () => {
   const [loading, setLoading] = useState(true);
   const [filtro, setFiltro] = useState('');
   const [filtroStatus, setFiltroStatus] = useState('todos');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [contaSelecionada, setContaSelecionada] = useState(null);
 
   useEffect(() => {
     carregarContas();
@@ -55,22 +63,22 @@ const ContaPagarListMUI = () => {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Tem certeza que deseja excluir esta conta a pagar?')) {
-      try {
-        const response = await fetch(`http://localhost:8080/contas-pagar/${id}`, {
-          method: 'DELETE',
-        });
-        if (response.ok) {
-          carregarContas();
-        } else {
-          alert('Erro ao excluir conta a pagar');
-        }
-      } catch (error) {
-        console.error('Erro ao excluir:', error);
-        alert('Erro ao excluir conta a pagar');
+  const handleView = async (id) => {
+    try {
+      const response = await fetch(`http://localhost:8080/contas-pagar/${id}`);
+      if (response.ok) {
+        const data = await response.json();
+        setContaSelecionada(data);
+        setModalOpen(true);
       }
+    } catch (error) {
+      console.error('Erro ao carregar detalhes da conta:', error);
     }
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setContaSelecionada(null);
   };
 
   const handlePagar = async (id) => {
@@ -93,30 +101,6 @@ const ContaPagarListMUI = () => {
       } catch (error) {
         console.error('Erro ao pagar conta:', error);
         alert('Erro ao marcar conta como paga');
-      }
-    }
-  };
-
-  const handleCancelar = async (id) => {
-    if (window.confirm('Tem certeza que deseja cancelar esta conta a pagar?')) {
-      try {
-        const response = await fetch(`http://localhost:8080/contas-pagar/${id}/cancelar`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-        if (response.ok) {
-          carregarContas();
-          alert('Conta cancelada com sucesso!');
-        } else {
-          const errorText = await response.text();
-          console.error('Erro ao cancelar conta:', response.status, errorText);
-          alert(`Erro ao cancelar conta: ${errorText || response.status}`);
-        }
-      } catch (error) {
-        console.error('Erro ao cancelar conta:', error);
-        alert('Erro ao cancelar conta');
       }
     }
   };
@@ -376,29 +360,26 @@ const ContaPagarListMUI = () => {
                     </TableCell>
                     <TableCell align="center">
                       <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
+                        <Tooltip title="Visualizar">
+                          <IconButton 
+                            size="small" 
+                            color="primary"
+                            onClick={() => handleView(conta.id)}
+                          >
+                            <VisibilityIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
                         {conta.status === 'PENDENTE' && (
-                          <>
-                            <Tooltip title="Pagar">
-                              <IconButton 
-                                size="small" 
-                                color="success"
-                                onClick={() => handlePagar(conta.id)}
-                              >
-                                <PaymentIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Cancelar">
-                              <IconButton 
-                                size="small" 
-                                color="warning"
-                                onClick={() => handleCancelar(conta.id)}
-                              >
-                                <CancelIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                          </>
+                          <Tooltip title="Pagar">
+                            <IconButton 
+                              size="small" 
+                              color="success"
+                              onClick={() => handlePagar(conta.id)}
+                            >
+                              <PaymentIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
                         )}
-                        
                       </Box>
                     </TableCell>
                   </TableRow>
@@ -422,6 +403,158 @@ const ContaPagarListMUI = () => {
           </Box>
         )}
       </Paper>
+
+      {/* Modal de Visualização */}
+      <Dialog
+        open={modalOpen}
+        onClose={handleCloseModal}
+        maxWidth="lg"
+        fullWidth
+        PaperProps={{
+          sx: { borderRadius: 2, minHeight: '80vh' }
+        }}
+      >
+        <DialogTitle sx={{ 
+          bgcolor: '#f5f5f5', 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          pb: 2
+        }}>
+          <Typography variant="h6" fontWeight={600}>
+            Visualizar Conta a Pagar
+          </Typography>
+          <IconButton onClick={handleCloseModal} size="small">
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        
+        {contaSelecionada && (
+          <DialogContent sx={{ p: 4 }}>
+            {/* Cabeçalho com título */}
+            <Box sx={{ 
+              display: 'flex', 
+              justifyContent: 'center', 
+              alignItems: 'center', 
+              mb: 4 
+            }}>
+              <Typography 
+                variant="h5" 
+                component="h1" 
+                align="center" 
+                sx={{ color: '#333', fontWeight: 600 }}
+              >
+                Dados da Conta a Pagar
+              </Typography>
+            </Box>
+
+            {/* Informações da Conta */}
+            <Grid container spacing={2} sx={{ mb: 4 }}>
+              <Grid item sx={{ width: '12%' }}>
+                <TextField
+                  fullWidth
+                  label="Código"
+                  value={contaSelecionada.id || ''}
+                  InputProps={{ readOnly: true }}
+                  size="small"
+                  variant="outlined"
+                />
+              </Grid>
+
+              <Grid item sx={{ width: '12%' }}>
+                <TextField
+                  fullWidth
+                  label="Parcela"
+                  value={contaSelecionada.parcela || ''}
+                  InputProps={{ readOnly: true }}
+                  size="small"
+                  variant="outlined"
+                />
+              </Grid>
+
+              <Grid item sx={{ width: '18%' }}>
+                <TextField
+                  fullWidth
+                  label="Status"
+                  value={getStatusLabel(contaSelecionada.status)}
+                  InputProps={{ readOnly: true }}
+                  size="small"
+                  variant="outlined"
+                />
+              </Grid>
+
+              <Grid item sx={{ width: '18%' }}>
+                <TextField
+                  fullWidth
+                  label="Valor"
+                  value={formatarValor(contaSelecionada.valor)}
+                  InputProps={{ readOnly: true }}
+                  size="small"
+                  variant="outlined"
+                  sx={{ '& .MuiInputBase-input': { fontWeight: 600 } }}
+                />
+              </Grid>
+
+              <Grid item sx={{ width: '18%' }}>
+                <TextField
+                  fullWidth
+                  label="Data Vencimento"
+                  value={formatarData(contaSelecionada.dataVencimento)}
+                  InputProps={{ readOnly: true }}
+                  size="small"
+                  variant="outlined"
+                />
+              </Grid>
+
+              <Grid item sx={{ width: '18%' }}>
+                <TextField
+                  fullWidth
+                  label="Data Pagamento"
+                  value={contaSelecionada.dataPagamento ? formatarData(contaSelecionada.dataPagamento) : 'Não paga'}
+                  InputProps={{ readOnly: true }}
+                  size="small"
+                  variant="outlined"
+                />
+              </Grid>
+
+              <Grid item sx={{ width: '100%' }}>
+                <TextField
+                  fullWidth
+                  label="Descrição"
+                  value={contaSelecionada.descricao || ''}
+                  InputProps={{ readOnly: true }}
+                  size="small"
+                  variant="outlined"
+                  multiline
+                  rows={3}
+                />
+              </Grid>
+            </Grid>
+
+            {contaSelecionada.justificativaCancelamento && (
+              <Grid container spacing={2} sx={{ mb: 2 }}>
+                <Grid item sx={{ width: '100%' }}>
+                  <TextField
+                    fullWidth
+                    label="Justificativa de Cancelamento"
+                    value={contaSelecionada.justificativaCancelamento}
+                    InputProps={{ readOnly: true }}
+                    size="small"
+                    variant="outlined"
+                    multiline
+                    rows={2}
+                  />
+                </Grid>
+              </Grid>
+            )}
+          </DialogContent>
+        )}
+        <DialogActions sx={{ p: 2, bgcolor: '#f5f5f5' }}>
+          <Button onClick={handleCloseModal} variant="contained" color="primary">
+            Fechar
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
