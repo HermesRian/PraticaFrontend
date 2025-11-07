@@ -31,6 +31,7 @@ const NotaEntradaViewModal = ({ open, onClose, notaId }) => {
   const [loading, setLoading] = useState(false);
   const [unidadesMedida, setUnidadesMedida] = useState([]);
   const [produtos, setProdutos] = useState([]);
+  const [parcelasCondicao, setParcelasCondicao] = useState([]);
 
   // Carregar unidades de medida e produtos
   useEffect(() => {
@@ -63,6 +64,21 @@ const NotaEntradaViewModal = ({ open, onClose, notaId }) => {
       console.log('Nota carregada para visualização:', data);
       console.log('Itens da nota:', data.itens);
       setNota(data);
+
+      // Carregar parcelas da condição de pagamento
+      if (data.condicaoPagamentoId) {
+        try {
+          const condicaoResponse = await fetch(`http://localhost:8080/condicoes-pagamento/${data.condicaoPagamentoId}`);
+          if (condicaoResponse.ok) {
+            const condicaoData = await condicaoResponse.json();
+            if (condicaoData.parcelasCondicao && condicaoData.parcelasCondicao.length > 0) {
+              setParcelasCondicao(condicaoData.parcelasCondicao);
+            }
+          }
+        } catch (error) {
+          console.error('Erro ao carregar parcelas da condição:', error);
+        }
+      }
     } catch (error) {
       console.error('Erro ao carregar nota:', error);
     } finally {
@@ -93,6 +109,41 @@ const NotaEntradaViewModal = ({ open, onClose, notaId }) => {
   const formatDate = (date) => {
     if (!date) return '';
     return new Date(date).toISOString().split('T')[0];
+  };
+
+  // Função para calcular o total da nota
+  const calcularTotalNota = () => {
+    if (!nota) return 0;
+    const totalProdutos = nota.itens?.reduce((sum, item) => sum + (item.valorTotal || 0), 0) || 0;
+    const totalNota = totalProdutos +
+      parseFloat(nota.valorFrete || 0) +
+      parseFloat(nota.valorSeguro || 0) +
+      parseFloat(nota.outrasDespesas || 0);
+    return totalNota;
+  };
+
+  // Função para calcular o valor de cada parcela com base no percentual
+  const calcularValorParcela = (parcela) => {
+    const totalNota = calcularTotalNota();
+    const percentual = parseFloat(parcela.percentual || 0);
+    return (totalNota * percentual) / 100;
+  };
+
+  // Função para calcular a data de vencimento da parcela baseada na data de emissão
+  const calcularDataVencimento = (parcela) => {
+    if (!nota?.dataEmissao || !parcela.dias) {
+      return 'A definir';
+    }
+    
+    // Cria uma data a partir da data de emissão
+    const dataEmissao = new Date(nota.dataEmissao + 'T00:00:00');
+    
+    // Adiciona os dias da parcela
+    const dataVencimento = new Date(dataEmissao);
+    dataVencimento.setDate(dataVencimento.getDate() + parseInt(parcela.dias));
+    
+    // Formata a data
+    return dataVencimento.toLocaleDateString('pt-BR');
   };
 
   if (!nota && !loading) {
@@ -417,6 +468,36 @@ const NotaEntradaViewModal = ({ open, onClose, notaId }) => {
               </Grid>
             </Grid>
 
+            {/* Grid de Parcelas da Condição de Pagamento */}
+            {parcelasCondicao.length > 0 && (
+              <TableContainer component={Paper} variant="outlined" sx={{ mb: 4 }}>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow sx={{ bgcolor: '#f5f5f5' }}>
+                      <TableCell sx={{ fontWeight: 600 }}>Parcela</TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>Cód. Forma Pgto</TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>Forma de Pgto</TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>Data Vencimento</TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>Valor Parcela</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {parcelasCondicao.map((parcela, index) => (
+                      <TableRow key={index} hover>
+                        <TableCell>{parcela.numeroParcela}</TableCell>
+                        <TableCell>{parcela.formaPagamento?.id || '-'}</TableCell>
+                        <TableCell>{parcela.formaPagamento?.nome || 'Não informada'}</TableCell>
+                        <TableCell>{calcularDataVencimento(parcela)}</TableCell>
+                        <TableCell sx={{ fontWeight: 600 }}>
+                          R$ {calcularValorParcela(parcela).toFixed(2)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            )}
+
             {/* Observações */}
             
             <Grid container spacing={2} sx={{ mb: 2 }}>
@@ -456,9 +537,6 @@ const NotaEntradaViewModal = ({ open, onClose, notaId }) => {
                     Última modificação: {new Date(nota.ultimaModificacao).toLocaleString('pt-BR')}
                   </Typography>
                 )}
-                <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                  Número da Nota: {nota.numero}
-                </Typography>
               </Box>
             </Box>
           </>

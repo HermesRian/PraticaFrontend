@@ -316,7 +316,8 @@ const NotaEntradaFormMUI = () => {
       produtoCodigo: produto.codigo || (produto.id ? produto.id.toString() : ''), // Código para exibição
       produtoNome: produto.nome,
       unidade: unidadeNome,
-      valorUnitario: produto.valorCompra || 0 // Usar valorCompra fixo do produto
+      // Sugerir valorCompra do produto, mas permitir que seja editado
+      valorUnitario: produto.valorCompra || prev.valorUnitario || 0
     }));
     calcularTotalItem();
   };
@@ -348,7 +349,7 @@ const NotaEntradaFormMUI = () => {
       return;
     }
     if (itemAtual.valorUnitario <= 0) {
-      setError('Valor unitário inválido. Verifique se o produto possui valor de compra cadastrado');
+      setError('Valor unitário deve ser maior que zero. Informe o valor de compra do produto.');
       return;
     }
 
@@ -585,6 +586,7 @@ const NotaEntradaFormMUI = () => {
         produtoId: produtoId,
         quantidade: parseFloat(item.quantidade || 0),
         valorUnitario: parseFloat(item.valorUnitario || 0),
+        valorCompra: parseFloat(item.valorUnitario || 0), // Enviar também como valorCompra para atualizar o produto
         valorDesconto: parseFloat(item.valorDesconto || 0)
       };
     });
@@ -927,16 +929,21 @@ const NotaEntradaFormMUI = () => {
               type="number"
               value={itemAtual.valorUnitario}
               disabled={!isPrimeiraLinhaCompleta()}
+              onChange={(e) => {
+                const valor = parseFloat(e.target.value) || 0;
+                setItemAtual({
+                  ...itemAtual,
+                  valorUnitario: valor
+                });
+              }}
               InputProps={{ 
-                readOnly: true,
                 inputProps: { step: 0.01, min: 0 },
                 startAdornment: <Box sx={{ mr: 1, color: 'text.secondary' }}>R$</Box>
               }}
               variant="outlined"
               sx={{ 
                 '& .MuiInputBase-input': { 
-                  textAlign: 'right',
-                  backgroundColor: isPrimeiraLinhaCompleta() ? '#f5f5f5' : '#e0e0e0' // Indicar visualmente que é somente leitura
+                  textAlign: 'right'
                 }
               }}
             />
