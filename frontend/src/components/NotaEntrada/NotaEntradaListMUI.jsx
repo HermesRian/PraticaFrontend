@@ -190,7 +190,11 @@ const NotaEntradaListMUI = () => {
           loadData();
           setError('');
         } else {
-          setError('Erro ao cancelar nota de entrada');
+          // Tenta obter a mensagem de erro do backend
+          const errorData = await response.json().catch(() => null);
+          const errorMessage = errorData?.message || errorData?.error || 
+            'Não é possível cancelar esta nota. Verifique se há contas pagas associadas.';
+          setError(errorMessage);
         }
       } catch (error) {
         console.error('Erro ao cancelar nota:', error);
