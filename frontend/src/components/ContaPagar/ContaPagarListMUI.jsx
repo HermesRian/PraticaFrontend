@@ -358,6 +358,18 @@ const ContaPagarListMUI = () => {
                     </TableCell>
                     <TableCell align="center">
                       <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
+                        <Tooltip title={conta.status?.toUpperCase() === 'PENDENTE' ? 'Pagar' : 'Conta já paga ou cancelada'}>
+                          <span>
+                            <IconButton 
+                              size="small" 
+                              color="success"
+                              onClick={() => handlePagar(conta.id)}
+                              disabled={conta.status?.toUpperCase() !== 'PENDENTE'}
+                            >
+                              <PaymentIcon fontSize="small" />
+                            </IconButton>
+                          </span>
+                        </Tooltip>
                         <Tooltip title="Visualizar">
                           <IconButton 
                             size="small" 
@@ -367,17 +379,7 @@ const ContaPagarListMUI = () => {
                             <VisibilityIcon fontSize="small" />
                           </IconButton>
                         </Tooltip>
-                        {conta.status?.toUpperCase() === 'PENDENTE' && (
-                          <Tooltip title="Pagar">
-                            <IconButton 
-                              size="small" 
-                              color="success"
-                              onClick={() => handlePagar(conta.id)}
-                            >
-                              <PaymentIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        )}
+                        
                       </Box>
                     </TableCell>
                   </TableRow>

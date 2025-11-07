@@ -29,7 +29,8 @@ import {
   Delete as DeleteIcon,
   Add as AddIcon,
   Search as SearchIcon,
-  Receipt as ReceiptIcon
+  Receipt as ReceiptIcon,
+  Cancel as CancelIcon
 } from '@mui/icons-material';
 import NotaEntradaViewModal from './NotaEntradaViewModal';
 
@@ -172,6 +173,30 @@ const NotaEntradaListMUI = () => {
   const handleCloseViewModal = () => {
     setViewModalOpen(false);
     setSelectedNotaId(null);
+  };
+
+  const handleCancelar = async (id) => {
+    if (window.confirm('Tem certeza que deseja cancelar esta nota de entrada? Esta ação não pode ser desfeita.')) {
+      try {
+        const response = await fetch(`http://localhost:8080/notas-entrada/${id}/cancelar`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (response.ok) {
+          // Recarrega a lista de notas
+          loadData();
+          setError('');
+        } else {
+          setError('Erro ao cancelar nota de entrada');
+        }
+      } catch (error) {
+        console.error('Erro ao cancelar nota:', error);
+        setError('Erro ao cancelar nota de entrada');
+      }
+    }
   };
 
   const notasFiltradas = notasEntrada.filter(nota => {
@@ -367,14 +392,28 @@ const NotaEntradaListMUI = () => {
                   </TableCell>
                   <TableCell>
                     <Box sx={{ display: 'flex', gap: 1 }}>
-                      <IconButton
-                        size="small"
-                        sx={{ color: '#1976d2' }}
-                        title="Visualizar"
-                        onClick={() => handleViewNota(nota.id)}
-                      >
-                        <VisibilityIcon fontSize="small" />
-                      </IconButton>
+                      <Tooltip title={nota.status?.toUpperCase() === 'PENDENTE' ? 'Cancelar' : 'Nota já paga ou cancelada'}>
+                        <span>
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={() => handleCancelar(nota.id)}
+                            disabled={nota.status?.toUpperCase() !== 'PENDENTE'}
+                          >
+                            <CancelIcon fontSize="small" />
+                          </IconButton>
+                        </span>
+                      </Tooltip>
+                      <Tooltip title="Visualizar">
+                        <IconButton
+                          size="small"
+                          color="primary"
+                          onClick={() => handleViewNota(nota.id)}
+                        >
+                          <VisibilityIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      
                     </Box>
                   </TableCell>
                 </TableRow>
