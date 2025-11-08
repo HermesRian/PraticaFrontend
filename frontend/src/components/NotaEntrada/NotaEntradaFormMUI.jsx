@@ -747,6 +747,11 @@ const NotaEntradaFormMUI = () => {
               onChange={(e) => handleChange('modelo', e.target.value)}
               placeholder="55"
               variant="outlined"
+              sx={{
+                '& .MuiInputBase-input': {
+                  textAlign: 'right'
+                }
+              }}
             />
           </Grid>
 
@@ -759,6 +764,11 @@ const NotaEntradaFormMUI = () => {
               onChange={(e) => handleChange('serie', e.target.value)}
               placeholder="1"
               variant="outlined"
+              sx={{
+                '& .MuiInputBase-input': {
+                  textAlign: 'right'
+                }
+              }}
             />
           </Grid>
 
@@ -769,9 +779,20 @@ const NotaEntradaFormMUI = () => {
               size="small"
               label="Número"
               value={notaEntrada.numero}
-              onChange={(e) => handleChange('numero', e.target.value)}
+              onChange={(e) => {
+                const valor = e.target.value.replace(/\D/g, ''); // Remove não numéricos
+                if (valor.length <= 9) {
+                  handleChange('numero', valor);
+                }
+              }}
               placeholder="123456"
               variant="outlined"
+              inputProps={{ maxLength: 9 }}
+              sx={{
+                '& .MuiInputBase-input': {
+                  textAlign: 'right'
+                }
+              }}
             />
           </Grid>
 
@@ -868,7 +889,10 @@ const NotaEntradaFormMUI = () => {
               onClick={() => isPrimeiraLinhaCompleta() && setProdutoModalOpen(true)}
               sx={{ 
                 cursor: isPrimeiraLinhaCompleta() ? 'pointer' : 'not-allowed',
-                '& .MuiInputBase-input': { cursor: isPrimeiraLinhaCompleta() ? 'pointer' : 'not-allowed' }
+                '& .MuiInputBase-input': { 
+                  cursor: isPrimeiraLinhaCompleta() ? 'pointer' : 'not-allowed',
+                  textAlign: 'right'
+                }
               }}
             />
           </Grid>
@@ -1251,7 +1275,12 @@ const NotaEntradaFormMUI = () => {
               value={notaEntrada.condicaoPagamentoId}
               InputProps={{ readOnly: true }}
               variant="outlined"
-              sx={{ bgcolor: '#f5f5f5' }}
+              sx={{ 
+                bgcolor: '#f5f5f5',
+                '& .MuiInputBase-input': {
+                  textAlign: 'right'
+                }
+              }}
             />
           </Grid>
 
