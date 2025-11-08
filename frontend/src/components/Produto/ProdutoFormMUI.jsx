@@ -20,6 +20,7 @@ import {
   IconButton
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
+import UnidadeMedidaModal from './UnidadeMedidaModal';
 
 const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
   const [produto, setProduto] = useState({
@@ -44,10 +45,10 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
   });
 
   const [marcas, setMarcas] = useState([]);
-  const [unidadesMedida, setUnidadesMedida] = useState([]);
   const [categorias, setCategorias] = useState([]);
   const [errorMessage, setErrorMessage] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
+  const [unidadeModalOpen, setUnidadeModalOpen] = useState(false);
   const navigate = useNavigate();
   const { id: urlId } = useParams();
   const id = propId || urlId;
@@ -55,12 +56,10 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
   useEffect(() => {
     Promise.all([
       fetch('http://localhost:8080/marcas').then(res => res.json()).catch(() => []),
-      fetch('http://localhost:8080/unidades-medida').then(res => res.json()).catch(() => []),
       fetch('http://localhost:8080/categorias').then(res => res.json()).catch(() => [])
     ])
-    .then(([marcasData, unidadesMedidaData, categoriasData]) => {
+    .then(([marcasData, categoriasData]) => {
       setMarcas(marcasData);
-      setUnidadesMedida(unidadesMedidaData);
       setCategorias(categoriasData);
     })
     .catch(error => console.error('Erro ao carregar dados auxiliares:', error));
@@ -187,6 +186,15 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
     }
     
     setProduto(updatedProduto);
+  };
+
+  const handleUnidadeSelect = (unidade) => {
+    setProduto({
+      ...produto,
+      unidadeMedidaId: unidade.id,
+      unidadeMedidaDescricao: unidade.nome
+    });
+    setUnidadeModalOpen(false);
   };
 
   const handleSubmit = (e) => {
@@ -418,22 +426,22 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
             />
           </Grid>
           <Grid item sx={{ width: '14%' }}>
-            <FormControl fullWidth size="small">
-              <InputLabel>Unidade de Medida</InputLabel>
-              <Select
-                name="unidadeMedidaId"
-                value={produto.unidadeMedidaId}
-                onChange={handleChange}
-                label="Unidade de Medida"
-              >
-                <MenuItem value="">Selecione...</MenuItem>
-                {unidadesMedida.map((unidade) => (
-                  <MenuItem key={unidade.id} value={unidade.id}>
-                    {unidade.nome}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <TextField
+              fullWidth
+              label="Unidade de Medida"
+              size="small"
+              value={produto.unidadeMedidaDescricao || ''}
+              onClick={() => setUnidadeModalOpen(true)}
+              InputProps={{
+                readOnly: true,
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{ cursor: 'pointer' }}
+            />
           </Grid>
 
           <Grid item xs={3}>
@@ -668,6 +676,13 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
           </Box>
         </Box>
       </Paper>
+
+      {/* Modal de Seleção de Unidade de Medida */}
+      <UnidadeMedidaModal
+        open={unidadeModalOpen}
+        onClose={() => setUnidadeModalOpen(false)}
+        onSelect={handleUnidadeSelect}
+      />
     </Box>
   );
 };
