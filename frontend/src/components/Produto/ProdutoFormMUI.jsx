@@ -478,14 +478,14 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
               label="Valor de Compra"
               name="valorCompra"
               value={produto.valorCompra}
-              onChange={e => handleNumericChange(e, 10, true)}
               variant="outlined"
               error={!!fieldErrors.valorCompra}
-              helperText={fieldErrors.valorCompra || ''}
               InputProps={{
+                readOnly: true,
                 startAdornment: <InputAdornment position="start">R$</InputAdornment>,
                 inputMode: 'decimal'
               }}
+              sx={{ bgcolor: '#f5f5f5' }}
             />
           </Grid>
 
@@ -496,14 +496,14 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
               label="Valor de Venda"
               name="valorVenda"
               value={produto.valorVenda}
-              onChange={e => handleNumericChange(e, 10, true)}
               variant="outlined"
               error={!!fieldErrors.valorVenda}
-              helperText={fieldErrors.valorVenda || ''}
               InputProps={{
+                readOnly: true,
                 startAdornment: <InputAdornment position="start">R$</InputAdornment>,
                 inputMode: 'decimal'
               }}
+              sx={{ bgcolor: '#f5f5f5' }}
             />
           </Grid>
 
