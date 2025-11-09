@@ -20,7 +20,8 @@ import {
   IconButton
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
-import UnidadeMedidaModal from './UnidadeMedidaModal';
+import UnidadeMedidaModal from '../UnidadeMedida/UnidadeMedidaModal';
+import UnidadeMedidaModalForm from '../UnidadeMedida/UnidadeMedidaModalForm';
 
 const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
   const [produto, setProduto] = useState({
@@ -49,6 +50,8 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
   const [errorMessage, setErrorMessage] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
   const [unidadeModalOpen, setUnidadeModalOpen] = useState(false);
+  const [unidadeFormModalOpen, setUnidadeFormModalOpen] = useState(false);
+  const [unidadeRefreshTrigger, setUnidadeRefreshTrigger] = useState(0);
   const navigate = useNavigate();
   const { id: urlId } = useParams();
   const id = propId || urlId;
@@ -682,6 +685,23 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
         open={unidadeModalOpen}
         onClose={() => setUnidadeModalOpen(false)}
         onSelect={handleUnidadeSelect}
+        onAddNew={() => setUnidadeFormModalOpen(true)}
+        refreshTrigger={unidadeRefreshTrigger}
+      />
+
+      {/* Modal de Formulário de Unidade de Medida */}
+      <UnidadeMedidaModalForm
+        id={null}
+        open={unidadeFormModalOpen}
+        onClose={(novaUnidade) => {
+          // Fecha o modal de formulário
+          setUnidadeFormModalOpen(false);
+          // Se uma nova unidade foi criada, atualiza a lista (mas não seleciona automaticamente)
+          if (novaUnidade) {
+            setUnidadeRefreshTrigger(prev => prev + 1);
+            // Mantém o modal de seleção aberto para o usuário escolher
+          }
+        }}
       />
     </Box>
   );

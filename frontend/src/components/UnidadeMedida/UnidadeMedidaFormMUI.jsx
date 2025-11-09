@@ -112,9 +112,9 @@ const UnidadeMedidaFormMUI = ({ id: propId, isModal = false, onClose }) => {
         }
         return response.json();
       })
-      .then(() => {
+      .then((data) => {
         if (isModal) {
-          onClose();
+          onClose(data); // Passa a unidade criada/atualizada
         } else {
           navigate('/unidades-medida');
         }

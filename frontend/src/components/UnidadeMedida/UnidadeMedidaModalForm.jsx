@@ -3,11 +3,13 @@ import { Dialog, DialogContent, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import UnidadeMedidaFormMUI from './UnidadeMedidaFormMUI';
 
-const UnidadeMedidaModalForm = ({ id, onClose }) => {
+const UnidadeMedidaModalForm = ({ id, open = false, onClose }) => {
+  if (!open) return null;
+  
   return (
     <Dialog 
-      open={true}
-      onClose={onClose}
+      open={open}
+      onClose={() => onClose()}
       maxWidth="md"
       fullWidth
       sx={{
@@ -20,7 +22,7 @@ const UnidadeMedidaModalForm = ({ id, onClose }) => {
     >
       <IconButton
         aria-label="close"
-        onClick={onClose}
+        onClick={() => onClose()}
         sx={{
           position: 'absolute',
           right: 8,
