@@ -25,6 +25,7 @@
     LocalMall as LocalMallIcon,
     Category as CategoryIcon,
     Sell as SellIcon,
+    Straighten as StraightenIcon,
     Receipt as ReceiptIcon,
     RequestQuote as RequestQuoteIcon,
   } from '@mui/icons-material';
@@ -77,6 +78,11 @@
       segment: 'categorias',
       title: 'Categorias',
       icon: <SellIcon />,
+    },
+    {
+      segment: 'unidades-medida',
+      title: 'Unidades de Medida',
+      icon: <StraightenIcon />,
     },
 
     {

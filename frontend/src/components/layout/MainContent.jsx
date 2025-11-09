@@ -41,6 +41,8 @@ import EstadoFormModal from '../Estado/EstadoFormModal';
 import CategoriaListMUI from '../Categoria/CategoriaListMUI';
 import CategoriaFormMUI from '../Categoria/CategoriaFormMUI';
 
+import UnidadeMedidaListMUI from '../UnidadeMedida/UnidadeMedidaListMUI';
+
 import NotaEntradaListMUI from '../NotaEntrada/NotaEntradaListMUI';
 import NotaEntradaFormMUI from '../NotaEntrada/NotaEntradaFormMUI';
 
@@ -97,6 +99,9 @@ const MainContent = () => {
         <Route path="/categorias" element={<CategoriaListMUI />} />
         <Route path="/categorias/cadastrar" element={<CategoriaFormMUI />} />
         <Route path="/categorias/editar/:id" element={<CategoriaFormMUI />} />
+
+        {/* Unidades de Medida */}
+        <Route path="/unidades-medida" element={<UnidadeMedidaListMUI />} />
 
         {/* Notas de Entrada */}
         <Route path="/notas-entrada" element={<NotaEntradaListMUI />} />
