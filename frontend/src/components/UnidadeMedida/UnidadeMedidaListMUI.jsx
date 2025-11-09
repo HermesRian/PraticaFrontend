@@ -472,12 +472,11 @@ const UnidadeMedidaListMUI = () => {
       </Dialog>
 
       {/* Modal de Formulário */}
-      {isFormModalOpen && (
-        <UnidadeMedidaModalForm
-          id={selectedUnidadeMedidaId}
-          onClose={handleCloseFormModal}
-        />
-      )}
+      <UnidadeMedidaModalForm
+        id={selectedUnidadeMedidaId}
+        open={isFormModalOpen}
+        onClose={handleCloseFormModal}
+      />
     </Box>
   );
 };
