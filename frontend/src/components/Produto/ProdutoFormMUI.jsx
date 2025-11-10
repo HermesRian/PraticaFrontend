@@ -413,7 +413,7 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
             />
           </Grid>
 
-          <Grid item xs={3}>
+          <Grid item sx={{ width: '25%' }}>
             <TextField
               fullWidth
               required
@@ -428,7 +428,7 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
               helperText={fieldErrors.nome || ''}
             />
           </Grid>
-          <Grid item sx={{ width: '14%' }}>
+          <Grid item sx={{ width: '16%' }}>
             <TextField
               fullWidth
               label="Unidade de Medida"
@@ -443,11 +443,14 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
                   </InputAdornment>
                 ),
               }}
-              sx={{ cursor: 'pointer' }}
+              sx={{ 
+                cursor: 'pointer',
+                '& .MuiInputBase-input': { cursor: 'pointer' }
+              }}
             />
           </Grid>
 
-          <Grid item xs={3}>
+          <Grid item sx={{ width: '25%' }}>
             <TextField
               fullWidth
               size="small"
