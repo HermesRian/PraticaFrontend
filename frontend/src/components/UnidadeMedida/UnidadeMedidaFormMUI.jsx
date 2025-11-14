@@ -219,7 +219,7 @@ const UnidadeMedidaFormMUI = ({ id: propId, isModal = false, onClose }) => {
             />
           </Grid>
 
-          <Grid item sx={{ width: '75%' }}>
+          <Grid item sx={{ width: '86%' }}>
             <TextField
               fullWidth
               required
@@ -238,7 +238,7 @@ const UnidadeMedidaFormMUI = ({ id: propId, isModal = false, onClose }) => {
 
         {/* Linha 2: Observação */}
         <Grid container spacing={2} sx={{ mb: 4 }}>
-          <Grid item xs={12}>
+          <Grid item sx={{ width: '100%' }}>
             <TextField
               fullWidth
               size="small"

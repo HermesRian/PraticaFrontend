@@ -465,7 +465,7 @@ const UnidadeMedidaListMUI = () => {
                 />
               </Grid>
 
-              <Grid item sx={{ width: '60%' }}>
+              <Grid item sx={{ width: '83%' }}>
                 <TextField
                   fullWidth
                   size="small"
