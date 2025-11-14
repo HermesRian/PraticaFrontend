@@ -19,6 +19,7 @@ import {
 const UnidadeMedidaFormMUI = ({ id: propId, isModal = false, onClose }) => {
   const [unidadeMedida, setUnidadeMedida] = useState({
     nome: '',
+    observacao: '',
     ativo: true,
     dataCriacao: '',
     ultimaModificacao: '',
@@ -38,6 +39,7 @@ const UnidadeMedidaFormMUI = ({ id: propId, isModal = false, onClose }) => {
           
           const unidadeMedidaAtualizada = {
             nome: data.nome || '',
+            observacao: data.observacao || '',
             ativo: data.ativo ?? true,
             dataCriacao: data.dataCriacao || '',
             ultimaModificacao: data.ultimaModificacao || '',
@@ -230,6 +232,24 @@ const UnidadeMedidaFormMUI = ({ id: propId, isModal = false, onClose }) => {
               variant="outlined"
               error={!!fieldErrors.nome}
               helperText={fieldErrors.nome || ''}
+            />
+          </Grid>
+        </Grid>
+
+        {/* Linha 2: Observação */}
+        <Grid container spacing={2} sx={{ mb: 4 }}>
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              size="small"
+              label="Observação"
+              name="observacao"
+              value={unidadeMedida.observacao}
+              onChange={handleChange}
+              placeholder="Observações sobre a unidade de medida"
+              variant="outlined"
+              multiline
+              rows={3}
             />
           </Grid>
         </Grid>

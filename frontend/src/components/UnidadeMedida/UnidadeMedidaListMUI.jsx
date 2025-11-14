@@ -397,73 +397,130 @@ const UnidadeMedidaListMUI = () => {
       <Dialog
         open={isModalOpen}
         onClose={handleCloseModal}
-        maxWidth="sm"
+        maxWidth="md"
         fullWidth
+        PaperProps={{
+          sx: { borderRadius: 2, minHeight: '60vh' }
+        }}
       >
-        <DialogTitle sx={{ bgcolor: '#1976d2', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <StraightenIcon />
-            <span>Detalhes da Unidade de Medida</span>
-          </Box>
-          <IconButton onClick={handleCloseModal} sx={{ color: 'white' }}>
+        <DialogTitle sx={{ 
+          bgcolor: '#f5f5f5', 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          pb: 2
+        }}>
+          <Typography variant="h6" fontWeight={600}>
+            Visualizar Unidade de Medida
+          </Typography>
+          <IconButton onClick={handleCloseModal} size="small">
             <CloseIcon />
           </IconButton>
         </DialogTitle>
-        <DialogContent sx={{ pt: 3 }}>
-          {unidadeMedidaSelecionada && (
-            <Grid container spacing={2}>
-              <Grid item xs={12}>
-                <Typography variant="caption" color="text.secondary">
-                  Código
-                </Typography>
-                <Typography variant="body1" fontWeight={500}>
-                  {unidadeMedidaSelecionada.id}
-                </Typography>
+        
+        {unidadeMedidaSelecionada && (
+          <DialogContent sx={{ p: 4 }}>
+
+            {/* Título e switch */}
+            <Box sx={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center', 
+              mb: 4 
+            }}>
+              <Box sx={{ width: 120 }}></Box>
+              <Typography 
+                variant="h5" 
+                component="h1" 
+                align="center" 
+                sx={{ color: '#333', fontWeight: 600, flex: 1 }}
+              >
+                Dados da Unidade de Medida
+              </Typography>
+              <Box sx={{ width: 120, display: 'flex', justifyContent: 'flex-end' }}>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={unidadeMedidaSelecionada.ativo}
+                      disabled
+                      color="primary"
+                    />
+                  }
+                  label="Ativo"
+                  sx={{ mr: 0 }}
+                />
+              </Box>
+            </Box>
+
+            {/* Linha 1: Código e Nome */}
+            <Grid container spacing={2} alignItems="center" sx={{ mb: 4 }}>
+              <Grid item sx={{ width: '15%', minWidth: 100 }}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="Código"
+                  value={unidadeMedidaSelecionada.id || ''}
+                  InputProps={{ readOnly: true }}
+                  variant="outlined"
+                />
               </Grid>
-              <Grid item xs={12}>
-                <Typography variant="caption" color="text.secondary">
-                  Nome
-                </Typography>
-                <Typography variant="body1" fontWeight={500}>
-                  {unidadeMedidaSelecionada.nome}
-                </Typography>
+
+              <Grid item sx={{ width: '60%' }}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="Nome"
+                  value={unidadeMedidaSelecionada.nome || ''}
+                  InputProps={{ readOnly: true }}
+                  variant="outlined"
+                />
               </Grid>
-              <Grid item xs={12}>
-                <Typography variant="caption" color="text.secondary">
-                  Status
-                </Typography>
-                <Box sx={{ mt: 0.5 }}>
-                  <Chip
-                    label={unidadeMedidaSelecionada.ativo ? 'Ativo' : 'Inativo'}
-                    size="small"
-                    color={unidadeMedidaSelecionada.ativo ? 'success' : 'default'}
-                    variant={unidadeMedidaSelecionada.ativo ? 'filled' : 'outlined'}
-                  />
-                </Box>
-              </Grid>
-              {unidadeMedidaSelecionada.dataCriacao && (
-                <Grid item xs={12}>
-                  <Typography variant="caption" color="text.secondary">
-                    Data de Criação
-                  </Typography>
-                  <Typography variant="body2">
-                    {new Date(unidadeMedidaSelecionada.dataCriacao).toLocaleString('pt-BR')}
-                  </Typography>
-                </Grid>
-              )}
-              {unidadeMedidaSelecionada.ultimaModificacao && (
-                <Grid item xs={12}>
-                  <Typography variant="caption" color="text.secondary">
-                    Última Modificação
-                  </Typography>
-                  <Typography variant="body2">
-                    {new Date(unidadeMedidaSelecionada.ultimaModificacao).toLocaleString('pt-BR')}
-                  </Typography>
-                </Grid>
-              )}
             </Grid>
-          )}
-        </DialogContent>
+
+            {/* Linha 2: Observação */}
+            <Grid container spacing={2} sx={{ mb: 2 }}>
+              <Grid item sx={{ width: '100%' }}>
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={3}
+                  size="small"
+                  label="Observação"
+                  value={unidadeMedidaSelecionada.observacao || ''}
+                  InputProps={{ readOnly: true }}
+                  variant="outlined"
+                />
+              </Grid>
+            </Grid>
+
+            {/* Registros */}
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'flex-start',
+                alignItems: 'center',
+                gap: 2,
+                mt: 3,
+                pt: 2,
+                borderTop: '1px solid #eee',
+              }}
+            >
+              <Stack spacing={0.5} sx={{ flex: 1 }}>
+                {unidadeMedidaSelecionada.dataCriacao && (
+                  <Typography variant="caption" color="text.secondary">
+                    Data de cadastro: {new Date(unidadeMedidaSelecionada.dataCriacao).toLocaleString('pt-BR')}
+                  </Typography>
+                )}
+                {unidadeMedidaSelecionada.ultimaModificacao && (
+                  <Typography variant="caption" color="text.secondary">
+                    Última modificação: {new Date(unidadeMedidaSelecionada.ultimaModificacao).toLocaleString('pt-BR')}
+                  </Typography>
+                )}
+              </Stack>
+            </Box>
+
+          </DialogContent>
+        )}
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={handleCloseModal} variant="contained">
             Fechar
