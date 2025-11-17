@@ -454,7 +454,7 @@ const UnidadeMedidaListMUI = () => {
 
             {/* Linha 1: Código e Nome */}
             <Grid container spacing={2} alignItems="center" sx={{ mb: 4 }}>
-              <Grid item sx={{ width: '15%', minWidth: 100 }}>
+              <Grid item sx={{ width: '5%', minWidth: 100 }}>
                 <TextField
                   fullWidth
                   size="small"
@@ -465,7 +465,7 @@ const UnidadeMedidaListMUI = () => {
                 />
               </Grid>
 
-              <Grid item sx={{ width: '83%' }}>
+              <Grid item sx={{ width: '86%' }}>
                 <TextField
                   fullWidth
                   size="small"
