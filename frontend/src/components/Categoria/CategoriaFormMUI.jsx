@@ -105,7 +105,7 @@ const CategoriaFormMUI = ({ id: propId, isModal = false, onClose }) => {
               errorObj = JSON.parse(text);
               error = errorObj.erro || errorObj.message || 'Erro desconhecido ao salvar categoria';
               console.error('Resposta do servidor:', errorObj);
-            } catch (e) {
+            } catch {
               error = text || 'Erro ao salvar categoria';
               console.error('Resposta do servidor (texto):', text);
             }
@@ -126,9 +126,9 @@ const CategoriaFormMUI = ({ id: propId, isModal = false, onClose }) => {
         }
         return response.json();
       })
-      .then(() => {
+      .then((data) => {
         if (isModal) {
-          onClose();
+          onClose(data); // Retorna os dados da categoria criada/editada
         } else {
           navigate('/categorias');
         }

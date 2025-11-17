@@ -8,10 +8,6 @@ import {
   Grid,
   Switch,
   FormControlLabel,
-  FormControl,
-  Select,
-  MenuItem,
-  InputLabel,
   Paper,
   Alert,
   InputAdornment,
@@ -24,6 +20,8 @@ import UnidadeMedidaModal from '../UnidadeMedida/UnidadeMedidaModal';
 import UnidadeMedidaModalForm from '../UnidadeMedida/UnidadeMedidaModalForm';
 import MarcaModal from '../Marca/MarcaModal';
 import MarcaModalForm from '../Marca/MarcaModalForm';
+import CategoriaModal from '../Categoria/CategoriaModal';
+import CategoriaModalForm from '../Categoria/CategoriaModalForm';
 
 const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
   const [produto, setProduto] = useState({
@@ -47,7 +45,6 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
     ultimaModificacao: '',
   });
 
-  const [categorias, setCategorias] = useState([]);
   const [errorMessage, setErrorMessage] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
   const [unidadeModalOpen, setUnidadeModalOpen] = useState(false);
@@ -56,18 +53,13 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
   const [marcaModalOpen, setMarcaModalOpen] = useState(false);
   const [marcaFormModalOpen, setMarcaFormModalOpen] = useState(false);
   const [marcaRefreshTrigger, setMarcaRefreshTrigger] = useState(0);
+  const [categoriaModalOpen, setCategoriaModalOpen] = useState(false);
+  const [categoriaFormModalOpen, setCategoriaFormModalOpen] = useState(false);
+  const [categoriaRefreshTrigger, setCategoriaRefreshTrigger] = useState(0);
   const navigate = useNavigate();
   const { id: urlId } = useParams();
   const id = propId || urlId;
 
-  useEffect(() => {
-    fetch('http://localhost:8080/categorias')
-      .then(res => res.json())
-      .then(categoriasData => {
-        setCategorias(categoriasData);
-      })
-      .catch(error => console.error('Erro ao carregar categorias:', error));
-  }, []);
 
   useEffect(() => {
     if (id) {
@@ -208,6 +200,15 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
       marcaDescricao: marca.nome
     });
     setMarcaModalOpen(false);
+  };
+
+  const handleCategoriaSelect = (categoria) => {
+    setProduto({
+      ...produto,
+      categoriaId: categoria.id,
+      categoriaDescricao: categoria.nome
+    });
+    setCategoriaModalOpen(false);
   };
 
   const handleSubmit = (e) => {
@@ -575,22 +576,25 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
           </Grid>
 
           <Grid item sx={{ width: '15%' }}>
-            <FormControl fullWidth size="small">
-              <InputLabel>Categoria</InputLabel>
-              <Select
-                name="categoriaId"
-                value={produto.categoriaId}
-                onChange={handleChange}
-                label="Categoria"
-              >
-                <MenuItem value="">Selecione...</MenuItem>
-                {categorias.map((categoria) => (
-                  <MenuItem key={categoria.id} value={categoria.id}>
-                    {categoria.nome}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <TextField
+              fullWidth
+              label="Categoria"
+              size="small"
+              value={produto.categoriaDescricao || ''}
+              onClick={() => setCategoriaModalOpen(true)}
+              InputProps={{
+                readOnly: true,
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{ 
+                cursor: 'pointer',
+                '& .MuiInputBase-input': { cursor: 'pointer' }
+              }}
+            />
           </Grid>
 
           <Grid item xs={3}>
@@ -739,6 +743,30 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
           // Se uma nova marca foi criada, atualiza a lista (mas não seleciona automaticamente)
           if (novaMarca) {
             setMarcaRefreshTrigger(prev => prev + 1);
+            // Mantém o modal de seleção aberto para o usuário escolher
+          }
+        }}
+      />
+
+      {/* Modal de Seleção de Categoria */}
+      <CategoriaModal
+        open={categoriaModalOpen}
+        onClose={() => setCategoriaModalOpen(false)}
+        onSelect={handleCategoriaSelect}
+        onAddNew={() => setCategoriaFormModalOpen(true)}
+        refreshTrigger={categoriaRefreshTrigger}
+      />
+
+      {/* Modal de Formulário de Categoria */}
+      <CategoriaModalForm
+        id={null}
+        open={categoriaFormModalOpen}
+        onClose={(novaCategoria) => {
+          // Fecha o modal de formulário
+          setCategoriaFormModalOpen(false);
+          // Se uma nova categoria foi criada, atualiza a lista (mas não seleciona automaticamente)
+          if (novaCategoria) {
+            setCategoriaRefreshTrigger(prev => prev + 1);
             // Mantém o modal de seleção aberto para o usuário escolher
           }
         }}

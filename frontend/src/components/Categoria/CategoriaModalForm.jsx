@@ -3,24 +3,26 @@ import { Dialog, DialogContent, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import CategoriaFormMUI from './CategoriaFormMUI';
 
-const CategoriaModalForm = ({ open, onClose, onSaveSuccess, categoriaId }) => {
+const CategoriaModalForm = ({ id, open = false, onClose }) => {
+  if (!open) return null;
+  
   return (
     <Dialog 
-      open={open} 
-      onClose={onClose}
-      maxWidth="lg"
+      open={open}
+      onClose={() => onClose()}
+      maxWidth="md"
       fullWidth
       sx={{
         '& .MuiDialog-paper': {
           margin: '16px',
           width: 'calc(100% - 32px)',
-          maxWidth: '1000px',
+          maxWidth: '800px',
         }
       }}
     >
       <IconButton
         aria-label="close"
-        onClick={onClose}
+        onClick={() => onClose()}
         sx={{
           position: 'absolute',
           right: 8,
@@ -33,9 +35,9 @@ const CategoriaModalForm = ({ open, onClose, onSaveSuccess, categoriaId }) => {
       </IconButton>
       <DialogContent sx={{ p: 0 }}>
         <CategoriaFormMUI 
-          id={categoriaId} 
+          id={id} 
           isModal={true} 
-          onClose={onSaveSuccess || onClose} 
+          onClose={onClose} 
         />
       </DialogContent>
     </Dialog>

@@ -547,17 +547,15 @@ const CategoriaListMUI = () => {
       </Dialog>
 
       <CategoriaModalForm 
+        id={selectedCategoriaId}
         open={isFormModalOpen}
-        onClose={() => {
+        onClose={(categoriaAtualizada) => {
           setIsFormModalOpen(false);
           setSelectedCategoriaId(null);
+          if (categoriaAtualizada) {
+            loadData();
+          }
         }}
-        onSaveSuccess={() => {
-          loadData();
-          setIsFormModalOpen(false);
-          setSelectedCategoriaId(null);
-        }}
-        categoriaId={selectedCategoriaId}
       />
     </Box>
   );
