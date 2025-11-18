@@ -477,10 +477,6 @@
             <Grid item xs={12} md={3}>
               {condicaoPagamento.parcelasCondicao.length > 0 && (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <CalculateIcon color="primary" />
-                  <Typography variant="body2" color="text.secondary">
-                    Soma: {calcularSomaPercentuais().toFixed(2)}%
-                  </Typography>
                   <Chip 
                     label={Math.abs(calcularSomaPercentuais() - 100) < 0.01 ? "✓ 100%" : "≠ 100%"}
                     size="small"
