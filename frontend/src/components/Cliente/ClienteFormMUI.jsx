@@ -958,7 +958,8 @@ const ClienteForm = ({ id: propId, isModal = false, onClose }) => {
           </Grid>
         </Grid>        
         {/* Linha 5 */}
-        <Grid container spacing={2} sx={{ mb: 2 }}>          <Grid item sx={{ width: '100%' }}>
+        <Grid container spacing={2} sx={{ mb: 2 }}>          
+          <Grid item sx={{ width: '100%' }}>
             <TextField
               fullWidth
               multiline

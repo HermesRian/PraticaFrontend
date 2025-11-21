@@ -424,7 +424,7 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
             />
           </Grid>
 
-          <Grid item sx={{ width: '25%' }}>
+          <Grid item sx={{ width: '23%' }}>
             <TextField
               fullWidth
               required
@@ -439,10 +439,10 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
               helperText={fieldErrors.nome || ''}
             />
           </Grid>
-          <Grid item sx={{ width: '16%' }}>
+          <Grid item sx={{ width: '9%' }}>
             <TextField
               fullWidth
-              label="Unidade de Medida"
+              label="U.M."
               size="small"
               value={produto.unidadeMedidaDescricao || ''}
               onClick={() => setUnidadeModalOpen(true)}
@@ -474,13 +474,34 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
             />
           </Grid>
 
-          <Grid item sx={{ width: '10%', minWidth: 80 }}>
+          <Grid item sx={{ width: '15%', minWidth: 80 }}>
             <TextField
               fullWidth
               label="Marca"
               size="small"
               value={produto.marcaDescricao || ''}
               onClick={() => setMarcaModalOpen(true)}
+              InputProps={{
+                readOnly: true,
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{ 
+                cursor: 'pointer',
+                '& .MuiInputBase-input': { cursor: 'pointer' }
+              }}
+            />
+          </Grid>
+          <Grid item sx={{ width: '15%' }}>
+            <TextField
+              fullWidth
+              label="Categoria"
+              size="small"
+              value={produto.categoriaDescricao || ''}
+              onClick={() => setCategoriaModalOpen(true)}
               InputProps={{
                 readOnly: true,
                 endAdornment: (
@@ -555,10 +576,6 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
               }}
             />
           </Grid>
-        </Grid>
-
-        {/* Linha 3: Quantidade em Estoque, Unidade de Medida, Categoria, Quantidade Mínima */}
-        <Grid container spacing={2} sx={{ mb: 4 }}>
           <Grid item xs={3}>
             <TextField
               fullWidth
@@ -575,27 +592,7 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
             />
           </Grid>
 
-          <Grid item sx={{ width: '15%' }}>
-            <TextField
-              fullWidth
-              label="Categoria"
-              size="small"
-              value={produto.categoriaDescricao || ''}
-              onClick={() => setCategoriaModalOpen(true)}
-              InputProps={{
-                readOnly: true,
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <SearchIcon />
-                  </InputAdornment>
-                ),
-              }}
-              sx={{ 
-                cursor: 'pointer',
-                '& .MuiInputBase-input': { cursor: 'pointer' }
-              }}
-            />
-          </Grid>
+          
 
           <Grid item xs={3}>
             <TextField
@@ -612,6 +609,7 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
             />
           </Grid>
         </Grid>
+
 
         {/* Linha 4: Observações */}
         <Grid container spacing={2} sx={{ mb: 2 }}>
