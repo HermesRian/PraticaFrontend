@@ -217,6 +217,21 @@ const ProdutoListMUI = () => {
         produtoComDetalhes.unidadeMedidaDescricao = 'Erro ao carregar';
       }
     }
+
+    if (produto.categoriaId) {
+      try {
+        const categoriaResponse = await fetch(`http://localhost:8080/categorias/${produto.categoriaId}`);
+        if (categoriaResponse.ok) {
+          const categoriaData = await categoriaResponse.json();
+          produtoComDetalhes.categoriaDescricao = categoriaData.nome || '';
+        } else {
+          produtoComDetalhes.categoriaDescricao = 'Erro ao carregar';
+        }
+      } catch (error) {
+        console.error('Erro ao buscar categoria:', error);
+        produtoComDetalhes.categoriaDescricao = 'Erro ao carregar';
+      }
+    }
     
     setProdutoSelecionado(produtoComDetalhes);
     setIsModalOpen(true);
@@ -610,9 +625,9 @@ const ProdutoListMUI = () => {
               </Box>
             </Box>
 
-            {/* Linha 1: Código, Nome, Código Produto */}
+            {/* Linha 1: Código, Nome, U.M., Descrição, Marca, Categoria */}
             <Grid container spacing={2} alignItems="center" sx={{ mb: 4 }}>
-              <Grid item sx={{ width: '6%', minWidth: 80 }}>
+              <Grid item sx={{ width: '6%' }}>
                 <TextField
                   fullWidth
                   size="small"
@@ -622,108 +637,37 @@ const ProdutoListMUI = () => {
                   variant="outlined"
                 />
               </Grid>
-              <Grid item sx={{ width: '25%' }}>
+              <Grid item sx={{ width: '20%' }}>
                 <TextField
                   fullWidth
                   size="small"
-                  label="Nome do Produto"
+                  label="Produto"
                   value={produtoSelecionado.nome || ''}
                   InputProps={{ readOnly: true }}
                   variant="outlined"
                 />
               </Grid>
-              <Grid item sx={{ width: '47%' }}>
+              <Grid item sx={{ width: '9%' }}>
                 <TextField
                   fullWidth
                   size="small"
-                  label="Código do Produto"
-                  value={produtoSelecionado.codigo || ''}
+                  label="U.M."
+                  value={produtoSelecionado.unidadeMedidaDescricao || getUnidadeMedidaNome(produtoSelecionado.unidadeMedidaId)}
                   InputProps={{ readOnly: true }}
                   variant="outlined"
                 />
               </Grid>
-            </Grid>
-
-            {/* Linha 2: Preços e Estoque */}
-            <Grid container spacing={2} sx={{ mb: 4 }}>
-              <Grid item sx={{ width: '15%' }}>
+              <Grid item sx={{ width: '25%' }}>
                 <TextField
                   fullWidth
                   size="small"
-                  label="Preço"
-                  value={formatCurrency(produtoSelecionado.valorVenda)}
-                  InputProps={{ readOnly: true }}
-                  variant="outlined"
-                />
-              </Grid>
-              <Grid item sx={{ width: '15%' }}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  label="Valor Compra"
-                  value={formatCurrency(produtoSelecionado.valorCompra)}
+                  label="Descrição"
+                  value={produtoSelecionado.descricao || ''}
                   InputProps={{ readOnly: true }}
                   variant="outlined"
                 />
               </Grid>
               <Grid item sx={{ width: '15%' }}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  label="Custo do Produto"
-                  value={formatCurrency(produtoSelecionado.custoProduto)}
-                  InputProps={{ readOnly: true }}
-                  variant="outlined"
-                />
-              </Grid>
-              <Grid item sx={{ width: '15%' }}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  label="Valor Venda"
-                  value={formatCurrency(produtoSelecionado.valorVenda)}
-                  InputProps={{ readOnly: true }}
-                  variant="outlined"
-                />
-              </Grid>
-              <Grid item sx={{ width: '15%' }}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  label="Estoque Atual"
-                  value={produtoSelecionado.quantidadeEstoque || '0'}
-                  InputProps={{ readOnly: true }}
-                  variant="outlined"
-                />
-              </Grid>
-              <Grid item sx={{ width: '15%' }}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  label="Estoque Mínimo"
-                  value={produtoSelecionado.quantidadeMinima || '1'}
-                  InputProps={{ readOnly: true }}
-                  variant="outlined"
-                />
-              </Grid>
-              <Grid item sx={{ width: '15%' }}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  label="% Lucro"
-                  value={produtoSelecionado.percentualLucro ? 
-                    `${parseFloat(produtoSelecionado.percentualLucro).toFixed(2)}%` : 
-                    ''
-                  }
-                  InputProps={{ readOnly: true }}
-                  variant="outlined"
-                />
-              </Grid>
-            </Grid>
-
-            {/* Linha 3: Marca e Unidade */}
-            <Grid container spacing={2} sx={{ mb: 4 }}>
-              <Grid item sx={{ width: '50%' }}>
                 <TextField
                   fullWidth
                   size="small"
@@ -733,41 +677,108 @@ const ProdutoListMUI = () => {
                   variant="outlined"
                 />
               </Grid>
-              <Grid item sx={{ width: '50%' }}>
+              <Grid item sx={{ width: '15%' }}>
                 <TextField
                   fullWidth
                   size="small"
-                  label="Unidade de Medida"
-                  value={produtoSelecionado.unidadeMedidaDescricao || getUnidadeMedidaNome(produtoSelecionado.unidadeMedidaId)}
+                  label="Categoria"
+                  value={produtoSelecionado.categoriaDescricao || ''}
                   InputProps={{ readOnly: true }}
                   variant="outlined"
                 />
               </Grid>
             </Grid>
 
-            {/* Linha 4: Descrição */}
+            {/* Linha 2: Valores e Estoque */}
             <Grid container spacing={2} sx={{ mb: 4 }}>
-              <Grid item sx={{ width: '100%' }}>
+              <Grid item sx={{ width: '12%' }}>
                 <TextField
                   fullWidth
-                  multiline
-                  rows={2}
                   size="small"
-                  label="Descrição"
-                  value={produtoSelecionado.descricao || ''}
+                  label="Valor Compra"
+                  value={formatCurrency(produtoSelecionado.valorCompra)}
+                  InputProps={{
+                    readOnly: true,
+                    startAdornment: <InputAdornment position="start">R$</InputAdornment>,
+                    style: { backgroundColor: '#f5f5f5' }
+                  }}
+                  variant="outlined"
+                />
+              </Grid>
+              <Grid item sx={{ width: '12%' }}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="Custo do Produto"
+                  value={formatCurrency(produtoSelecionado.custoProduto)}
+                  InputProps={{
+                    readOnly: true,
+                    startAdornment: <InputAdornment position="start">R$</InputAdornment>,
+                    style: { backgroundColor: '#f5f5f5' }
+                  }}
+                  variant="outlined"
+                />
+              </Grid>
+              <Grid item sx={{ width: '12%' }}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="Valor Venda"
+                  value={formatCurrency(produtoSelecionado.valorVenda)}
+                  InputProps={{
+                    readOnly: true,
+                    startAdornment: <InputAdornment position="start">R$</InputAdornment>,
+                    style: { backgroundColor: '#f5f5f5' }
+                  }}
+                  variant="outlined"
+                />
+              </Grid>
+              <Grid item sx={{ width: '12%' }}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="Lucro"
+                  value={produtoSelecionado.percentualLucro ? 
+                    parseFloat(produtoSelecionado.percentualLucro).toFixed(2) : 
+                    ''
+                  }
+                  InputProps={{
+                    readOnly: true,
+                    endAdornment: <InputAdornment position="end">%</InputAdornment>,
+                    style: { backgroundColor: '#f5f5f5' }
+                  }}
+                  variant="outlined"
+                />
+              </Grid>
+              <Grid item xs={3}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="Qtd. Estoque"
+                  value={produtoSelecionado.quantidadeEstoque || '0'}
+                  InputProps={{ readOnly: true }}
+                  variant="outlined"
+                />
+              </Grid>
+              <Grid item xs={3}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="Qtd. Mínima"
+                  value={produtoSelecionado.quantidadeMinima || '1'}
                   InputProps={{ readOnly: true }}
                   variant="outlined"
                 />
               </Grid>
             </Grid>
 
-            {/* Linha 5: Observações */}
+            {/* Linha 3: Observações */}
             <Grid container spacing={2} sx={{ mb: 2 }}>
               <Grid item sx={{ width: '100%' }}>
                 <TextField
                   fullWidth
                   multiline
-                  rows={2}
+                  rows={3}
                   size="small"
                   label="Observações"
                   value={produtoSelecionado.observacoes || ''}
