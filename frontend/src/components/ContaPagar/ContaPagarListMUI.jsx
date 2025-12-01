@@ -450,7 +450,7 @@ const ContaPagarListMUI = () => {
 
             {/* Informações da Conta */}
             <Grid container spacing={3} sx={{ mb: 5 }}>
-              <Grid item sx={{ width: '12%' }}>
+              <Grid item sx={{ width: '6%' }}>
                 <TextField
                   fullWidth
                   label="Código"
@@ -461,7 +461,7 @@ const ContaPagarListMUI = () => {
                 />
               </Grid>
 
-              <Grid item sx={{ width: '12%' }}>
+              <Grid item sx={{ width: '8%' }}>
                 <TextField
                   fullWidth
                   label="Parcela"
@@ -472,7 +472,7 @@ const ContaPagarListMUI = () => {
                 />
               </Grid>
 
-              <Grid item sx={{ width: '18%' }}>
+              <Grid item sx={{ width: '15%' }}>
                 <TextField
                   fullWidth
                   label="Status"

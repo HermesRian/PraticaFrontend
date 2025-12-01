@@ -38,6 +38,7 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
     categoriaDescricao: '',
     valorCompra: '',
     valorVenda: '',
+    custoProduto: '',
     quantidadeMinima: '1',
     percentualLucro: '',
     observacoes: '',
@@ -518,9 +519,9 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
           </Grid>
         </Grid>
 
-        {/* Linha 2: Valor de Compra, Valor de Venda, Lucro */}
+        {/* Linha 2: Valor de Compra, Custo do Produto, Valor de Venda, Lucro */}
         <Grid container spacing={2} sx={{ mb: 4 }}>
-          <Grid item xs={4}>
+          <Grid item sx={{ width: '12%' }}>
             <TextField
               fullWidth
               size="small"
@@ -538,7 +539,24 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
             />
           </Grid>
 
-          <Grid item xs={4}>
+          <Grid item sx={{ width: '12%' }}>
+            <TextField
+              fullWidth
+              size="small"
+              label="Custo do Produto"
+              name="custoProduto"
+              value={produto.custoProduto}
+              variant="outlined"
+              InputProps={{
+                readOnly: true,
+                startAdornment: <InputAdornment position="start">R$</InputAdornment>,
+                inputMode: 'decimal'
+              }}
+              sx={{ bgcolor: '#f5f5f5' }}
+            />
+          </Grid>
+
+          <Grid item sx={{ width: '12%' }}>
             <TextField
               fullWidth
               size="small"
@@ -556,7 +574,7 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
             />
           </Grid>
 
-          <Grid item xs={4}>
+          <Grid item sx={{ width: '12%' }}>
             <TextField
               fullWidth
               size="small"

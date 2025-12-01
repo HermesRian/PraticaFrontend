@@ -622,7 +622,7 @@ const ProdutoListMUI = () => {
                   variant="outlined"
                 />
               </Grid>
-              <Grid item sx={{ width: '47%' }}>
+              <Grid item sx={{ width: '25%' }}>
                 <TextField
                   fullWidth
                   size="small"
@@ -662,6 +662,16 @@ const ProdutoListMUI = () => {
                   size="small"
                   label="Valor Compra"
                   value={formatCurrency(produtoSelecionado.valorCompra)}
+                  InputProps={{ readOnly: true }}
+                  variant="outlined"
+                />
+              </Grid>
+              <Grid item sx={{ width: '15%' }}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="Custo do Produto"
+                  value={formatCurrency(produtoSelecionado.custoProduto)}
                   InputProps={{ readOnly: true }}
                   variant="outlined"
                 />
