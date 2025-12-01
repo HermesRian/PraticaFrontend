@@ -34,10 +34,8 @@ import {
   Search as SearchIcon,
   Visibility as VisibilityIcon,
   Payment as PaymentIcon,
-  Close as CloseIcon,
-  Receipt as ReceiptIcon
+  Close as CloseIcon
 } from '@mui/icons-material';
-import NotaEntradaViewModal from '../NotaEntrada/NotaEntradaViewModal';
 
 const ContaPagarListMUI = () => {
   const [contas, setContas] = useState([]);
@@ -46,8 +44,6 @@ const ContaPagarListMUI = () => {
   const [filtroStatus, setFiltroStatus] = useState('todos');
   const [modalOpen, setModalOpen] = useState(false);
   const [contaSelecionada, setContaSelecionada] = useState(null);
-  const [notaModalOpen, setNotaModalOpen] = useState(false);
-  const [notaEntradaId, setNotaEntradaId] = useState(null);
 
   useEffect(() => {
     carregarContas();
@@ -83,18 +79,6 @@ const ContaPagarListMUI = () => {
   const handleCloseModal = () => {
     setModalOpen(false);
     setContaSelecionada(null);
-  };
-
-  const handleViewNota = () => {
-    if (contaSelecionada?.notaEntradaId) {
-      setNotaEntradaId(contaSelecionada.notaEntradaId);
-      setNotaModalOpen(true);
-    }
-  };
-
-  const handleCloseNotaModal = () => {
-    setNotaModalOpen(false);
-    setNotaEntradaId(null);
   };
 
   const handlePagar = async (id) => {
@@ -565,28 +549,12 @@ const ContaPagarListMUI = () => {
             )}
           </DialogContent>
         )}
-        <DialogActions sx={{ p: 2, bgcolor: '#f5f5f5', justifyContent: 'space-between' }}>
-          <Button 
-            onClick={handleViewNota} 
-            variant="outlined" 
-            color="primary"
-            startIcon={<ReceiptIcon />}
-            disabled={!contaSelecionada?.notaEntradaId}
-          >
-            Visualizar Nota
-          </Button>
+        <DialogActions sx={{ p: 2, bgcolor: '#f5f5f5' }}>
           <Button onClick={handleCloseModal} variant="contained" color="primary">
             Fechar
           </Button>
         </DialogActions>
       </Dialog>
-
-      {/* Modal de Visualização da Nota de Entrada */}
-      <NotaEntradaViewModal 
-        open={notaModalOpen} 
-        onClose={handleCloseNotaModal} 
-        notaId={notaEntradaId} 
-      />
     </Box>
   );
 };
