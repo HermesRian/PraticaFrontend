@@ -94,6 +94,19 @@
         });
       }
       
+      // Validação para descontoPercentual
+      if (name === 'descontoPercentual') {
+        const valorNumerico = parseFloat(value);
+        if (value !== '' && valorNumerico > 100) {
+          setCondicaoPagamento({ ...condicaoPagamento, [name]: '100' });
+          return;
+        }
+        if (value !== '' && valorNumerico < 0) {
+          setCondicaoPagamento({ ...condicaoPagamento, [name]: '0' });
+          return;
+        }
+      }
+      
       setCondicaoPagamento({ ...condicaoPagamento, [name]: type === 'checkbox' ? checked : value });
     };
 
