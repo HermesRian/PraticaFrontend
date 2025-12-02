@@ -246,6 +246,10 @@ const FuncionarioFormMUI = () => {
       dataDemissao: funcionario.dataDemissao || null,
       dataValidadeCnh: funcionario.dataValidadeCnh || null,
     };
+    
+    // Remover campos auxiliares que não devem ir para o backend
+    delete funcionarioFormatado.cargoNome;
+    delete funcionarioFormatado.cidadeNome;
 
     console.log('Dados enviados:', funcionarioFormatado);
 

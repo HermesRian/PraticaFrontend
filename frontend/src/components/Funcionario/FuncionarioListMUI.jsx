@@ -183,22 +183,21 @@ const FuncionarioListMUI = () => {
 
   const getSexoLabel = (sexo) => {
     switch (sexo) {
-      case 'M': return 'Masculino';
-      case 'F': return 'Feminino';
-      case 'O': return 'Outro';
+      case 0: return 'Masculino';
+      case 1: return 'Feminino';
       default: return 'Não informado';
     }
   };
 
   const getEstadoCivilLabel = (estadoCivil) => {
     switch (estadoCivil) {
-      case 'SOLTEIRO': return 'Solteiro(a)';
-      case 'CASADO': return 'Casado(a)';
-      case 'DIVORCIADO': return 'Divorciado(a)';
-      case 'VIUVO': return 'Viúvo(a)';
-      case 'UNIAO_ESTAVEL': return 'União Estável';
-      case 'SEPARADO': return 'Separado(a)';
-      case 'OUTRO': return 'Outro';
+      case 0: return 'Solteiro(a)';
+      case 1: return 'Casado(a)';
+      case 2: return 'Divorciado(a)';
+      case 3: return 'Viúvo(a)';
+      case 4: return 'União Estável';
+      case 5: return 'Separado(a)';
+      case 6: return 'Outro';
       default: return 'Não informado';
     }
   };
