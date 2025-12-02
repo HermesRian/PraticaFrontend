@@ -29,7 +29,6 @@
   const CondicaoPagamentoFormMUI = ({ id: propId, isModal = false, onClose }) => {
     const [condicaoPagamento, setCondicaoPagamento] = useState({
       nome: '',
-      dias: '',
       parcelas: '',
       ativo: true,
       jurosPercentual: '',
@@ -62,7 +61,6 @@
             
             const condicaoPagamentoAtualizada = {
               nome: data.nome || '',
-              dias: data.dias || '',
               parcelas: data.parcelas || '',
               jurosPercentual: data.jurosPercentual || '',
               multaPercentual: data.multaPercentual || '',
@@ -174,22 +172,8 @@
         errors.nome = 'Este campo é obrigatório';
       }
       
-      if (!condicaoPagamento.dias?.toString().trim()) {
-        errors.dias = 'Este campo é obrigatório';
-      }
-      
       if (condicaoPagamento.parcelasCondicao.length === 0) {
         setErrorMessage('É necessário criar pelo menos uma parcela.');
-        return;
-      }
-      
-      const diasCondicao = parseInt(condicaoPagamento.dias, 10) || 0;
-      const parcelasInvalidas = condicaoPagamento.parcelasCondicao.some(
-        (parcela) => parseInt(parcela.dias, 10) > diasCondicao
-      );
-      
-      if (parcelasInvalidas) {
-        setErrorMessage('Os dias das parcelas não podem exceder o prazo total da condição de pagamento.');
         return;
       }
       
@@ -208,7 +192,6 @@
 
       const payload = {
         nome: condicaoPagamento.nome,
-        dias: parseInt(condicaoPagamento.dias, 10) || 0,
         parcelas: condicaoPagamento.parcelasCondicao?.length || 0,
         ativo: condicaoPagamento.ativo,
         jurosPercentual: parseFloat(condicaoPagamento.jurosPercentual) || 0,
@@ -364,25 +347,6 @@
                 helperText={fieldErrors.nome || ''}
               />
             </Grid>
-
-            <Grid item sx={{ width: '10%', minWidth: 120 }}>
-              <TextField
-                fullWidth
-                required
-                size="small"
-                label="Prazo (dias)"
-                name="dias"
-                type="number"
-                value={condicaoPagamento.dias}
-                onChange={handleChange}
-                placeholder="Dias"
-                variant="outlined"
-                error={!!fieldErrors.dias}
-                helperText={fieldErrors.dias || ''}
-                inputProps={{ min: 0 }}
-              />
-            </Grid>
-
 
             <Grid item sx={{ width: '10%' }}>
               <TextField
