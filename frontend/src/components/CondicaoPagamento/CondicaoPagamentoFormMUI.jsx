@@ -123,17 +123,31 @@
     };
 
     const handleAdicionarParcela = () => {
-      const proximoNumero = condicaoPagamento.parcelasCondicao.length + 1;
+      const parcelasExistentes = condicaoPagamento.parcelasCondicao.length;
+      const proximoNumero = parcelasExistentes + 1;
+      const totalParcelas = proximoNumero;
+      
+      // Calcula o percentual base para todas as parcelas
+      const percentualBase = Math.floor(100 / totalParcelas);
+      const resto = 100 - (percentualBase * totalParcelas);
+      
+      // Atualiza os percentuais de todas as parcelas existentes
+      const parcelasAtualizadas = condicaoPagamento.parcelasCondicao.map((parcela, index) => ({
+        ...parcela,
+        percentual: (index === 0 ? percentualBase + resto : percentualBase).toString()
+      }));
+      
+      // Adiciona a nova parcela
       const novaParcela = {
         numeroParcela: proximoNumero,
         dias: '',
-        percentual: '',
+        percentual: percentualBase.toString(),
         formaPagamentoId: '',
       };
       
       setCondicaoPagamento({ 
         ...condicaoPagamento, 
-        parcelasCondicao: [...condicaoPagamento.parcelasCondicao, novaParcela] 
+        parcelasCondicao: [...parcelasAtualizadas, novaParcela] 
       });
     };
 
@@ -145,7 +159,23 @@
     };
 
     const handleRemoverParcela = (index) => {
-      const parcelasAtualizadas = condicaoPagamento.parcelasCondicao.filter((_, i) => i !== index);
+      const parcelasRestantes = condicaoPagamento.parcelasCondicao.filter((_, i) => i !== index);
+      
+      if (parcelasRestantes.length === 0) {
+        setCondicaoPagamento({ ...condicaoPagamento, parcelasCondicao: [] });
+        return;
+      }
+      
+      // Redistribui os percentuais entre as parcelas restantes
+      const percentualBase = Math.floor(100 / parcelasRestantes.length);
+      const resto = 100 - (percentualBase * parcelasRestantes.length);
+      
+      const parcelasAtualizadas = parcelasRestantes.map((parcela, i) => ({
+        ...parcela,
+        numeroParcela: i + 1,
+        percentual: (i === 0 ? percentualBase + resto : percentualBase).toString()
+      }));
+      
       setCondicaoPagamento({ ...condicaoPagamento, parcelasCondicao: parcelasAtualizadas });
     };
 
