@@ -46,6 +46,9 @@ import UnidadeMedidaListMUI from '../UnidadeMedida/UnidadeMedidaListMUI';
 import NotaEntradaListMUI from '../NotaEntrada/NotaEntradaListMUI';
 import NotaEntradaFormMUI from '../NotaEntrada/NotaEntradaFormMUI';
 
+import NotaSaidaListMUI from '../NotaSaida/NotaSaidaListMUI';
+import NotaSaidaFormMUI from '../NotaSaida/NotaSaidaFormMUI';
+
 import ContaPagarListMUI from '../ContaPagar/ContaPagarListMUI';
 
 const MainContent = () => {
@@ -107,6 +110,11 @@ const MainContent = () => {
         <Route path="/notas-entrada" element={<NotaEntradaListMUI />} />
         <Route path="/notas-entrada/cadastrar" element={<NotaEntradaFormMUI />} />
         <Route path="/notas-entrada/editar/:id" element={<NotaEntradaFormMUI />} />
+
+        {/* Notas de Saída */}
+        <Route path="/notas-saida" element={<NotaSaidaListMUI />} />
+        <Route path="/notas-saida/cadastrar" element={<NotaSaidaFormMUI />} />
+        <Route path="/notas-saida/editar/:id" element={<NotaSaidaFormMUI />} />
 
         {/* Contas a Pagar */}
         <Route path="/contas-pagar" element={<ContaPagarListMUI />} />

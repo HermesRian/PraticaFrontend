@@ -108,6 +108,11 @@
       icon: <ReceiptIcon />,
     },
     {
+      segment: 'notas-saida',
+      title: 'Notas de Saída',
+      icon: <ReceiptIcon />,
+    },
+    {
       segment: 'contas-pagar',
       title: 'Contas a Pagar',
       icon: <RequestQuoteIcon />,

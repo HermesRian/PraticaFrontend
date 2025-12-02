@@ -1,0 +1,404 @@
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import {
+  Box,
+  Typography,
+  Button,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TableSortLabel,
+  IconButton,
+  Chip,
+  TextField,
+  InputAdornment,
+  Alert,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Tooltip
+} from '@mui/material';
+import {
+  Visibility as VisibilityIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Add as AddIcon,
+  Search as SearchIcon,
+  Receipt as ReceiptIcon,
+  Cancel as CancelIcon
+} from '@mui/icons-material';
+import NotaSaidaViewModal from './NotaSaidaViewModal';
+
+const NotaSaidaListMUI = () => {
+  const [notasSaida, setNotasSaida] = useState([]);
+  const [clientes, setClientes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [filtro, setFiltro] = useState('');
+  const [filtroStatus, setFiltroStatus] = useState('todos');
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [selectedNotaId, setSelectedNotaId] = useState(null);
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const [notasData, clientesData] = await Promise.all([
+        fetch('http://localhost:8080/notas-saida').then(res => res.json()),
+        fetch('http://localhost:8080/clientes').then(res => res.json())
+      ]);
+      console.log('Notas carregadas:', notasData);
+      console.log('Clientes carregados:', clientesData);
+      setNotasSaida(notasData);
+      setClientes(clientesData);
+    } catch (error) {
+      console.error('Erro ao buscar dados:', error);
+      setError('Erro ao carregar dados');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const getClienteNome = (nota) => {
+    // Tenta pegar do objeto cliente aninhado primeiro
+    if (nota.cliente) {
+      return nota.cliente.razaoSocial || nota.cliente.nome || nota.cliente.nomeFantasia || 'Nome não informado';
+    }
+    
+    // Fallback: busca na lista de clientes usando o ID
+    if (nota.clienteId) {
+      const cliente = clientes.find((c) => c.id === nota.clienteId);
+      if (cliente) {
+        return cliente.razaoSocial || cliente.nome || cliente.nomeFantasia || 'Nome não informado';
+      }
+    }
+    
+    return 'Cliente não informado';
+  };
+
+  const getStatusColor = (status) => {
+    const statusUpper = status?.toUpperCase();
+    switch (statusUpper) {
+      case 'PENDENTE':
+        return 'warning';
+      case 'PAGA':
+        return 'success';
+      case 'CANCELADA':
+        return 'error';
+      default:
+        return 'default';
+    }
+  };
+
+  const getStatusLabel = (status) => {
+    const statusUpper = status?.toUpperCase();
+    switch (statusUpper) {
+      case 'PENDENTE':
+        return 'Pendente';
+      case 'PAGA':
+        return 'Paga';
+      case 'CANCELADA':
+        return 'Cancelada';
+      default:
+        return status;
+    }
+  };
+
+  const handleViewNota = (notaId) => {
+    setSelectedNotaId(notaId);
+    setViewModalOpen(true);
+  };
+
+  const handleCloseViewModal = () => {
+    setViewModalOpen(false);
+    setSelectedNotaId(null);
+  };
+
+  const handleCancelar = async (id) => {
+    if (window.confirm('Tem certeza que deseja cancelar esta nota de saída? Esta ação não pode ser desfeita.')) {
+      try {
+        const response = await fetch(`http://localhost:8080/notas-saida/${id}/cancelar`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (response.ok) {
+          // Recarrega a lista de notas
+          loadData();
+          setError('');
+        } else {
+          // Tenta obter a mensagem de erro do backend
+          const errorData = await response.json().catch(() => null);
+          const errorMessage = errorData?.message || errorData?.error || 
+            'Não é possível cancelar esta nota. Verifique se há contas pagas associadas.';
+          setError(errorMessage);
+        }
+      } catch (error) {
+        console.error('Erro ao cancelar nota:', error);
+        setError('Erro ao cancelar nota de saída');
+      }
+    }
+  };
+
+  const notasFiltradas = notasSaida.filter(nota => {
+    // Filtro por texto
+    const matchesText = nota.numero?.toLowerCase().includes(filtro.toLowerCase()) ||
+      getClienteNome(nota)?.toLowerCase().includes(filtro.toLowerCase());
+    
+    // Filtro por status (normalizado para uppercase)
+    const statusNormalizado = nota.status?.toUpperCase();
+    const matchesStatus = filtroStatus === 'todos' || statusNormalizado === filtroStatus;
+    
+    return matchesText && matchesStatus;
+  });
+
+  const formatCurrency = (value) => {
+    return `R$ ${parseFloat(value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+  };
+
+  const formatDate = (date) => {
+    if (!date) return '-';
+    // Extrai apenas a parte da data (YYYY-MM-DD) para evitar problemas de timezone
+    const dateStr = date.split('T')[0];
+    const [year, month, day] = dateStr.split('-');
+    return `${day}/${month}/${year}`;
+  };
+
+  if (loading) {
+    return (
+      <Box sx={{ 
+        padding: { xs: 2, md: 3 }, 
+        bgcolor: '#f8f9fa', 
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <Typography>Carregando notas de saída...</Typography>
+      </Box>
+    );
+  }
+
+  return (
+    <Box sx={{ 
+      padding: { xs: 2, md: 3 }, 
+      bgcolor: '#f8f9fa', 
+      minHeight: '100vh' 
+    }}>
+      <Paper 
+        elevation={10}
+        sx={{
+          width: '95%',
+          maxWidth: 1400,
+          mx: 'auto',
+          p: { xs: 2, md: 3, lg: 4 },
+          borderRadius: 2,
+          overflow: 'hidden'
+        }}
+      >
+        {/* Cabeçalho */}
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          mb: 3,
+          gap: 2,
+          flexWrap: { xs: 'wrap', md: 'nowrap' }
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexGrow: 1, flexWrap: { xs: 'wrap', md: 'nowrap' } }}>
+            <TextField
+              variant="outlined"
+              placeholder="Pesquisar por número, cliente..."
+              value={filtro}
+              onChange={(e) => setFiltro(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon color="action" />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{ 
+                width: { xs: '100%', sm: 300 },
+                '& .MuiOutlinedInput-root': {
+                  height: 40,
+                  '& fieldset': {
+                    borderColor: '#e0e0e0',
+                  },
+                  '&:hover fieldset': {
+                    borderColor: '#1976d2',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#1976d2',
+                  }
+                }
+              }}
+            />
+            <FormControl size="small" sx={{ minWidth: 150 }}>
+              <InputLabel>Status</InputLabel>
+              <Select
+                value={filtroStatus}
+                onChange={(e) => setFiltroStatus(e.target.value)}
+                label="Status"
+                sx={{ height: 40 }}
+              >
+                <MenuItem value="todos">Todos</MenuItem>
+                <MenuItem value="PENDENTE">Pendente</MenuItem>
+                <MenuItem value="PAGA">Paga</MenuItem>
+                <MenuItem value="CANCELADA">Cancelada</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
+          <Button
+            component={Link}
+            to="/notas-saida/cadastrar"
+            variant="contained"
+            startIcon={<AddIcon />}
+            sx={{ 
+              bgcolor: '#1976d2',
+              '&:hover': { bgcolor: '#1565c0' },
+              borderRadius: 2,
+              px: 3,
+              py: 1,
+              height: 40,
+              whiteSpace: 'nowrap'
+            }}
+          >
+            Adicionar
+          </Button>
+        </Box>
+
+
+
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
+
+        {/* Contador */}
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="body2" color="text.secondary">
+            Exibindo {notasFiltradas.length} de {notasSaida.length} notas de saída
+          </Typography>
+        </Box>
+
+        {/* Tabela */}
+        <TableContainer>
+          <Table>
+            <TableHead>
+              <TableRow sx={{ bgcolor: '#f5f5f5' }}>
+                <TableCell sx={{ fontWeight: 600 }}>Número</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Cliente</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Data Emissão</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Total</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Ações</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {notasFiltradas.map((nota) => (
+                <TableRow 
+                  key={nota.id}
+                  hover
+                  sx={{ '&:hover': { bgcolor: '#f8f9fa' } }}
+                >
+                  <TableCell>
+                    <Typography variant="body2" fontWeight={500} color="primary">
+                      {nota.numero}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body2">
+                      {getClienteNome(nota)}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body2">
+                      {formatDate(nota.dataEmissao)}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body2" fontWeight={500}>
+                      {formatCurrency(nota.valorTotal || nota.totalAPagar || nota.total || 0)}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Chip
+                      label={getStatusLabel(nota.status)}
+                      size="small"
+                      color={getStatusColor(nota.status)}
+                      variant="filled"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      <Tooltip title={nota.status?.toUpperCase() === 'PENDENTE' ? 'Cancelar' : 'Nota já paga ou cancelada'}>
+                        <span>
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={() => handleCancelar(nota.id)}
+                            disabled={nota.status?.toUpperCase() !== 'PENDENTE'}
+                          >
+                            <CancelIcon fontSize="small" />
+                          </IconButton>
+                        </span>
+                      </Tooltip>
+                      <Tooltip title="Visualizar">
+                        <IconButton
+                          size="small"
+                          color="primary"
+                          onClick={() => handleViewNota(nota.id)}
+                        >
+                          <VisibilityIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+
+        {/* Mensagem quando não há dados */}
+        {notasFiltradas.length === 0 && (
+          <Box sx={{ textAlign: 'center', py: 4 }}>
+            <Typography variant="h6" color="text.secondary">
+              {notasSaida.length === 0 
+                ? 'Nenhuma nota de saída cadastrada' 
+                : 'Nenhuma nota encontrada com os filtros aplicados'
+              }
+            </Typography>
+            {filtro && (
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                Termo pesquisado: "{filtro}"
+              </Typography>
+            )}
+          </Box>
+        )}
+      </Paper>
+
+      {/* Modal de Visualização */}
+      <NotaSaidaViewModal
+        open={viewModalOpen}
+        onClose={handleCloseViewModal}
+        notaId={selectedNotaId}
+      />
+    </Box>
+  );
+};
+
+export default NotaSaidaListMUI;
