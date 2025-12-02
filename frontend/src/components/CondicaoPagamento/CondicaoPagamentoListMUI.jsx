@@ -519,7 +519,7 @@ const CondicaoPagamentoListMUI = () => {
                 />
               </Grid>
 
-              <Grid item sx={{ width: '92%' }}>
+              <Grid item sx={{ width: '45%' }}>
                 <TextField
                   fullWidth
                   size="small"
@@ -529,11 +529,7 @@ const CondicaoPagamentoListMUI = () => {
                   variant="outlined"
                 />
               </Grid>
-            </Grid>
-
-            {/* Linha 2: Percentuais */}
-            <Grid container spacing={2} sx={{ mb: 4 }}>
-              <Grid item sx={{ width: '30%' }}>
+              <Grid item sx={{ width: '10%' }}>
                 <TextField
                   fullWidth
                   size="small"
@@ -544,7 +540,7 @@ const CondicaoPagamentoListMUI = () => {
                 />
               </Grid>
 
-              <Grid item sx={{ width: '30%' }}>
+              <Grid item sx={{ width: '10%' }}>
                 <TextField
                   fullWidth
                   size="small"
@@ -555,7 +551,7 @@ const CondicaoPagamentoListMUI = () => {
                 />
               </Grid>
 
-              <Grid item sx={{ width: '30%' }}>
+              <Grid item sx={{ width: '10%' }}>
                 <TextField
                   fullWidth
                   size="small"
@@ -565,6 +561,10 @@ const CondicaoPagamentoListMUI = () => {
                   variant="outlined"
                 />
               </Grid>
+            </Grid>
+
+            <Grid container spacing={2} sx={{ mb: 4 }}>
+              
 
               <Grid item sx={{ width: '15%', minWidth: 120 }}>
                 {/* Espaço vazio para manter alinhamento */}
@@ -581,7 +581,7 @@ const CondicaoPagamentoListMUI = () => {
             {/* Informações das Parcelas */}
             {condicaoSelecionada.parcelasCondicao && condicaoSelecionada.parcelasCondicao.length > 0 && (
               <Grid container spacing={2} alignItems="center" sx={{ mb: 3 }}>
-                <Grid item xs={12} md={3}>
+                <Grid item sx={{ width: '13%', minWidth: 120 }}>
                   <TextField
                     fullWidth
                     size="small"
@@ -617,7 +617,7 @@ const CondicaoPagamentoListMUI = () => {
             {condicaoSelecionada.parcelasCondicao && condicaoSelecionada.parcelasCondicao.length > 0 ? (
               condicaoSelecionada.parcelasCondicao.map((parcela, index) => (
                 <Grid container spacing={2} alignItems="center" sx={{ mb: 2 }} key={index}>
-                  <Grid item xs={6} md={1.5}>
+                  <Grid item sx={{ width: '13%', minWidth: 120 }}>
                     <TextField
                       fullWidth
                       size="small"
@@ -627,7 +627,7 @@ const CondicaoPagamentoListMUI = () => {
                       variant="outlined"
                     />
                   </Grid>
-                  <Grid item xs={6} md={2}>
+                  <Grid item sx={{ width: '13%', minWidth: 120 }}>
                     <TextField
                       fullWidth
                       size="small"
@@ -637,7 +637,7 @@ const CondicaoPagamentoListMUI = () => {
                       variant="outlined"
                     />
                   </Grid>
-                  <Grid item xs={6} md={2}>
+                  <Grid item sx={{ width: '13%', minWidth: 120 }}>
                     <TextField
                       fullWidth
                       size="small"
