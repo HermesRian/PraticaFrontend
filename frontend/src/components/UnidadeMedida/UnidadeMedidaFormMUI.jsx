@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+
+// Importações do Material-UI
 import {
   Box,
   Typography,
@@ -13,14 +15,15 @@ import {
   Stack
 } from '@mui/material';
 
-const CategoriaFormMUI = ({ id: propId, isModal = false, onClose }) => {
-  const [categoria, setCategoria] = useState({
+// Componente de formulário de unidade de medida
+const UnidadeMedidaFormMUI = ({ id: propId, isModal = false, onClose }) => {
+  const [unidadeMedida, setUnidadeMedida] = useState({
     nome: '',
+    observacao: '',
     ativo: true,
     dataCriacao: '',
     ultimaModificacao: '',
   });
-
   const [errorMessage, setErrorMessage] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
   const navigate = useNavigate();
@@ -29,27 +32,30 @@ const CategoriaFormMUI = ({ id: propId, isModal = false, onClose }) => {
 
   useEffect(() => {
     if (id) {
-      fetch(`http://localhost:8080/categorias/${id}`)
+      fetch(`http://localhost:8080/unidades-medida/${id}`)
         .then((response) => response.json())
         .then((data) => {
           console.log('Dados recebidos do backend:', data);
           
-          const categoriaAtualizada = {
-            ...data,
+          const unidadeMedidaAtualizada = {
+            nome: data.nome || '',
+            observacao: data.observacao || '',
+            ativo: data.ativo ?? true,
             dataCriacao: data.dataCriacao || '',
             ultimaModificacao: data.ultimaModificacao || '',
           };
           
-          console.log('Categoria final:', categoriaAtualizada);
-          setCategoria(categoriaAtualizada);
+          console.log('Unidade de medida final:', unidadeMedidaAtualizada);
+          setUnidadeMedida(unidadeMedidaAtualizada);
         })
-        .catch((error) => console.error('Erro ao buscar categoria:', error));
+        .catch((error) => console.error('Erro ao buscar unidade de medida:', error));
     }
   }, [id]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     
+    // Limpa o erro do campo quando o usuário começar a digitar
     if (fieldErrors[name]) {
       setFieldErrors(prev => {
         const newErrors = { ...prev };
@@ -57,87 +63,67 @@ const CategoriaFormMUI = ({ id: propId, isModal = false, onClose }) => {
         return newErrors;
       });
     }
-
-    setCategoria({ ...categoria, [name]: type === 'checkbox' ? checked : value });
+    
+    setUnidadeMedida({ ...unidadeMedida, [name]: type === 'checkbox' ? checked : value });
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     
+    // Limpa erros anteriores
     setFieldErrors({});
     setErrorMessage('');
+    
+    // Validação de campos obrigatórios
     const errors = {};
     
-    if (!categoria.nome?.trim()) {
+    if (!unidadeMedida.nome?.trim()) {
       errors.nome = 'Este campo é obrigatório';
     }
     
+    // Se há erros, exibe e para a execução
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
+      setErrorMessage('Por favor, preencha todos os campos obrigatórios.');
       return;
     }
 
-    const categoriaFormatada = {
-      ...categoria,
-      nome: categoria.nome?.trim(),
+    // Formatando os dados para corresponder ao modelo esperado pelo backend
+    const unidadeMedidaFormatada = {
+      ...unidadeMedida,
     };
 
-    console.log('Dados enviados:', categoriaFormatada);
+    console.log('Dados enviados:', unidadeMedidaFormatada);
 
     const method = id ? 'PUT' : 'POST';
-    const url = id ? `http://localhost:8080/categorias/${id}` : 'http://localhost:8080/categorias';
+    const url = id ? `http://localhost:8080/unidades-medida/${id}` : 'http://localhost:8080/unidades-medida';
 
     fetch(url, {
       method: method,
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(categoriaFormatada),
+      body: JSON.stringify(unidadeMedidaFormatada),
     })
       .then((response) => {
         if (!response.ok) {
-          console.error('Erro na resposta:', response.status, response.statusText);
-          
           return response.text().then(text => {
-            let error;
-            let errorObj = null;
-            try {
-              errorObj = JSON.parse(text);
-              error = errorObj.erro || errorObj.message || 'Erro desconhecido ao salvar categoria';
-              console.error('Resposta do servidor:', errorObj);
-            } catch {
-              error = text || 'Erro ao salvar categoria';
-              console.error('Resposta do servidor (texto):', text);
-            }
-            
-            if (errorObj && errorObj.erro) {
-              const errorMessage = errorObj.erro;
-              if (errorMessage.includes('nome') || errorMessage.includes('Nome')) {
-                setFieldErrors(prev => ({
-                  ...prev,
-                  nome: errorMessage
-                }));
-                throw new Error('');
-              }
-            }
-            
-            throw new Error(error);
+            console.error('Erro do servidor:', text);
+            throw new Error(`Erro do servidor: ${response.status} - ${text}`);
           });
         }
         return response.json();
       })
       .then((data) => {
         if (isModal) {
-          onClose(data); // Retorna os dados da categoria criada/editada
+          onClose(data); // Passa a unidade criada/atualizada
         } else {
-          navigate('/categorias');
+          navigate('/unidades-medida');
         }
       })
       .catch((error) => {
-        console.error('Erro capturado:', error);
-        if (error.message.trim()) {
-          setErrorMessage(error.message);
-        }
+        console.error('Erro ao salvar unidade de medida:', error);
+        setErrorMessage('Erro ao salvar unidade de medida. Tente novamente.');
       });
   };
 
@@ -145,14 +131,14 @@ const CategoriaFormMUI = ({ id: propId, isModal = false, onClose }) => {
     if (isModal) {
       onClose();
     } else {
-      navigate('/categorias');
+      navigate('/unidades-medida');
     }
   };
 
   return (
     <Box sx={{ 
       padding: isModal ? 0 : { xs: 2, md: 3 }, 
-      bgcolor: '#f8f9fa', 
+      bgcolor: isModal ? 'transparent' : '#f8f9fa', 
       minHeight: isModal ? 'auto' : '100vh',
       paddingBottom: isModal ? 0 : 0.5
     }}>
@@ -161,9 +147,9 @@ const CategoriaFormMUI = ({ id: propId, isModal = false, onClose }) => {
         onSubmit={handleSubmit}
         elevation={isModal ? 0 : 10}
         sx={{
-          width: isModal ? '100%' : '95%',
-          maxWidth: isModal ? 'none' : 1000,
-          minHeight: isModal ? 'auto' : '70vh',
+          width: isModal ? '100%' : '90%',
+          maxWidth: isModal ? 'none' : 900,
+          minHeight: 'auto',
           mx: isModal ? 0 : 'auto',
           p: { xs: 2, md: 3, lg: 4 },
           pb: 0,
@@ -180,32 +166,36 @@ const CategoriaFormMUI = ({ id: propId, isModal = false, onClose }) => {
           }
         }}
       >
-        {/* Cabeçalho */}
+        {/* Cabeçalho com título e switch Ativo */}
         <Box sx={{ 
           display: 'flex', 
           justifyContent: 'space-between', 
           alignItems: 'center', 
           mb: 4 
         }}>
+          {/* Espaço vazio à esquerda para centralizar o título */}
           <Box sx={{ width: 120 }}></Box>
           
+          {/* Título centralizado */}
           <Typography 
             variant="h5" 
             component="h1" 
             align="center" 
             sx={{ color: '#333', fontWeight: 600, flex: 1 }}
           >
-            {id ? 'Editar Categoria' : 'Cadastrar Nova Categoria'}
+            {id ? 'Editar Unidade de Medida' : 'Cadastrar Nova Unidade de Medida'}
           </Typography>
+
+          {/* Switch Ativo à direita */}
           <Box sx={{ width: 120, display: 'flex', justifyContent: 'flex-end' }}>
             <FormControlLabel
               control={
                 <Switch
-                  checked={categoria.ativo}
+                  checked={unidadeMedida.ativo}
                   onChange={handleChange}
                   name="ativo"
                   color="primary"
-                  disabled={!id}
+                  disabled={!id} // Desabilita durante cadastro (quando não há id)
                 />
               }
               label="Ativo"
@@ -214,9 +204,9 @@ const CategoriaFormMUI = ({ id: propId, isModal = false, onClose }) => {
           </Box>
         </Box>
 
-        {/* Linha 1: Código e Nome */}
+        {/* Linha 1: Código, Nome */}
         <Grid container spacing={2} alignItems="center" sx={{ mb: 4 }}>
-          <Grid item sx={{ width: '6%', minWidth: 120 }}>
+          <Grid item sx={{ width: '6%', minWidth: 80 }}>
             <TextField
               fullWidth
               size="small"
@@ -229,19 +219,37 @@ const CategoriaFormMUI = ({ id: propId, isModal = false, onClose }) => {
             />
           </Grid>
 
-          <Grid item sx={{ width: '75%' }}>
+          <Grid item sx={{ width: '86%' }}>
             <TextField
               fullWidth
               required
               size="small"
-              label="Nome da Categoria"
+              label="Nome"
               name="nome"
-              value={categoria.nome}
+              value={unidadeMedida.nome}
               onChange={handleChange}
-              placeholder="Nome da categoria"
+              placeholder="Nome da unidade de medida (ex: Unidade, Metro, Litro)"
               variant="outlined"
               error={!!fieldErrors.nome}
               helperText={fieldErrors.nome || ''}
+            />
+          </Grid>
+        </Grid>
+
+        {/* Linha 2: Observação */}
+        <Grid container spacing={2} sx={{ mb: 4 }}>
+          <Grid item sx={{ width: '100%' }}>
+            <TextField
+              fullWidth
+              size="small"
+              label="Observação"
+              name="observacao"
+              value={unidadeMedida.observacao}
+              onChange={handleChange}
+              placeholder="Observações sobre a unidade de medida"
+              variant="outlined"
+              multiline
+              rows={3}
             />
           </Grid>
         </Grid>
@@ -258,7 +266,7 @@ const CategoriaFormMUI = ({ id: propId, isModal = false, onClose }) => {
           </Alert>
         )}
 
-        {/* Registro e botões */}
+        {/* Botões e Informações de registro */}
         <Box
           sx={{
             display: 'flex',
@@ -276,21 +284,21 @@ const CategoriaFormMUI = ({ id: propId, isModal = false, onClose }) => {
             boxShadow: '0px -4px 8px rgba(0, 0, 0, 0.05)'
           }}
         >
-          {/* Registros */}
+          {/* Informações de registro - lado esquerdo */}
           <Stack spacing={0.5} sx={{ flex: 1 }}>
-            {categoria.dataCriacao && (
+            {unidadeMedida.dataCriacao && (
               <Typography variant="caption" color="text.secondary">
-                Data de cadastro: {new Date(categoria.dataCriacao).toLocaleString('pt-BR')}
+                Data de cadastro: {new Date(unidadeMedida.dataCriacao).toLocaleString('pt-BR')}
               </Typography>
             )}
-            {categoria.ultimaModificacao && (
+            {unidadeMedida.ultimaModificacao && (
               <Typography variant="caption" color="text.secondary">
-                Última modificação: {new Date(categoria.ultimaModificacao).toLocaleString('pt-BR')}
+                Última modificação: {new Date(unidadeMedida.ultimaModificacao).toLocaleString('pt-BR')}
               </Typography>
             )}
           </Stack>
 
-          {/* Botões */}
+          {/* Botões - lado direito */}
           <Box sx={{ display: 'flex', gap: 2 }}>
             <Button
               variant="contained"
@@ -318,4 +326,4 @@ const CategoriaFormMUI = ({ id: propId, isModal = false, onClose }) => {
   );
 };
 
-export default CategoriaFormMUI;
+export default UnidadeMedidaFormMUI;

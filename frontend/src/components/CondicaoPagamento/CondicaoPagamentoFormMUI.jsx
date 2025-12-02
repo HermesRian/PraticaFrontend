@@ -29,7 +29,6 @@
   const CondicaoPagamentoFormMUI = ({ id: propId, isModal = false, onClose }) => {
     const [condicaoPagamento, setCondicaoPagamento] = useState({
       nome: '',
-      dias: '',
       parcelas: '',
       ativo: true,
       jurosPercentual: '',
@@ -62,7 +61,6 @@
             
             const condicaoPagamentoAtualizada = {
               nome: data.nome || '',
-              dias: data.dias || '',
               parcelas: data.parcelas || '',
               jurosPercentual: data.jurosPercentual || '',
               multaPercentual: data.multaPercentual || '',
@@ -75,8 +73,6 @@
                 dias: parcela.dias || '',
                 percentual: parcela.percentual || '',
                 formaPagamentoId: parcela.formaPagamentoId || parcela.formaPagamento?.id || '',
-                dataVencimento: parcela.dataVencimento || '',
-                situacao: parcela.situacao || 'A',
               }))
             };
             
@@ -96,6 +92,19 @@
           delete newErrors[name];
           return newErrors;
         });
+      }
+      
+      // Validação para descontoPercentual
+      if (name === 'descontoPercentual') {
+        const valorNumerico = parseFloat(value);
+        if (value !== '' && valorNumerico > 100) {
+          setCondicaoPagamento({ ...condicaoPagamento, [name]: '100' });
+          return;
+        }
+        if (value !== '' && valorNumerico < 0) {
+          setCondicaoPagamento({ ...condicaoPagamento, [name]: '0' });
+          return;
+        }
       }
       
       setCondicaoPagamento({ ...condicaoPagamento, [name]: type === 'checkbox' ? checked : value });
@@ -119,8 +128,6 @@
         dias: '',
         percentual: index === 0 ? (percentualBase + resto).toString() : percentualBase.toString(),
         formaPagamentoId: '',
-        dataVencimento: '',
-        situacao: 'A',
       }));
       
       setCondicaoPagamento({ ...condicaoPagamento, parcelasCondicao: parcelasGeradas });
@@ -129,19 +136,31 @@
     };
 
     const handleAdicionarParcela = () => {
-      const proximoNumero = condicaoPagamento.parcelasCondicao.length + 1;
+      const parcelasExistentes = condicaoPagamento.parcelasCondicao.length;
+      const proximoNumero = parcelasExistentes + 1;
+      const totalParcelas = proximoNumero;
+      
+      // Calcula o percentual base para todas as parcelas
+      const percentualBase = Math.floor(100 / totalParcelas);
+      const resto = 100 - (percentualBase * totalParcelas);
+      
+      // Atualiza os percentuais de todas as parcelas existentes
+      const parcelasAtualizadas = condicaoPagamento.parcelasCondicao.map((parcela, index) => ({
+        ...parcela,
+        percentual: (index === 0 ? percentualBase + resto : percentualBase).toString()
+      }));
+      
+      // Adiciona a nova parcela
       const novaParcela = {
         numeroParcela: proximoNumero,
         dias: '',
-        percentual: '',
+        percentual: percentualBase.toString(),
         formaPagamentoId: '',
-        dataVencimento: '',
-        situacao: 'A',
       };
       
       setCondicaoPagamento({ 
         ...condicaoPagamento, 
-        parcelasCondicao: [...condicaoPagamento.parcelasCondicao, novaParcela] 
+        parcelasCondicao: [...parcelasAtualizadas, novaParcela] 
       });
     };
 
@@ -153,7 +172,23 @@
     };
 
     const handleRemoverParcela = (index) => {
-      const parcelasAtualizadas = condicaoPagamento.parcelasCondicao.filter((_, i) => i !== index);
+      const parcelasRestantes = condicaoPagamento.parcelasCondicao.filter((_, i) => i !== index);
+      
+      if (parcelasRestantes.length === 0) {
+        setCondicaoPagamento({ ...condicaoPagamento, parcelasCondicao: [] });
+        return;
+      }
+      
+      // Redistribui os percentuais entre as parcelas restantes
+      const percentualBase = Math.floor(100 / parcelasRestantes.length);
+      const resto = 100 - (percentualBase * parcelasRestantes.length);
+      
+      const parcelasAtualizadas = parcelasRestantes.map((parcela, i) => ({
+        ...parcela,
+        numeroParcela: i + 1,
+        percentual: (i === 0 ? percentualBase + resto : percentualBase).toString()
+      }));
+      
       setCondicaoPagamento({ ...condicaoPagamento, parcelasCondicao: parcelasAtualizadas });
     };
 
@@ -174,22 +209,8 @@
         errors.nome = 'Este campo é obrigatório';
       }
       
-      if (!condicaoPagamento.dias?.toString().trim()) {
-        errors.dias = 'Este campo é obrigatório';
-      }
-      
       if (condicaoPagamento.parcelasCondicao.length === 0) {
         setErrorMessage('É necessário criar pelo menos uma parcela.');
-        return;
-      }
-      
-      const diasCondicao = parseInt(condicaoPagamento.dias, 10) || 0;
-      const parcelasInvalidas = condicaoPagamento.parcelasCondicao.some(
-        (parcela) => parseInt(parcela.dias, 10) > diasCondicao
-      );
-      
-      if (parcelasInvalidas) {
-        setErrorMessage('Os dias das parcelas não podem exceder o prazo total da condição de pagamento.');
         return;
       }
       
@@ -208,7 +229,6 @@
 
       const payload = {
         nome: condicaoPagamento.nome,
-        dias: parseInt(condicaoPagamento.dias, 10) || 0,
         parcelas: condicaoPagamento.parcelasCondicao?.length || 0,
         ativo: condicaoPagamento.ativo,
         jurosPercentual: parseFloat(condicaoPagamento.jurosPercentual) || 0,
@@ -220,8 +240,6 @@
           percentual: parseFloat(parcela.percentual) || 0,
           condicaoPagamentoId: id ? parseInt(id, 10) : null,
           formaPagamentoId: parseInt(parcela.formaPagamentoId, 10) || null,
-          dataVencimento: parcela.dataVencimento || null,
-          situacao: parcela.situacao || 'A',
         })),
       };
 
@@ -365,25 +383,6 @@
               />
             </Grid>
 
-            <Grid item sx={{ width: '10%', minWidth: 120 }}>
-              <TextField
-                fullWidth
-                required
-                size="small"
-                label="Prazo (dias)"
-                name="dias"
-                type="number"
-                value={condicaoPagamento.dias}
-                onChange={handleChange}
-                placeholder="Dias"
-                variant="outlined"
-                error={!!fieldErrors.dias}
-                helperText={fieldErrors.dias || ''}
-                inputProps={{ min: 0 }}
-              />
-            </Grid>
-
-
             <Grid item sx={{ width: '10%' }}>
               <TextField
                 fullWidth
@@ -477,10 +476,6 @@
             <Grid item xs={12} md={3}>
               {condicaoPagamento.parcelasCondicao.length > 0 && (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <CalculateIcon color="primary" />
-                  <Typography variant="body2" color="text.secondary">
-                    Soma: {calcularSomaPercentuais().toFixed(2)}%
-                  </Typography>
                   <Chip 
                     label={Math.abs(calcularSomaPercentuais() - 100) < 0.01 ? "✓ 100%" : "≠ 100%"}
                     size="small"
@@ -567,35 +562,6 @@
                           {forma.nome}
                         </MenuItem>
                       ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-                <Grid item xs={2.5}>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    label="Data Vencimento"
-                    type="date"
-                    value={parcela.dataVencimento}
-                    onChange={(e) => handleParcelaChange(index, 'dataVencimento', e.target.value)}
-                    variant="outlined"
-                    InputLabelProps={{
-                      shrink: true,
-                    }}
-                  />
-                </Grid>
-                <Grid item sx={{ width: '10%' }}>
-                  <FormControl fullWidth size="small">
-                    <InputLabel>Situação</InputLabel>
-                    <Select
-                      value={parcela.situacao}
-                      onChange={(e) => handleParcelaChange(index, 'situacao', e.target.value)}
-                      label="Situação"
-                    >
-                      <MenuItem value="A">Ativa</MenuItem>
-                      <MenuItem value="I">Inativa</MenuItem>
-                      <MenuItem value="P">Paga</MenuItem>
-                      <MenuItem value="V">Vencida</MenuItem>
                     </Select>
                   </FormControl>
                 </Grid>

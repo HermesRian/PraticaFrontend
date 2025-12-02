@@ -193,8 +193,8 @@ const ClienteListMUI = () => {
         
         if (condicaoResponse.ok) {
           const condicaoData = await condicaoResponse.json();
-          clienteComCondicaoPagamento.condicaoPagamentoDescricao = condicaoData.descricao || '';
-          console.log('Descrição da condição de pagamento encontrada:', condicaoData.descricao);
+          clienteComCondicaoPagamento.condicaoPagamentoDescricao = condicaoData.nome || '';
+          console.log('Nome da condição de pagamento encontrada:', condicaoData.nome);
         } else {
           console.error('Erro ao buscar condição de pagamento, status:', condicaoResponse.status);
           clienteComCondicaoPagamento.condicaoPagamentoDescricao = 'Erro ao carregar';
@@ -758,7 +758,7 @@ const ClienteListMUI = () => {
             </Grid>            
             {/* Linha 3 */}
             <Grid container spacing={2} sx={{ mb: 4 }}>
-              <Grid item sx={{ width: '15%', minWidth: 150 }}>
+              <Grid item sx={{ width: '20%', minWidth: 150 }}>
                 <TextField
                   fullWidth
                   size="small"
@@ -769,7 +769,7 @@ const ClienteListMUI = () => {
                 />
               </Grid>
 
-              <Grid item sx={{ width: '25%' }}>
+              <Grid item sx={{ width: '30%' }}>
                 <TextField
                   fullWidth
                   size="small"
@@ -792,7 +792,7 @@ const ClienteListMUI = () => {
                   />
                 </Grid>
               )}
-              <Grid item sx={{ width: '15%', minWidth: 150 }}>
+              <Grid item sx={{ width: '20%', minWidth: 150 }}>
                 <TextField
                   fullWidth
                   size="small"
@@ -847,7 +847,7 @@ const ClienteListMUI = () => {
                 />
               </Grid>
 
-              <Grid item sx={{ width: '35%' }}>
+              <Grid item sx={{ width: '30%' }}>
                 <TextField
                   fullWidth
                   size="small"

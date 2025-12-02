@@ -270,7 +270,7 @@ const NotaEntradaFormMUI = () => {
       parseFloat(notaEntrada.valorFrete || 0) +
       parseFloat(notaEntrada.valorSeguro || 0) +
       parseFloat(notaEntrada.outrasDespesas || 0);
-    return totalNota;
+    return parseFloat(totalNota.toFixed(2));
   };
 
   // Função para calcular o valor de cada parcela com base no percentual
@@ -330,10 +330,11 @@ const NotaEntradaFormMUI = () => {
     const { quantidade, valorUnitario, valorDesconto } = itemAtual;
     const subtotal = quantidade * valorUnitario;
     const total = subtotal - valorDesconto;
+    const totalArredondado = parseFloat(total.toFixed(2));
     
     setItemAtual(prev => ({ 
       ...prev, 
-      valorTotal: total 
+      valorTotal: totalArredondado 
     }));
   };
 
@@ -372,7 +373,7 @@ const NotaEntradaFormMUI = () => {
             const descontoAnterior = item.valorDesconto;
             const novaQuantidade = quantidadeAnterior + itemAtual.quantidade;
             const novoDesconto = itemAtual.valorDesconto; // Sobrescrever desconto
-            const novoTotal = (novaQuantidade * item.valorUnitario) - novoDesconto;
+            const novoTotal = parseFloat(((novaQuantidade * item.valorUnitario) - novoDesconto).toFixed(2));
             
             console.log(`- Quantidade: ${quantidadeAnterior} + ${itemAtual.quantidade} = ${novaQuantidade}`);
             console.log(`- Desconto: ${descontoAnterior} → ${novoDesconto} (sobrescrito)`);
@@ -747,6 +748,11 @@ const NotaEntradaFormMUI = () => {
               onChange={(e) => handleChange('modelo', e.target.value)}
               placeholder="55"
               variant="outlined"
+              sx={{
+                '& .MuiInputBase-input': {
+                  textAlign: 'right'
+                }
+              }}
             />
           </Grid>
 
@@ -759,6 +765,11 @@ const NotaEntradaFormMUI = () => {
               onChange={(e) => handleChange('serie', e.target.value)}
               placeholder="1"
               variant="outlined"
+              sx={{
+                '& .MuiInputBase-input': {
+                  textAlign: 'right'
+                }
+              }}
             />
           </Grid>
 
@@ -769,9 +780,20 @@ const NotaEntradaFormMUI = () => {
               size="small"
               label="Número"
               value={notaEntrada.numero}
-              onChange={(e) => handleChange('numero', e.target.value)}
+              onChange={(e) => {
+                const valor = e.target.value.replace(/\D/g, ''); // Remove não numéricos
+                if (valor.length <= 9) {
+                  handleChange('numero', valor);
+                }
+              }}
               placeholder="123456"
               variant="outlined"
+              inputProps={{ maxLength: 9 }}
+              sx={{
+                '& .MuiInputBase-input': {
+                  textAlign: 'right'
+                }
+              }}
             />
           </Grid>
 
@@ -868,7 +890,10 @@ const NotaEntradaFormMUI = () => {
               onClick={() => isPrimeiraLinhaCompleta() && setProdutoModalOpen(true)}
               sx={{ 
                 cursor: isPrimeiraLinhaCompleta() ? 'pointer' : 'not-allowed',
-                '& .MuiInputBase-input': { cursor: isPrimeiraLinhaCompleta() ? 'pointer' : 'not-allowed' }
+                '& .MuiInputBase-input': { 
+                  cursor: isPrimeiraLinhaCompleta() ? 'pointer' : 'not-allowed',
+                  textAlign: 'right'
+                }
               }}
             />
           </Grid>
@@ -931,10 +956,18 @@ const NotaEntradaFormMUI = () => {
               disabled={!isPrimeiraLinhaCompleta()}
               onChange={(e) => {
                 const valor = parseFloat(e.target.value) || 0;
+                const valorFormatado = Math.round(valor * 100) / 100;
                 setItemAtual({
                   ...itemAtual,
-                  valorUnitario: valor
+                  valorUnitario: valorFormatado
                 });
+              }}
+              onBlur={(e) => {
+                const valor = parseFloat(e.target.value) || 0;
+                setItemAtual(prev => ({
+                  ...prev,
+                  valorUnitario: parseFloat(valor.toFixed(2))
+                }));
               }}
               InputProps={{ 
                 inputProps: { step: 0.01, min: 0 },
@@ -960,10 +993,11 @@ const NotaEntradaFormMUI = () => {
               onChange={(e) => {
                 if (isPrimeiraLinhaCompleta()) {
                   const valor = parseFloat(e.target.value) || 0;
+                  const valorFormatado = Math.round(valor * 100) / 100;
                   const valorUnitario = itemAtual.valorUnitario || 0;
                   
                   // Validação: desconto não pode ser maior que o valor unitário
-                  if (valor > valorUnitario) {
+                  if (valorFormatado > valorUnitario) {
                     setItemAtual(prev => ({ 
                       ...prev, 
                       valorDesconto: valorUnitario,
@@ -973,11 +1007,18 @@ const NotaEntradaFormMUI = () => {
                     setErroDesconto('');
                     setItemAtual(prev => ({ 
                       ...prev, 
-                      valorDesconto: valor,
+                      valorDesconto: valorFormatado,
                       percentualDesconto: 0
                     }));
                   }
                 }
+              }}
+              onBlur={(e) => {
+                const valor = parseFloat(e.target.value) || 0;
+                setItemAtual(prev => ({
+                  ...prev,
+                  valorDesconto: parseFloat(valor.toFixed(2))
+                }));
               }}
               InputProps={{ 
                 inputProps: { step: 0.01, min: 0, max: itemAtual.valorUnitario || 999999 },
@@ -1157,7 +1198,17 @@ const NotaEntradaFormMUI = () => {
                   type="number"
                   value={notaEntrada.valorFrete}
                   disabled={!temProdutosAdicionados()}
-                  onChange={(e) => temProdutosAdicionados() && handleChange('valorFrete', parseFloat(e.target.value) || 0)}
+                  onChange={(e) => {
+                    if (temProdutosAdicionados()) {
+                      const valor = parseFloat(e.target.value) || 0;
+                      const valorFormatado = Math.round(valor * 100) / 100;
+                      handleChange('valorFrete', valorFormatado);
+                    }
+                  }}
+                  onBlur={(e) => {
+                    const valor = parseFloat(e.target.value) || 0;
+                    handleChange('valorFrete', parseFloat(valor.toFixed(2)));
+                  }}
                   InputProps={{ 
                     inputProps: { step: 0.01, min: 0 },
                     startAdornment: <Box sx={{ mr: 1, color: 'text.secondary' }}>R$</Box>
@@ -1180,7 +1231,17 @@ const NotaEntradaFormMUI = () => {
                   type="number"
                   value={notaEntrada.valorSeguro}
                   disabled={!temProdutosAdicionados()}
-                  onChange={(e) => temProdutosAdicionados() && handleChange('valorSeguro', parseFloat(e.target.value) || 0)}
+                  onChange={(e) => {
+                    if (temProdutosAdicionados()) {
+                      const valor = parseFloat(e.target.value) || 0;
+                      const valorFormatado = Math.round(valor * 100) / 100;
+                      handleChange('valorSeguro', valorFormatado);
+                    }
+                  }}
+                  onBlur={(e) => {
+                    const valor = parseFloat(e.target.value) || 0;
+                    handleChange('valorSeguro', parseFloat(valor.toFixed(2)));
+                  }}
                   InputProps={{ 
                     inputProps: { step: 0.01, min: 0 },
                     startAdornment: <Box sx={{ mr: 1, color: 'text.secondary' }}>R$</Box>
@@ -1203,7 +1264,17 @@ const NotaEntradaFormMUI = () => {
                   type="number"
                   value={notaEntrada.outrasDespesas}
                   disabled={!temProdutosAdicionados()}
-                  onChange={(e) => temProdutosAdicionados() && handleChange('outrasDespesas', parseFloat(e.target.value) || 0)}
+                  onChange={(e) => {
+                    if (temProdutosAdicionados()) {
+                      const valor = parseFloat(e.target.value) || 0;
+                      const valorFormatado = Math.round(valor * 100) / 100;
+                      handleChange('outrasDespesas', valorFormatado);
+                    }
+                  }}
+                  onBlur={(e) => {
+                    const valor = parseFloat(e.target.value) || 0;
+                    handleChange('outrasDespesas', parseFloat(valor.toFixed(2)));
+                  }}
                   InputProps={{ 
                     inputProps: { step: 0.01, min: 0 },
                     startAdornment: <Box sx={{ mr: 1, color: 'text.secondary' }}>R$</Box>
@@ -1251,7 +1322,12 @@ const NotaEntradaFormMUI = () => {
               value={notaEntrada.condicaoPagamentoId}
               InputProps={{ readOnly: true }}
               variant="outlined"
-              sx={{ bgcolor: '#f5f5f5' }}
+              sx={{ 
+                bgcolor: '#f5f5f5',
+                '& .MuiInputBase-input': {
+                  textAlign: 'right'
+                }
+              }}
             />
           </Grid>
 

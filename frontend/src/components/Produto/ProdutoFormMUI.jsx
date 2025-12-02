@@ -8,10 +8,6 @@ import {
   Grid,
   Switch,
   FormControlLabel,
-  FormControl,
-  Select,
-  MenuItem,
-  InputLabel,
   Paper,
   Alert,
   InputAdornment,
@@ -20,6 +16,12 @@ import {
   IconButton
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
+import UnidadeMedidaModal from '../UnidadeMedida/UnidadeMedidaModal';
+import UnidadeMedidaModalForm from '../UnidadeMedida/UnidadeMedidaModalForm';
+import MarcaModal from '../Marca/MarcaModal';
+import MarcaModalForm from '../Marca/MarcaModalForm';
+import CategoriaModal from '../Categoria/CategoriaModal';
+import CategoriaModalForm from '../Categoria/CategoriaModalForm';
 
 const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
   const [produto, setProduto] = useState({
@@ -36,6 +38,7 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
     categoriaDescricao: '',
     valorCompra: '',
     valorVenda: '',
+    custoProduto: '',
     quantidadeMinima: '1',
     percentualLucro: '',
     observacoes: '',
@@ -43,28 +46,21 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
     ultimaModificacao: '',
   });
 
-  const [marcas, setMarcas] = useState([]);
-  const [unidadesMedida, setUnidadesMedida] = useState([]);
-  const [categorias, setCategorias] = useState([]);
   const [errorMessage, setErrorMessage] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
+  const [unidadeModalOpen, setUnidadeModalOpen] = useState(false);
+  const [unidadeFormModalOpen, setUnidadeFormModalOpen] = useState(false);
+  const [unidadeRefreshTrigger, setUnidadeRefreshTrigger] = useState(0);
+  const [marcaModalOpen, setMarcaModalOpen] = useState(false);
+  const [marcaFormModalOpen, setMarcaFormModalOpen] = useState(false);
+  const [marcaRefreshTrigger, setMarcaRefreshTrigger] = useState(0);
+  const [categoriaModalOpen, setCategoriaModalOpen] = useState(false);
+  const [categoriaFormModalOpen, setCategoriaFormModalOpen] = useState(false);
+  const [categoriaRefreshTrigger, setCategoriaRefreshTrigger] = useState(0);
   const navigate = useNavigate();
   const { id: urlId } = useParams();
   const id = propId || urlId;
 
-  useEffect(() => {
-    Promise.all([
-      fetch('http://localhost:8080/marcas').then(res => res.json()).catch(() => []),
-      fetch('http://localhost:8080/unidades-medida').then(res => res.json()).catch(() => []),
-      fetch('http://localhost:8080/categorias').then(res => res.json()).catch(() => [])
-    ])
-    .then(([marcasData, unidadesMedidaData, categoriasData]) => {
-      setMarcas(marcasData);
-      setUnidadesMedida(unidadesMedidaData);
-      setCategorias(categoriasData);
-    })
-    .catch(error => console.error('Erro ao carregar dados auxiliares:', error));
-  }, []);
 
   useEffect(() => {
     if (id) {
@@ -187,6 +183,33 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
     }
     
     setProduto(updatedProduto);
+  };
+
+  const handleUnidadeSelect = (unidade) => {
+    setProduto({
+      ...produto,
+      unidadeMedidaId: unidade.id,
+      unidadeMedidaDescricao: unidade.nome
+    });
+    setUnidadeModalOpen(false);
+  };
+
+  const handleMarcaSelect = (marca) => {
+    setProduto({
+      ...produto,
+      marcaId: marca.id,
+      marcaDescricao: marca.nome
+    });
+    setMarcaModalOpen(false);
+  };
+
+  const handleCategoriaSelect = (categoria) => {
+    setProduto({
+      ...produto,
+      categoriaId: categoria.id,
+      categoriaDescricao: categoria.nome
+    });
+    setCategoriaModalOpen(false);
   };
 
   const handleSubmit = (e) => {
@@ -402,7 +425,7 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
             />
           </Grid>
 
-          <Grid item xs={3}>
+          <Grid item sx={{ width: '23%' }}>
             <TextField
               fullWidth
               required
@@ -417,26 +440,29 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
               helperText={fieldErrors.nome || ''}
             />
           </Grid>
-          <Grid item sx={{ width: '14%' }}>
-            <FormControl fullWidth size="small">
-              <InputLabel>Unidade de Medida</InputLabel>
-              <Select
-                name="unidadeMedidaId"
-                value={produto.unidadeMedidaId}
-                onChange={handleChange}
-                label="Unidade de Medida"
-              >
-                <MenuItem value="">Selecione...</MenuItem>
-                {unidadesMedida.map((unidade) => (
-                  <MenuItem key={unidade.id} value={unidade.id}>
-                    {unidade.nome}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+          <Grid item sx={{ width: '9%' }}>
+            <TextField
+              fullWidth
+              label="U.M."
+              size="small"
+              value={produto.unidadeMedidaDescricao || ''}
+              onClick={() => setUnidadeModalOpen(true)}
+              InputProps={{
+                readOnly: true,
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{ 
+                cursor: 'pointer',
+                '& .MuiInputBase-input': { cursor: 'pointer' }
+              }}
+            />
           </Grid>
 
-          <Grid item xs={3}>
+          <Grid item sx={{ width: '25%' }}>
             <TextField
               fullWidth
               size="small"
@@ -449,65 +475,106 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
             />
           </Grid>
 
-          <Grid item sx={{ width: '10%', minWidth: 80 }}>
-            <FormControl fullWidth size="small">
-              <InputLabel>Marca</InputLabel>
-              <Select
-                name="marcaId"
-                value={produto.marcaId}
-                onChange={handleChange}
-                label="Marca"
-              >
-                <MenuItem value="">Selecione...</MenuItem>
-                {marcas.map((marca) => (
-                  <MenuItem key={marca.id} value={marca.id}>
-                    {marca.nome}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+          <Grid item sx={{ width: '15%', minWidth: 80 }}>
+            <TextField
+              fullWidth
+              label="Marca"
+              size="small"
+              value={produto.marcaDescricao || ''}
+              onClick={() => setMarcaModalOpen(true)}
+              InputProps={{
+                readOnly: true,
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{ 
+                cursor: 'pointer',
+                '& .MuiInputBase-input': { cursor: 'pointer' }
+              }}
+            />
+          </Grid>
+          <Grid item sx={{ width: '15%' }}>
+            <TextField
+              fullWidth
+              label="Categoria"
+              size="small"
+              value={produto.categoriaDescricao || ''}
+              onClick={() => setCategoriaModalOpen(true)}
+              InputProps={{
+                readOnly: true,
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{ 
+                cursor: 'pointer',
+                '& .MuiInputBase-input': { cursor: 'pointer' }
+              }}
+            />
           </Grid>
         </Grid>
 
-        {/* Linha 2: Valor de Compra, Valor de Venda, Lucro */}
+        {/* Linha 2: Valor de Compra, Custo do Produto, Valor de Venda, Lucro */}
         <Grid container spacing={2} sx={{ mb: 4 }}>
-          <Grid item xs={4}>
+          <Grid item sx={{ width: '12%' }}>
             <TextField
               fullWidth
               size="small"
               label="Valor de Compra"
               name="valorCompra"
               value={produto.valorCompra}
-              onChange={e => handleNumericChange(e, 10, true)}
               variant="outlined"
               error={!!fieldErrors.valorCompra}
-              helperText={fieldErrors.valorCompra || ''}
               InputProps={{
+                readOnly: true,
                 startAdornment: <InputAdornment position="start">R$</InputAdornment>,
                 inputMode: 'decimal'
               }}
+              sx={{ bgcolor: '#f5f5f5' }}
             />
           </Grid>
 
-          <Grid item xs={4}>
+          <Grid item sx={{ width: '12%' }}>
+            <TextField
+              fullWidth
+              size="small"
+              label="Custo do Produto"
+              name="custoProduto"
+              value={produto.custoProduto}
+              variant="outlined"
+              InputProps={{
+                readOnly: true,
+                startAdornment: <InputAdornment position="start">R$</InputAdornment>,
+                inputMode: 'decimal'
+              }}
+              sx={{ bgcolor: '#f5f5f5' }}
+            />
+          </Grid>
+
+          <Grid item sx={{ width: '12%' }}>
             <TextField
               fullWidth
               size="small"
               label="Valor de Venda"
               name="valorVenda"
               value={produto.valorVenda}
-              onChange={e => handleNumericChange(e, 10, true)}
               variant="outlined"
               error={!!fieldErrors.valorVenda}
-              helperText={fieldErrors.valorVenda || ''}
               InputProps={{
+                readOnly: true,
                 startAdornment: <InputAdornment position="start">R$</InputAdornment>,
                 inputMode: 'decimal'
               }}
+              sx={{ bgcolor: '#f5f5f5' }}
             />
           </Grid>
 
-          <Grid item xs={4}>
+          <Grid item sx={{ width: '12%' }}>
             <TextField
               fullWidth
               size="small"
@@ -527,10 +594,6 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
               }}
             />
           </Grid>
-        </Grid>
-
-        {/* Linha 3: Quantidade em Estoque, Unidade de Medida, Categoria, Quantidade Mínima */}
-        <Grid container spacing={2} sx={{ mb: 4 }}>
           <Grid item xs={3}>
             <TextField
               fullWidth
@@ -547,24 +610,7 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
             />
           </Grid>
 
-          <Grid item sx={{ width: '15%' }}>
-            <FormControl fullWidth size="small">
-              <InputLabel>Categoria</InputLabel>
-              <Select
-                name="categoriaId"
-                value={produto.categoriaId}
-                onChange={handleChange}
-                label="Categoria"
-              >
-                <MenuItem value="">Selecione...</MenuItem>
-                {categorias.map((categoria) => (
-                  <MenuItem key={categoria.id} value={categoria.id}>
-                    {categoria.nome}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
+          
 
           <Grid item xs={3}>
             <TextField
@@ -581,6 +627,7 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
             />
           </Grid>
         </Grid>
+
 
         {/* Linha 4: Observações */}
         <Grid container spacing={2} sx={{ mb: 2 }}>
@@ -668,6 +715,78 @@ const ProdutoFormMUI = ({ id: propId, isModal = false, onClose }) => {
           </Box>
         </Box>
       </Paper>
+
+      {/* Modal de Seleção de Unidade de Medida */}
+      <UnidadeMedidaModal
+        open={unidadeModalOpen}
+        onClose={() => setUnidadeModalOpen(false)}
+        onSelect={handleUnidadeSelect}
+        onAddNew={() => setUnidadeFormModalOpen(true)}
+        refreshTrigger={unidadeRefreshTrigger}
+      />
+
+      {/* Modal de Formulário de Unidade de Medida */}
+      <UnidadeMedidaModalForm
+        id={null}
+        open={unidadeFormModalOpen}
+        onClose={(novaUnidade) => {
+          // Fecha o modal de formulário
+          setUnidadeFormModalOpen(false);
+          // Se uma nova unidade foi criada, atualiza a lista (mas não seleciona automaticamente)
+          if (novaUnidade) {
+            setUnidadeRefreshTrigger(prev => prev + 1);
+            // Mantém o modal de seleção aberto para o usuário escolher
+          }
+        }}
+      />
+
+      {/* Modal de Seleção de Marca */}
+      <MarcaModal
+        open={marcaModalOpen}
+        onClose={() => setMarcaModalOpen(false)}
+        onSelect={handleMarcaSelect}
+        onAddNew={() => setMarcaFormModalOpen(true)}
+        refreshTrigger={marcaRefreshTrigger}
+      />
+
+      {/* Modal de Formulário de Marca */}
+      <MarcaModalForm
+        id={null}
+        open={marcaFormModalOpen}
+        onClose={(novaMarca) => {
+          // Fecha o modal de formulário
+          setMarcaFormModalOpen(false);
+          // Se uma nova marca foi criada, atualiza a lista (mas não seleciona automaticamente)
+          if (novaMarca) {
+            setMarcaRefreshTrigger(prev => prev + 1);
+            // Mantém o modal de seleção aberto para o usuário escolher
+          }
+        }}
+      />
+
+      {/* Modal de Seleção de Categoria */}
+      <CategoriaModal
+        open={categoriaModalOpen}
+        onClose={() => setCategoriaModalOpen(false)}
+        onSelect={handleCategoriaSelect}
+        onAddNew={() => setCategoriaFormModalOpen(true)}
+        refreshTrigger={categoriaRefreshTrigger}
+      />
+
+      {/* Modal de Formulário de Categoria */}
+      <CategoriaModalForm
+        id={null}
+        open={categoriaFormModalOpen}
+        onClose={(novaCategoria) => {
+          // Fecha o modal de formulário
+          setCategoriaFormModalOpen(false);
+          // Se uma nova categoria foi criada, atualiza a lista (mas não seleciona automaticamente)
+          if (novaCategoria) {
+            setCategoriaRefreshTrigger(prev => prev + 1);
+            // Mantém o modal de seleção aberto para o usuário escolher
+          }
+        }}
+      />
     </Box>
   );
 };

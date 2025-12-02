@@ -314,16 +314,6 @@ const CondicaoPagamentoListMUI = () => {
                 </TableCell>
                 <TableCell>
                   <TableSortLabel
-                    active={sortConfig.key === 'dias'}
-                    direction={sortConfig.direction}
-                    onClick={() => handleSort('dias')}
-                    sx={{ fontWeight: 600 }}
-                  >
-                    Prazo (dias)
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell>
-                  <TableSortLabel
                     active={sortConfig.key === 'parcelas'}
                     direction={sortConfig.direction}
                     onClick={() => handleSort('parcelas')}
@@ -369,15 +359,6 @@ const CondicaoPagamentoListMUI = () => {
                         {condicao.nome}
                       </Typography>
                     </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      icon={<ScheduleIcon />}
-                      label={`${condicao.dias} dias`}
-                      size="small"
-                      color="info"
-                      variant="outlined"
-                    />
                   </TableCell>
                   <TableCell>
                     <Chip
@@ -524,7 +505,7 @@ const CondicaoPagamentoListMUI = () => {
               </Box>
             </Box>
 
-            {/* Linha 1: Código, Descrição, Dias */}
+            {/* Linha 1: Código e Descrição */}
             <Grid container spacing={2} alignItems="center" sx={{ mb: 4 }}>
               <Grid item sx={{ width: '8%', minWidth: 100 }}>
                 <TextField
@@ -538,7 +519,7 @@ const CondicaoPagamentoListMUI = () => {
                 />
               </Grid>
 
-              <Grid item sx={{ width: '62%' }}>
+              <Grid item sx={{ width: '92%' }}>
                 <TextField
                   fullWidth
                   size="small"
@@ -547,21 +528,6 @@ const CondicaoPagamentoListMUI = () => {
                   InputProps={{ readOnly: true }}
                   variant="outlined"
                 />
-              </Grid>
-
-              <Grid item sx={{ width: '15%', minWidth: 120 }}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  label="Prazo (dias)"
-                  value={condicaoSelecionada.dias || ''}
-                  InputProps={{ readOnly: true }}
-                  variant="outlined"
-                />
-              </Grid>
-
-              <Grid item sx={{ width: '15%', minWidth: 120 }}>
-                {/* Espaço vazio para manter alinhamento */}
               </Grid>
             </Grid>
 

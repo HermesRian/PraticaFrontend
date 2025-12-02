@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import CategoriaModalForm from './CategoriaModalForm';
+import UnidadeMedidaModalForm from './UnidadeMedidaModalForm';
 import {
   Box,
   Typography,
@@ -36,38 +35,39 @@ import {
 import {
   Visibility as VisibilityIcon,
   Edit as EditIcon,
+  Delete as DeleteIcon,
   Add as AddIcon,
   Search as SearchIcon,
-  Sell as SellIcon,
+  Straighten as StraightenIcon,
   Close as CloseIcon,
   Block as BlockIcon,
   CheckCircle as CheckCircleIcon
 } from '@mui/icons-material';
 
-const CategoriaListMUI = () => {
-  const [categorias, setCategorias] = useState([]);
-  const [categoriaSelecionada, setCategoriaSelecionada] = useState(null);
+const UnidadeMedidaListMUI = () => {
+  const [unidadesMedida, setUnidadesMedida] = useState([]);
+  const [unidadeMedidaSelecionada, setUnidadeMedidaSelecionada] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
-  const [selectedCategoriaId, setSelectedCategoriaId] = useState(null);
+  const [selectedUnidadeMedidaId, setSelectedUnidadeMedidaId] = useState(null);
   const [sortConfig, setSortConfig] = useState({ key: 'nome', direction: 'asc' });
   const [filtro, setFiltro] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [filtroStatus, setFiltroStatus] = useState('todos');
+  const [filtroStatus, setFiltroStatus] = useState('todos'); // 'todos', 'ativos', 'inativos'
 
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch('http://localhost:8080/categorias');
-      const data = await response.json();
-      setCategorias(data);
-    } catch (error) {
-      console.error('Erro ao buscar dados:', error);
-      setError('Erro ao carregar dados');
-    } finally {
-      setLoading(false);
-    }
+  const loadData = () => {
+    fetch('http://localhost:8080/unidades-medida')
+      .then(res => res.json())
+      .then((data) => {
+        setUnidadesMedida(data);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error('Erro ao buscar dados:', error);
+        setError('Erro ao carregar dados');
+        setLoading(false);
+      });
   };
 
   useEffect(() => {
@@ -81,7 +81,7 @@ const CategoriaListMUI = () => {
     }
     setSortConfig({ key, direction });
 
-    const sortedCategorias = [...categorias].sort((a, b) => {
+    const sortedUnidades = [...unidadesMedida].sort((a, b) => {
       let aValue = a[key];
       let bValue = b[key];
 
@@ -103,110 +103,92 @@ const CategoriaListMUI = () => {
       }
       return 0;
     });
-    setCategorias(sortedCategorias);
+
+    setUnidadesMedida(sortedUnidades);
   };
 
-  const handleDelete = (id) => {
-    const categoria = categorias.find(c => c.id === id);
-    const isAtivo = categoria?.ativo;
-    const acao = isAtivo ? 'inativar' : 'ativar';
-    const mensagem = isAtivo ? 
-      'Tem certeza que deseja inativar esta categoria?' : 
-      'Tem certeza que deseja ativar esta categoria?';
+  const unidadesMedidaFiltradas = unidadesMedida.filter((unidade) => {
+    const matchFiltro = unidade.nome.toLowerCase().includes(filtro.toLowerCase());
+    const matchStatus = 
+      filtroStatus === 'todos' || 
+      (filtroStatus === 'ativos' && unidade.ativo) || 
+      (filtroStatus === 'inativos' && !unidade.ativo);
     
-    if (window.confirm(mensagem)) {
-      if (isAtivo) {
-        fetch(`http://localhost:8080/categorias/${id}`, {
-          method: 'DELETE',
-        })
-          .then(() => {
-            setCategorias(categorias.map(categoria => 
-              categoria.id === id ? { ...categoria, ativo: false } : categoria
-            ));
-          })
-          .catch((error) => {
-            console.error(`Erro ao ${acao} categoria:`, error);
-            setError(`Erro ao ${acao} categoria`);
-          });
-      } else {
-        const categoriaAtualizada = {
-          ...categoria,
-          ativo: true,
-        };
+    return matchFiltro && matchStatus;
+  });
 
-        fetch(`http://localhost:8080/categorias/${id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(categoriaAtualizada),
-        })
-          .then((response) => {
-            if (!response.ok) {
-              throw new Error('Erro ao ativar categoria');
-            }
-            return response.json();
-          })
-          .then(() => {
-            setCategorias(categorias.map(categoria => 
-              categoria.id === id ? { ...categoria, ativo: true } : categoria
-            ));
-          })
-          .catch((error) => {
-            console.error(`Erro ao ${acao} categoria:`, error);
-            setError(`Erro ao ${acao} categoria`);
-          });
-      }
-    }
-  };
-
-  const handleView = async (categoria) => {
-    setCategoriaSelecionada(categoria);
+  const handleView = (unidade) => {
+    setUnidadeMedidaSelecionada(unidade);
     setIsModalOpen(true);
   };
 
-  const handleCloseModal = () => {
-    setCategoriaSelecionada(null);
-    setIsModalOpen(false);
+  const handleEdit = (unidade) => {
+    setSelectedUnidadeMedidaId(unidade.id);
+    setIsFormModalOpen(true);
   };
 
-  const categoriasFiltradas = categorias.filter(categoria => {
-    const matchesText = categoria.id?.toString().includes(filtro) ||
-      categoria.nome?.toLowerCase().includes(filtro.toLowerCase());
-    
-    const matchesStatus = filtroStatus === 'todos' || 
-      (filtroStatus === 'ativos' && categoria.ativo) ||
-      (filtroStatus === 'inativos' && !categoria.ativo);
-    
-    return matchesText && matchesStatus;
-  });
+  const handleAdd = () => {
+    setSelectedUnidadeMedidaId(null);
+    setIsFormModalOpen(true);
+  };
+
+  const handleDelete = (id) => {
+    if (window.confirm('Deseja realmente excluir esta unidade de medida?')) {
+      fetch(`http://localhost:8080/unidades-medida/${id}`, {
+        method: 'DELETE',
+      })
+        .then((response) => {
+          if (response.ok) {
+            loadData();
+          } else {
+            setError('Erro ao excluir unidade de medida');
+          }
+        })
+        .catch((error) => {
+          console.error('Erro ao excluir:', error);
+          setError('Erro ao excluir unidade de medida');
+        });
+    }
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setUnidadeMedidaSelecionada(null);
+  };
+
+  const handleCloseFormModal = () => {
+    setIsFormModalOpen(false);
+    setSelectedUnidadeMedidaId(null);
+    loadData();
+  };
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
-        <Typography>Carregando categorias...</Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <Typography>Carregando...</Typography>
       </Box>
     );
   }
 
   return (
-    <Box sx={{ 
-      padding: { xs: 2, md: 3 }, 
-      bgcolor: '#f8f9fa', 
-      minHeight: '100vh' 
-    }}>
-      <Paper 
-        elevation={10}
-        sx={{
-          width: '95%',
-          maxWidth: 1400,
-          mx: 'auto',
-          p: { xs: 2, md: 3, lg: 4 },
-          borderRadius: 2,
-          overflow: 'hidden'
-        }}
-      >
-        {/* Cabeçalho */}
+    <Box sx={{ p: 3 }}>
+      <Paper elevation={2} sx={{ p: 3, borderRadius: 2 }}>
+        {/* cabeçalho top */}
+        {/* <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Avatar sx={{ bgcolor: '#1976d2', width: 48, height: 48 }}>
+            <StraightenIcon />
+          </Avatar>
+          <Box>
+            <Typography variant="h5" fontWeight={600} color="primary">
+              Unidades de Medida
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Gerencie as unidades de medida do sistema
+            </Typography>
+          </Box>
+        </Box> */}
+
+        {/* Filtros e Botão Adicionar */}
         <Box sx={{ 
           display: 'flex', 
           justifyContent: 'space-between', 
@@ -218,7 +200,7 @@ const CategoriaListMUI = () => {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexGrow: 1, flexWrap: { xs: 'wrap', md: 'nowrap' } }}>
             <TextField
               variant="outlined"
-              placeholder="Pesquisar por código, nome..."
+              placeholder="Pesquisar por nome..."
               value={filtro}
               onChange={(e) => setFiltro(e.target.value)}
               InputProps={{
@@ -259,8 +241,8 @@ const CategoriaListMUI = () => {
             </FormControl>
           </Box>
           <Button
+            onClick={handleAdd}
             variant="contained"
-            onClick={() => setIsFormModalOpen(true)}
             startIcon={<AddIcon />}
             sx={{ 
               bgcolor: '#1976d2',
@@ -285,7 +267,7 @@ const CategoriaListMUI = () => {
         {/* Tabela */}
         <Box sx={{ mb: 2 }}>
           <Typography variant="body2" color="text.secondary">
-            Exibindo {categoriasFiltradas.length} de {categorias.length} categorias
+            Exibindo {unidadesMedidaFiltradas.length} de {unidadesMedida.length} unidades de medida
             {filtroStatus !== 'todos' && ` (${filtroStatus})`}
           </Typography>
         </Box>
@@ -311,7 +293,7 @@ const CategoriaListMUI = () => {
                     onClick={() => handleSort('nome')}
                     sx={{ fontWeight: 600 }}
                   >
-                    Categoria
+                    Unidade de Medida
                   </TableSortLabel>
                 </TableCell>
                 <TableCell>
@@ -328,35 +310,33 @@ const CategoriaListMUI = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {categoriasFiltradas.map((categoria) => (
+              {unidadesMedidaFiltradas.map((unidade) => (
                 <TableRow 
-                  key={categoria.id}
+                  key={unidade.id}
                   hover
                   sx={{ '&:hover': { bgcolor: '#f8f9fa' } }}
                 >
                   <TableCell>
                     <Typography variant="body2" fontWeight={500} color="primary">
-                      {categoria.id}
+                      {unidade.id}
                     </Typography>
                   </TableCell>
                   <TableCell>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Avatar sx={{ width: 32, height: 32, bgcolor: '#1976d2' }}>
-                        <SellIcon fontSize="small" />
+                        <StraightenIcon fontSize="small" />
                       </Avatar>
-                      <Box>
-                        <Typography variant="body2" fontWeight={500}>
-                          {categoria.nome}
-                        </Typography>
-                      </Box>
+                      <Typography variant="body2" fontWeight={500}>
+                        {unidade.nome}
+                      </Typography>
                     </Box>
                   </TableCell>
                   <TableCell>
                     <Chip
-                      label={categoria.ativo ? 'Ativo' : 'Inativo'}
+                      label={unidade.ativo ? 'Ativo' : 'Inativo'}
                       size="small"
-                      color={categoria.ativo ? 'success' : 'default'}
-                      variant={categoria.ativo ? 'filled' : 'outlined'}
+                      color={unidade.ativo ? 'success' : 'default'}
+                      variant={unidade.ativo ? 'filled' : 'outlined'}
                     />
                   </TableCell>
                   <TableCell>
@@ -364,7 +344,7 @@ const CategoriaListMUI = () => {
                       <Tooltip title="Visualizar">
                         <IconButton
                           size="small"
-                          onClick={() => handleView(categoria)}
+                          onClick={() => handleView(unidade)}
                           sx={{ color: '#17a2b8' }}
                         >
                           <VisibilityIcon fontSize="small" />
@@ -373,20 +353,19 @@ const CategoriaListMUI = () => {
                       <Tooltip title="Editar">
                         <IconButton
                           size="small"
-                          component={Link}
-                          to={`/categorias/editar/${categoria.id}`}
+                          onClick={() => handleEdit(unidade)}
                           sx={{ color: '#28a745' }}
                         >
                           <EditIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
-                      <Tooltip title={categoria.ativo ? "Inativar" : "Ativar"}>
+                      <Tooltip title={unidade.ativo ? "Excluir" : "Ativar"}>
                         <IconButton
                           size="small"
-                          onClick={() => handleDelete(categoria.id)}
-                          sx={{ color: categoria.ativo ? '#dc3545' : '#28a745' }}
+                          onClick={() => handleDelete(unidade.id)}
+                          sx={{ color: unidade.ativo ? '#dc3545' : '#28a745' }}
                         >
-                          {categoria.ativo ? <BlockIcon fontSize="small" /> : <CheckCircleIcon fontSize="small" />}
+                          {unidade.ativo ? <BlockIcon fontSize="small" /> : <CheckCircleIcon fontSize="small" />}
                         </IconButton>
                       </Tooltip>
                     </Box>
@@ -397,12 +376,12 @@ const CategoriaListMUI = () => {
           </Table>
         </TableContainer>
 
-        {categoriasFiltradas.length === 0 && (
+        {unidadesMedidaFiltradas.length === 0 && (
           <Box sx={{ textAlign: 'center', py: 4 }}>
             <Typography variant="h6" color="text.secondary">
-              {categorias.length === 0 
-                ? 'Nenhuma categoria cadastrada' 
-                : `Nenhuma categoria ${filtroStatus === 'todos' ? '' : filtroStatus === 'ativos' ? 'ativa' : 'inativa'} encontrada`
+              {unidadesMedida.length === 0 
+                ? 'Nenhuma unidade de medida cadastrada' 
+                : `Nenhuma unidade de medida ${filtroStatus === 'todos' ? '' : filtroStatus === 'ativos' ? 'ativa' : 'inativa'} encontrada`
               }
             </Typography>
             {filtro && (
@@ -421,7 +400,7 @@ const CategoriaListMUI = () => {
         maxWidth="md"
         fullWidth
         PaperProps={{
-          sx: { borderRadius: 2, minHeight: '40vh' }
+          sx: { borderRadius: 2, minHeight: '60vh' }
         }}
       >
         <DialogTitle sx={{ 
@@ -432,16 +411,17 @@ const CategoriaListMUI = () => {
           pb: 2
         }}>
           <Typography variant="h6" fontWeight={600}>
-            Visualizar Categoria
+            Visualizar Unidade de Medida
           </Typography>
           <IconButton onClick={handleCloseModal} size="small">
             <CloseIcon />
           </IconButton>
         </DialogTitle>
         
-        {categoriaSelecionada && (
+        {unidadeMedidaSelecionada && (
           <DialogContent sx={{ p: 4 }}>
-            {/* Título e Switch */}
+
+            {/* Título e switch */}
             <Box sx={{ 
               display: 'flex', 
               justifyContent: 'space-between', 
@@ -455,13 +435,13 @@ const CategoriaListMUI = () => {
                 align="center" 
                 sx={{ color: '#333', fontWeight: 600, flex: 1 }}
               >
-                Dados da Categoria
+                Dados da Unidade de Medida
               </Typography>
               <Box sx={{ width: 120, display: 'flex', justifyContent: 'flex-end' }}>
                 <FormControlLabel
                   control={
                     <Switch
-                      checked={categoriaSelecionada.ativo}
+                      checked={unidadeMedidaSelecionada.ativo}
                       disabled
                       color="primary"
                     />
@@ -474,22 +454,39 @@ const CategoriaListMUI = () => {
 
             {/* Linha 1: Código e Nome */}
             <Grid container spacing={2} alignItems="center" sx={{ mb: 4 }}>
-              <Grid item sx={{ width: '15%', minWidth: 120 }}>
+              <Grid item sx={{ width: '5%', minWidth: 100 }}>
                 <TextField
                   fullWidth
                   size="small"
                   label="Código"
-                  value={categoriaSelecionada.id || ''}
+                  value={unidadeMedidaSelecionada.id || ''}
                   InputProps={{ readOnly: true }}
                   variant="outlined"
                 />
               </Grid>
-              <Grid item sx={{ width: '85%' }}>
+
+              <Grid item sx={{ width: '86%' }}>
                 <TextField
                   fullWidth
                   size="small"
-                  label="Nome da Categoria"
-                  value={categoriaSelecionada.nome || ''}
+                  label="Nome"
+                  value={unidadeMedidaSelecionada.nome || ''}
+                  InputProps={{ readOnly: true }}
+                  variant="outlined"
+                />
+              </Grid>
+            </Grid>
+
+            {/* Linha 2: Observação */}
+            <Grid container spacing={2} sx={{ mb: 2 }}>
+              <Grid item sx={{ width: '100%' }}>
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={3}
+                  size="small"
+                  label="Observação"
+                  value={unidadeMedidaSelecionada.observacao || ''}
                   InputProps={{ readOnly: true }}
                   variant="outlined"
                 />
@@ -509,56 +506,36 @@ const CategoriaListMUI = () => {
               }}
             >
               <Stack spacing={0.5} sx={{ flex: 1 }}>
-                {categoriaSelecionada.dataCriacao && (
+                {unidadeMedidaSelecionada.dataCriacao && (
                   <Typography variant="caption" color="text.secondary">
-                    Data de cadastro: {new Date(categoriaSelecionada.dataCriacao).toLocaleString('pt-BR')}
+                    Data de cadastro: {new Date(unidadeMedidaSelecionada.dataCriacao).toLocaleString('pt-BR')}
                   </Typography>
                 )}
-                {categoriaSelecionada.ultimaModificacao && (
+                {unidadeMedidaSelecionada.ultimaModificacao && (
                   <Typography variant="caption" color="text.secondary">
-                    Última modificação: {new Date(categoriaSelecionada.ultimaModificacao).toLocaleString('pt-BR')}
+                    Última modificação: {new Date(unidadeMedidaSelecionada.ultimaModificacao).toLocaleString('pt-BR')}
                   </Typography>
                 )}
               </Stack>
             </Box>
+
           </DialogContent>
         )}
-        
-        <DialogActions sx={{ p: 3, bgcolor: '#f5f5f5' }}>
-          <Button
-            onClick={handleCloseModal}
-            variant="outlined"
-            color="inherit"
-          >
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={handleCloseModal} variant="contained">
             Fechar
           </Button>
-          {categoriaSelecionada && (
-            <Button
-              component={Link}
-              to={`/categorias/editar/${categoriaSelecionada.id}`}
-              variant="contained"
-              startIcon={<EditIcon />}
-              onClick={handleCloseModal}
-            >
-              Editar
-            </Button>
-          )}
         </DialogActions>
       </Dialog>
 
-      <CategoriaModalForm 
-        id={selectedCategoriaId}
+      {/* Modal de Formulário */}
+      <UnidadeMedidaModalForm
+        id={selectedUnidadeMedidaId}
         open={isFormModalOpen}
-        onClose={(categoriaAtualizada) => {
-          setIsFormModalOpen(false);
-          setSelectedCategoriaId(null);
-          if (categoriaAtualizada) {
-            loadData();
-          }
-        }}
+        onClose={handleCloseFormModal}
       />
     </Box>
   );
 };
 
-export default CategoriaListMUI;
+export default UnidadeMedidaListMUI;

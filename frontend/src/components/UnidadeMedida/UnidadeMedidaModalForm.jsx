@@ -1,9 +1,9 @@
 import React from 'react';
 import { Dialog, DialogContent, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import CategoriaFormMUI from './CategoriaFormMUI';
+import UnidadeMedidaFormMUI from './UnidadeMedidaFormMUI';
 
-const CategoriaModalForm = ({ id, open = false, onClose }) => {
+const UnidadeMedidaModalForm = ({ id, open = false, onClose }) => {
   if (!open) return null;
   
   return (
@@ -34,7 +34,7 @@ const CategoriaModalForm = ({ id, open = false, onClose }) => {
         <CloseIcon />
       </IconButton>
       <DialogContent sx={{ p: 0 }}>
-        <CategoriaFormMUI 
+        <UnidadeMedidaFormMUI 
           id={id} 
           isModal={true} 
           onClose={onClose} 
@@ -44,4 +44,4 @@ const CategoriaModalForm = ({ id, open = false, onClose }) => {
   );
 };
 
-export default CategoriaModalForm;
+export default UnidadeMedidaModalForm;
