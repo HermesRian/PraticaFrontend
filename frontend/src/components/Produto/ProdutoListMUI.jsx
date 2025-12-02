@@ -186,55 +186,64 @@ const ProdutoListMUI = () => {
   };
 
   const handleView = async (produto) => {
-    let produtoComDetalhes = { ...produto };
-    
-    if (produto.marcaId) {
-      try {
-        const marcaResponse = await fetch(`http://localhost:8080/marcas/${produto.marcaId}`);
-        if (marcaResponse.ok) {
-          const marcaData = await marcaResponse.json();
-          produtoComDetalhes.marcaDescricao = marcaData.nome || '';
-        } else {
+    try {
+      // Buscar dados completos do produto do backend
+      const produtoResponse = await fetch(`http://localhost:8080/produtos/${produto.id}`);
+      const produtoCompleto = await produtoResponse.json();
+      
+      let produtoComDetalhes = { ...produtoCompleto };
+      
+      if (produtoCompleto.marcaId) {
+        try {
+          const marcaResponse = await fetch(`http://localhost:8080/marcas/${produtoCompleto.marcaId}`);
+          if (marcaResponse.ok) {
+            const marcaData = await marcaResponse.json();
+            produtoComDetalhes.marcaDescricao = marcaData.nome || '';
+          } else {
+            produtoComDetalhes.marcaDescricao = 'Erro ao carregar';
+          }
+        } catch (error) {
+          console.error('Erro ao buscar marca:', error);
           produtoComDetalhes.marcaDescricao = 'Erro ao carregar';
         }
-      } catch (error) {
-        console.error('Erro ao buscar marca:', error);
-        produtoComDetalhes.marcaDescricao = 'Erro ao carregar';
       }
-    }
 
-    if (produto.unidadeMedidaId) {
-      try {
-        const unidadeResponse = await fetch(`http://localhost:8080/unidades-medida/${produto.unidadeMedidaId}`);
-        if (unidadeResponse.ok) {
-          const unidadeData = await unidadeResponse.json();
-          produtoComDetalhes.unidadeMedidaDescricao = unidadeData.nome || '';
-        } else {
+      if (produtoCompleto.unidadeMedidaId) {
+        try {
+          const unidadeResponse = await fetch(`http://localhost:8080/unidades-medida/${produtoCompleto.unidadeMedidaId}`);
+          if (unidadeResponse.ok) {
+            const unidadeData = await unidadeResponse.json();
+            produtoComDetalhes.unidadeMedidaDescricao = unidadeData.nome || '';
+          } else {
+            produtoComDetalhes.unidadeMedidaDescricao = 'Erro ao carregar';
+          }
+        } catch (error) {
+          console.error('Erro ao buscar unidade de medida:', error);
           produtoComDetalhes.unidadeMedidaDescricao = 'Erro ao carregar';
         }
-      } catch (error) {
-        console.error('Erro ao buscar unidade de medida:', error);
-        produtoComDetalhes.unidadeMedidaDescricao = 'Erro ao carregar';
       }
-    }
 
-    if (produto.categoriaId) {
-      try {
-        const categoriaResponse = await fetch(`http://localhost:8080/categorias/${produto.categoriaId}`);
-        if (categoriaResponse.ok) {
-          const categoriaData = await categoriaResponse.json();
-          produtoComDetalhes.categoriaDescricao = categoriaData.nome || '';
-        } else {
+      if (produtoCompleto.categoriaId) {
+        try {
+          const categoriaResponse = await fetch(`http://localhost:8080/categorias/${produtoCompleto.categoriaId}`);
+          if (categoriaResponse.ok) {
+            const categoriaData = await categoriaResponse.json();
+            produtoComDetalhes.categoriaDescricao = categoriaData.nome || '';
+          } else {
+            produtoComDetalhes.categoriaDescricao = 'Erro ao carregar';
+          }
+        } catch (error) {
+          console.error('Erro ao buscar categoria:', error);
           produtoComDetalhes.categoriaDescricao = 'Erro ao carregar';
         }
-      } catch (error) {
-        console.error('Erro ao buscar categoria:', error);
-        produtoComDetalhes.categoriaDescricao = 'Erro ao carregar';
       }
+      
+      setProdutoSelecionado(produtoComDetalhes);
+      setIsModalOpen(true);
+    } catch (error) {
+      console.error('Erro ao buscar produto:', error);
+      setError('Erro ao carregar detalhes do produto');
     }
-    
-    setProdutoSelecionado(produtoComDetalhes);
-    setIsModalOpen(true);
   };
 
   const handleCloseModal = () => {
