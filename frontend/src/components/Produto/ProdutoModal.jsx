@@ -197,7 +197,7 @@ const ProdutoModal = ({ open, onClose, onSelect, onAddNew, refreshTrigger }) => 
                 >
                   <TableCell>
                     <Typography variant="body2" fontFamily="monospace" fontWeight={500}>
-                      {produto.codigo || 'N/A'}
+                      {produto.id || 'N/A'}
                     </Typography>
                   </TableCell>
                   <TableCell>
