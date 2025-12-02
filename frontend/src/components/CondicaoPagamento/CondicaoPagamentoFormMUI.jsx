@@ -73,8 +73,6 @@
                 dias: parcela.dias || '',
                 percentual: parcela.percentual || '',
                 formaPagamentoId: parcela.formaPagamentoId || parcela.formaPagamento?.id || '',
-                dataVencimento: parcela.dataVencimento || '',
-                situacao: parcela.situacao || 'A',
               }))
             };
             
@@ -117,8 +115,6 @@
         dias: '',
         percentual: index === 0 ? (percentualBase + resto).toString() : percentualBase.toString(),
         formaPagamentoId: '',
-        dataVencimento: '',
-        situacao: 'A',
       }));
       
       setCondicaoPagamento({ ...condicaoPagamento, parcelasCondicao: parcelasGeradas });
@@ -133,8 +129,6 @@
         dias: '',
         percentual: '',
         formaPagamentoId: '',
-        dataVencimento: '',
-        situacao: 'A',
       };
       
       setCondicaoPagamento({ 
@@ -203,8 +197,6 @@
           percentual: parseFloat(parcela.percentual) || 0,
           condicaoPagamentoId: id ? parseInt(id, 10) : null,
           formaPagamentoId: parseInt(parcela.formaPagamentoId, 10) || null,
-          dataVencimento: parcela.dataVencimento || null,
-          situacao: parcela.situacao || 'A',
         })),
       };
 
@@ -527,35 +519,6 @@
                           {forma.nome}
                         </MenuItem>
                       ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-                <Grid item xs={2.5}>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    label="Data Vencimento"
-                    type="date"
-                    value={parcela.dataVencimento}
-                    onChange={(e) => handleParcelaChange(index, 'dataVencimento', e.target.value)}
-                    variant="outlined"
-                    InputLabelProps={{
-                      shrink: true,
-                    }}
-                  />
-                </Grid>
-                <Grid item sx={{ width: '10%' }}>
-                  <FormControl fullWidth size="small">
-                    <InputLabel>Situação</InputLabel>
-                    <Select
-                      value={parcela.situacao}
-                      onChange={(e) => handleParcelaChange(index, 'situacao', e.target.value)}
-                      label="Situação"
-                    >
-                      <MenuItem value="A">Ativa</MenuItem>
-                      <MenuItem value="I">Inativa</MenuItem>
-                      <MenuItem value="P">Paga</MenuItem>
-                      <MenuItem value="V">Vencida</MenuItem>
                     </Select>
                   </FormControl>
                 </Grid>
