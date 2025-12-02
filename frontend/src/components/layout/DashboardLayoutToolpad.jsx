@@ -118,6 +118,11 @@
       icon: <RequestQuoteIcon />,
     },
     {
+      segment: 'contas-receber',
+      title: 'Contas a Receber',
+      icon: <RequestQuoteIcon />,
+    },
+    {
       kind: 'divider',
     },
     {
