@@ -50,7 +50,9 @@ import NotaSaidaListMUI from '../NotaSaida/NotaSaidaListMUI';
 import NotaSaidaFormMUI from '../NotaSaida/NotaSaidaFormMUI';
 
 import ContaPagarListMUI from '../ContaPagar/ContaPagarListMUI';
+import ContaPagarFormMUI from '../ContaPagar/ContaPagarFormMUI';
 import ContaReceberListMUI from '../ContaReceber/ContaReceberListMUI';
+import ContaReceberFormMUI from '../ContaReceber/ContaReceberFormMUI';
 
 const MainContent = () => {
   return (
@@ -119,9 +121,13 @@ const MainContent = () => {
 
         {/* Contas a Pagar */}
         <Route path="/contas-pagar" element={<ContaPagarListMUI />} />
+        <Route path="/contas-pagar/cadastrar" element={<ContaPagarFormMUI />} />
+        <Route path="/contas-pagar/editar/:id" element={<ContaPagarFormMUI />} />
 
         {/* Contas a Receber */}
         <Route path="/contas-receber" element={<ContaReceberListMUI />} />
+        <Route path="/contas-receber/cadastrar" element={<ContaReceberFormMUI />} />
+        <Route path="/contas-receber/editar/:id" element={<ContaReceberFormMUI />} />
       </Routes>
     </main>
   );
